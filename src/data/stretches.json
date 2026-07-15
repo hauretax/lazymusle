@@ -1,0 +1,19 @@
+{
+  "_source": "Routine post-pompes recoupée (O'Coach push-day cool-down, Peloton, Planet Fitness). Modifiable ici.",
+  "stretches": [
+    { "id": "wrists", "name": "Poignets", "target": "Avant-bras · poignets", "seconds": 15, "sides": 2, "sideLabels": ["Paumes au sol", "Dos des mains"],
+      "howto": "À quatre pattes, mains au sol doigts vers les genoux, recule doucement le bassin. Puis retourne les mains (dos au sol)." },
+    { "id": "cobra", "name": "Cobra", "target": "Abdos · poitrine · épaules", "seconds": 25, "sides": 1,
+      "howto": "À plat ventre, mains sous les épaules, pousse le buste vers le haut. Épaules basses, regard devant." },
+    { "id": "pec", "name": "Pec au chambranle", "target": "Pectoraux · épaule avant", "seconds": 30, "sides": 2,
+      "howto": "Avant-bras contre un mur ou un montant de porte, coude à ~90°. Avance d'un pas et tourne le buste à l'opposé." },
+    { "id": "triceps", "name": "Triceps overhead", "target": "Triceps · épaule", "seconds": 30, "sides": 2,
+      "howto": "Bras levé, coude plié, main entre les omoplates. L'autre main attrape le coude et pousse doucement." },
+    { "id": "shoulder", "name": "Épaule croisée", "target": "Arrière d'épaule · haut du dos", "seconds": 30, "sides": 2,
+      "howto": "Un bras tendu en travers de la poitrine, ramène-le vers toi avec l'autre avant-bras. Épaules relâchées." },
+    { "id": "child", "name": "Posture de l'enfant", "target": "Dos · épaules · triceps", "seconds": 40, "sides": 1,
+      "howto": "Assis sur les talons, plie le buste en avant, bras tendus loin devant, front vers le sol. Respire dans le dos." },
+    { "id": "twist", "name": "Torsion + respiration", "target": "Dos · obliques", "seconds": 15, "sides": 2,
+      "howto": "Debout, bras écartés, tourne le buste, hanches fixes. Termine par 3 à 5 grandes respirations." }
+  ]
+}

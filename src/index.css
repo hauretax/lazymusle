@@ -316,6 +316,11 @@ body {
 .reminder__msg { color: var(--accent2); font-size: 13px; font-weight: 600; }
 .reminder__note { color: var(--muted); font-size: 12px; line-height: 1.5; }
 
+/* ---------- Bouton d'installation ---------- */
+.install { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.install__btn { width: 100%; max-width: 340px; }
+.install__hint { color: var(--muted); font-size: 13px; text-align: center; max-width: 340px; line-height: 1.5; }
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }

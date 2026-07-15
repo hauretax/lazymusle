@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useApp, getNextStep } from '../store'
 import { GOAL, TOTAL_DAYS, getDay, sessionMinTotal, computeRest, parseSet } from '../data/pushupProgram'
 import { canNotify, requestNotif, notify, exportSchedule } from '../lib/reminders'
+import InstallButton from '../components/InstallButton'
 
 function startOfDay(d) {
   const x = new Date(d)
@@ -170,6 +171,8 @@ export default function Home({ onStart, onOpenProgress }) {
       {!firstRun && (
         <button className="link" onClick={onOpenProgress}>Voir ma progression →</button>
       )}
+
+      <InstallButton />
     </div>
   )
 }

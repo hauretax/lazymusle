@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useApp, getNextStep } from '../store'
+import { useApp, getNextStep, pushupsOf } from '../store'
 import { GOAL, TOTAL_DAYS, getDay, sessionMinTotal, computeRest, parseSet } from '../data/pushupProgram'
 import { PUSHUPS_GOAL, getGoal, hasProgram } from '../data/goals'
 import { canNotify, requestNotif, notify, exportSchedule } from '../lib/reminders'
@@ -37,10 +37,11 @@ function ProgressRing({ done, total }) {
 export default function Home({ onStart, onOpenProgress, onEditGoals }) {
   const { state } = useApp()
   const step = getNextStep(state)
-  const bestMax = state.maxHistory.reduce((m, x) => Math.max(m, x.reps), 0)
+  const pushups = pushupsOf(state)
+  const bestMax = pushups.maxHistory.reduce((m, x) => Math.max(m, x.reps), 0)
   const onPushups = state.goals.includes(PUSHUPS_GOAL)
-  const firstRun = state.levelIndex == null
-  const doneCount = state.sessions.length
+  const firstRun = pushups.levelIndex == null
+  const doneCount = pushups.sessions.length
   // Objectifs choisis dont le module n'existe pas encore (voir TICKETS.md).
   const soonGoals = state.goals.filter((id) => !hasProgram(id)).map(getGoal).filter(Boolean)
 
@@ -49,15 +50,15 @@ export default function Home({ onStart, onOpenProgress, onEditGoals }) {
 
   // Notification "jour J" quand l'app est ouverte (une fois par séance due).
   useEffect(() => {
-    if (state.levelIndex == null || state.finished || !state.nextDate) return
+    if (pushups.levelIndex == null || pushups.finished || !pushups.nextDate) return
     if (!canNotify() || Notification.permission !== 'granted') return
-    if (daysUntil(state.nextDate) > 0) return
-    const key = 'reps-notified-' + startOfDay(state.nextDate).toISOString().slice(0, 10)
+    if (daysUntil(pushups.nextDate) > 0) return
+    const key = 'reps-notified-' + startOfDay(pushups.nextDate).toISOString().slice(0, 10)
     if (!sessionStorage.getItem(key)) {
       sessionStorage.setItem(key, '1')
       notify("C'est ton jour de pompes 💪", 'Ta séance t’attend dans Reps.')
     }
-  }, [state.levelIndex, state.finished, state.nextDate])
+  }, [pushups.levelIndex, pushups.finished, pushups.nextDate])
 
   const enableNotifs = async () => {
     const p = await requestNotif()
@@ -66,7 +67,7 @@ export default function Home({ onStart, onOpenProgress, onEditGoals }) {
   }
 
   const addToCalendar = () => {
-    const n = exportSchedule(state)
+    const n = exportSchedule(pushups)
     setRemindMsg(n ? `Planning exporté (${n} séances) — ouvre le fichier pour l’ajouter.` : '')
   }
 
@@ -116,7 +117,7 @@ export default function Home({ onStart, onOpenProgress, onEditGoals }) {
 
       {!firstRun && step.type === 'session' && (() => {
         const day = getDay(step.levelIndex, step.dayIndex)
-        const du = daysUntil(state.nextDate)
+        const du = daysUntil(pushups.nextDate)
         const ready = du <= 0
         return (
           <div className="card card--next">
@@ -141,9 +142,9 @@ export default function Home({ onStart, onOpenProgress, onEditGoals }) {
               </>
             )}
 
-            {state.nextDate && !ready && (
+            {pushups.nextDate && !ready && (
               <p className="card__rest-note">
-                Repos conseillé. Prochaine séance {du === 1 ? 'demain' : `dans ${du} jours`} ({fmtDay(state.nextDate)}). Tu peux quand même y aller 👊
+                Repos conseillé. Prochaine séance {du === 1 ? 'demain' : `dans ${du} jours`} ({fmtDay(pushups.nextDate)}). Tu peux quand même y aller 👊
               </p>
             )}
 

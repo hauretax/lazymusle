@@ -45,13 +45,14 @@ function dayTitle(r) {
 }
 
 // Projette toutes les séances restantes sur des dates, en suivant le rythme 2-2-3.
-export function projectSchedule(state) {
-  const rem = remainingDays(state.levelIndex, state.dayIndex)
+// Prend l'état du programme pompes (`state.programs.pushups`), pas le state entier.
+export function projectSchedule(pushups) {
+  const rem = remainingDays(pushups.levelIndex, pushups.dayIndex)
   if (!rem.length) return []
-  const first = state.nextDate ? new Date(state.nextDate) : new Date()
+  const first = pushups.nextDate ? new Date(pushups.nextDate) : new Date()
   const d = startOfDay(first)
   d.setHours(REMINDER_HOUR, 0, 0, 0)
-  const nCompleted = state.sessions.length
+  const nCompleted = pushups.sessions.length
   const events = []
   for (let i = 0; i < rem.length; i++) {
     events.push({ start: new Date(d), title: dayTitle(rem[i]) })
@@ -100,8 +101,8 @@ export function downloadICS(text, filename = 'pompes-planning.ics') {
   setTimeout(() => URL.revokeObjectURL(url), 1500)
 }
 
-export function exportSchedule(state) {
-  const events = projectSchedule(state)
+export function exportSchedule(pushups) {
+  const events = projectSchedule(pushups)
   if (!events.length) return 0
   downloadICS(buildICS(events))
   return events.length

@@ -11,6 +11,7 @@ import {
   computeRest, pickLevelIndex, gapAfterSession, parseSet, sessionMinTotal,
   getDay, remainingDays, daysInLevel, isTestDay, levels, GOAL, TOTAL_DAYS,
 } from '../src/data/pushupProgram.js'
+import { hydrate, freshState, STATE_VERSION } from '../src/lib/migrate.js'
 
 let fails = 0
 
@@ -109,6 +110,85 @@ eq('le jour de test vise le max du niveau', getDay(0, 9).values, ['20+'])
 eq('tout le programme depuis le départ', remainingDays(0, 0).length, 54)
 eq('depuis le test du Niveau 1', remainingDays(0, 9).length, 45)
 eq('niveau non commencé', remainingDays(null, 0).length, 0)
+
+// ---------- Migration de l'état sauvegardé ----------
+// C'est la progression réelle de quelqu'un : une migration ratée l'efface en silence.
+
+// Un v2 crédible : en plein Niveau 2, 4 séances faites, avant l'arrivée des objectifs.
+const V2 = {
+  version: 2,
+  createdAt: '2026-07-01T10:00:00.000Z',
+  goal: 100,
+  restSec: 60,
+  levelIndex: 1,
+  dayIndex: 4,
+  lastSessionDate: '2026-07-14T10:00:00.000Z',
+  nextDate: '2026-07-16T10:00:00.000Z',
+  maxHistory: [{ date: '2026-07-01T10:00:00.000Z', reps: 24, kind: 'initial' }],
+  sessions: [
+    { levelIndex: 1, dayIndex: 0, isTest: false, total: 62, date: '2026-07-06T10:00:00.000Z' },
+    { levelIndex: 1, dayIndex: 1, isTest: false, total: 65, date: '2026-07-08T10:00:00.000Z' },
+    { levelIndex: 1, dayIndex: 2, isTest: false, total: 68, date: '2026-07-11T10:00:00.000Z' },
+    { levelIndex: 1, dayIndex: 3, isTest: false, total: 70, date: '2026-07-14T10:00:00.000Z' },
+  ],
+  finished: false,
+}
+
+section('Migration v2 (état à plat, sans objectifs)')
+{
+  const m = hydrate(V2)
+  eq('version à jour', m.version, STATE_VERSION)
+  eq('objectif pompes déduit : pas de retour à l’onboarding', m.goals, ['pushups'])
+  eq('niveau conservé', m.programs.pushups.levelIndex, 1)
+  eq('jour conservé', m.programs.pushups.dayIndex, 4)
+  eq('séances conservées', m.programs.pushups.sessions.length, 4)
+  eq('historique de max conservé', m.programs.pushups.maxHistory, V2.maxHistory)
+  eq('prochaine date conservée', m.programs.pushups.nextDate, V2.nextDate)
+  eq('dernière séance conservée', m.programs.pushups.lastSessionDate, V2.lastSessionDate)
+  eq('date de création conservée', m.createdAt, V2.createdAt)
+  eq('plus rien à plat', [m.levelIndex, m.dayIndex, m.sessions, m.finished], [undefined, undefined, undefined, undefined])
+  eq('champs morts retirés', [m.goal, m.restSec], [undefined, undefined])
+}
+
+section('Migration v3 (objectifs déjà là, état des pompes encore à plat)')
+{
+  const v3 = { ...V2, version: 3, goals: ['pushups', 'handstand'] }
+  const m = hydrate(v3)
+  eq('objectifs préservés tels quels', m.goals, ['pushups', 'handstand'])
+  eq('niveau conservé', m.programs.pushups.levelIndex, 1)
+  eq('séances conservées', m.programs.pushups.sessions.length, 4)
+}
+
+section('Migration : quelqu’un qui n’a jamais fait le test initial')
+{
+  const m = hydrate({ version: 2, createdAt: '2026-07-01T10:00:00.000Z', levelIndex: null, sessions: [], maxHistory: [] })
+  eq('pas d’objectif déduit → onboarding', m.goals, [])
+  eq('programme vierge', m.programs.pushups.levelIndex, null)
+}
+
+section('Migration : un v4 ne bouge pas (idempotence)')
+{
+  const once = hydrate(V2)
+  const twice = hydrate(once)
+  eq('rejouer la migration ne change rien', twice, once)
+}
+
+section('Migration : état corrompu ou partiel')
+{
+  const m = hydrate({})
+  eq('objet vide → état neuf jouable', [m.goals, m.programs.pushups.levelIndex], [[], null])
+  const p = hydrate({ version: 4, goals: ['pushups'], programs: { pushups: { levelIndex: 2 } } })
+  eq('programme incomplet complété', p.programs.pushups.dayIndex, 0)
+  eq('champ existant préservé', p.programs.pushups.levelIndex, 2)
+  eq('tableaux manquants recréés', p.programs.pushups.sessions, [])
+}
+
+section('État neuf')
+{
+  const f = freshState()
+  eq('aucun objectif', f.goals, [])
+  eq('pompes prêtes mais non commencées', [f.programs.pushups.levelIndex, f.programs.pushups.dayIndex], [null, 0])
+}
 
 console.log(fails === 0
   ? `\n✅ tout passe\n`

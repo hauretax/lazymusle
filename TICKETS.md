@@ -32,7 +32,7 @@ Vérifié dans le navigateur : 1er lancement, migration d'un state v2 en plein N
 intacte), édition des objectifs, cas « aucun module prêt » (seuls des objectifs « bientôt » cochés),
 retrait puis remise des pompes (progression conservée), réinitialisation → l'onboarding revient.
 
-### T2 — Moteur muscle / repos · socle fait, finition avec T3
+### T2 — Moteur muscle / repos · fait
 
 Dès qu'il y a plusieurs exos à pratiquer, il faut gérer les repos sur les différents jours et
 alterner les groupes musculaires pour ne pas épuiser. Prérequis de T3/T4/T5.
@@ -44,15 +44,12 @@ alterner les groupes musculaires pour ne pas épuiser. Prérequis de T3/T4/T5.
       avertissements, conflit de veille de test
 - [x] Vérifié : 24 assertions passent, y compris le cas pompes + handstand
 
-**Pas fait, et ça ne peut pas l'être avant T3** : le moteur n'a qu'un seul module à arbitrer
-aujourd'hui, donc aucune de ses règles ne se déclenche dans l'app. Il n'y a **rien à voir à l'écran**
-et rien à vérifier en usage réel. L'UI multi-exos (plan du jour ordonné, avertissements affichés,
-date de prochaine séance par exo) arrive avec T3, quand il y aura deux programmes à faire cohabiter —
-la coder maintenant, ce serait deviner.
+**Fermé par T3**, une fois qu'il y a eu deux programmes à faire cohabiter :
 
-- [ ] Remplacer le rythme fixe 2-2-3 (propre aux pompes) par une date de prochaine séance par exo
-- [ ] Afficher le plan du jour ordonné + les avertissements
-- [ ] Vérifier en usage réel avec deux modules actifs
+- [x] Date de prochaine séance par exo (pompes : motif 2-2-3 · handstand : quotidien)
+- [x] Accueil rendu dans l'ordre que renvoie le moteur, pas dans un ordre codé en dur
+- [x] Chevauchement musculaire affiché (deltoïdes antérieurs + triceps), tiré des chartes OG
+- [x] Vérifié en usage réel avec pompes + handstand actifs
 
 **Décidé** (16/07/2026, sur la base de la recherche T3) :
 
@@ -66,9 +63,26 @@ la coder maintenant, ce serait deviner.
 - Garde-fou tiré du forum GB : le handstand quotidien n'est valable que **si la charge de force reste
   modérée** — donc la charge pompes doit peser dans la décision.
 
-### T3 — Module handstand · à faire
+### T3 — Module handstand · fait
 
 Progression **pilotée par la tenue max, pas par un calendrier** (voir « Le piège » plus bas).
+
+- [x] Données + sources dans `src/data/handstandProgram.json`, formule dans le `.js`
+- [x] Test au chrono : compte à rebours pour monter, bips toutes les 10 s, ajustement à la fin
+      (on ne touche pas son téléphone la tête en bas)
+- [x] Séance : prep poignets + sortie, puis tenues dérivées du max ; la tenue réelle est
+      enregistrée si on redescend avant la fin
+- [x] Deux niveaux (mur → équilibre libre), avec les nuances affichées et non masquées
+
+**Piège trouvé en vérifiant, à ne pas réintroduire** : une tenue max n'a de sens que **rapportée à
+son niveau**. 44 s au mur, c'est un débutant ; 30 s en équilibre libre, c'est ~un an de travail.
+Comparer les deux déclarait le programme terminé après un test de débutant. Le max est donc attaché
+à son niveau, et une promotion le remet à `null` : l'exercice change, la mesure aussi. Verrouillé
+par des assertions.
+
+**Reste ouvert** : la pause de 90 s entre tenues et le découpage des essais d'équilibre
+(20 s / 30 s) sont des **choix de l'app**, pas des données sourcées — Prilepin ne donne pas de pause.
+C'est marqué dans le JSON. À ajuster à l'usage.
 
 **Sources retenues** (recherche du 16/07/2026) :
 

@@ -2,19 +2,46 @@ import { useState } from 'react'
 import { useApp, getNextStep } from './store'
 import { getDay } from './data/pushupProgram'
 import Home from './screens/Home'
+import Onboarding from './screens/Onboarding'
 import Test from './screens/Test'
 import Session from './screens/Session'
 import Progress from './screens/Progress'
 import Stretch from './screens/Stretch'
 
 export default function App() {
-  const { state, recordInitialTest, completeSession } = useApp()
+  const { state, recordInitialTest, setGoals, completeSession } = useApp()
   const [view, setView] = useState('home')
   const step = getNextStep(state)
 
   const start = () => {
     if (step.type === 'test-initial') setView('test')
     else if (step.type === 'session') setView('session')
+  }
+
+  // Aucun objectif choisi (1er lancement, ou après une réinitialisation) : on demande avant tout.
+  // Retour à l'accueil ensuite : après une réinitialisation, `view` pointe encore sur l'écran quitté.
+  if (step.type === 'onboarding') {
+    return (
+      <Onboarding
+        onValidate={(ids) => {
+          setGoals(ids)
+          setView('home')
+        }}
+      />
+    )
+  }
+
+  if (view === 'goals') {
+    return (
+      <Onboarding
+        initial={state.goals}
+        onCancel={() => setView('home')}
+        onValidate={(ids) => {
+          setGoals(ids)
+          setView('home')
+        }}
+      />
+    )
   }
 
   if (view === 'progress') {
@@ -51,5 +78,11 @@ export default function App() {
     )
   }
 
-  return <Home onStart={start} onOpenProgress={() => setView('progress')} />
+  return (
+    <Home
+      onStart={start}
+      onOpenProgress={() => setView('progress')}
+      onEditGoals={() => setView('goals')}
+    />
+  )
 }

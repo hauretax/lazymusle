@@ -1,0 +1,32 @@
+{
+  "goals": [
+    {
+      "id": "pushups",
+      "emoji": "💪",
+      "label": "100 pompes d’affilée",
+      "tagline": "3 niveaux, une séance à la fois.",
+      "status": "available"
+    },
+    {
+      "id": "handstand",
+      "emoji": "🤸",
+      "label": "Tenir en handstand",
+      "tagline": "Progression vers l’équilibre sur les mains.",
+      "status": "soon"
+    },
+    {
+      "id": "core",
+      "emoji": "🧘",
+      "label": "Abdos / L-sit",
+      "tagline": "Gainage et L-sit, du sol aux barres.",
+      "status": "soon"
+    },
+    {
+      "id": "running",
+      "emoji": "🏃",
+      "label": "Courir 5 km",
+      "tagline": "Intervalles guidés, du canapé aux 5 km.",
+      "status": "soon"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useApp, getNextStep } from '../store'
 import { GOAL, TOTAL_DAYS, getDay, sessionMinTotal, computeRest, parseSet } from '../data/pushupProgram'
+import { PUSHUPS_GOAL, getGoal, hasProgram } from '../data/goals'
 import { canNotify, requestNotif, notify, exportSchedule } from '../lib/reminders'
 import InstallButton from '../components/InstallButton'
 
@@ -33,12 +34,15 @@ function ProgressRing({ done, total }) {
   )
 }
 
-export default function Home({ onStart, onOpenProgress }) {
+export default function Home({ onStart, onOpenProgress, onEditGoals }) {
   const { state } = useApp()
   const step = getNextStep(state)
   const bestMax = state.maxHistory.reduce((m, x) => Math.max(m, x.reps), 0)
+  const onPushups = state.goals.includes(PUSHUPS_GOAL)
   const firstRun = state.levelIndex == null
   const doneCount = state.sessions.length
+  // Objectifs choisis dont le module n'existe pas encore (voir TICKETS.md).
+  const soonGoals = state.goals.filter((id) => !hasProgram(id)).map(getGoal).filter(Boolean)
 
   const [notifStatus, setNotifStatus] = useState(canNotify() ? Notification.permission : 'unsupported')
   const [remindMsg, setRemindMsg] = useState('')
@@ -70,13 +74,25 @@ export default function Home({ onStart, onOpenProgress }) {
     <div className="screen home">
       <header className="home__head">
         <div>
-          <p className="home__hello">Objectif 100 pompes</p>
+          <p className="home__hello">{onPushups ? 'Objectif 100 pompes' : 'Tes objectifs'}</p>
           <h1 className="home__brand">Reps</h1>
         </div>
-        {!firstRun && <ProgressRing done={doneCount} total={TOTAL_DAYS} />}
+        {onPushups && !firstRun && <ProgressRing done={doneCount} total={TOTAL_DAYS} />}
       </header>
 
-      {firstRun && (
+      {step.type === 'no-program' && (
+        <div className="card card--intro">
+          <div className="intro__emoji">🚧</div>
+          <h2>Ça arrive</h2>
+          <p>
+            Les objectifs que tu as choisis ne sont pas encore développés — pour l’instant, seul le
+            programme <b>pompes</b> est prêt. Ajoute-le pour t’entraîner dès aujourd’hui.
+          </p>
+          <button className="btn btn--primary btn--big" onClick={onEditGoals}>Changer mes objectifs</button>
+        </div>
+      )}
+
+      {onPushups && firstRun && (
         <div className="card card--intro">
           <div className="intro__emoji">💪</div>
           <h2>100 pompes d’affilée</h2>
@@ -138,7 +154,7 @@ export default function Home({ onStart, onOpenProgress }) {
         )
       })()}
 
-      {!firstRun && (
+      {onPushups && !firstRun && (
         <div className="goalbar">
           <div className="goalbar__head">
             <span>Meilleur max</span>
@@ -150,7 +166,7 @@ export default function Home({ onStart, onOpenProgress }) {
         </div>
       )}
 
-      {!firstRun && step.type !== 'done' && (
+      {onPushups && !firstRun && step.type !== 'done' && (
         <div className="reminder">
           <div className="reminder__head">
             <span>🔔 Rappels jour J</span>
@@ -168,9 +184,29 @@ export default function Home({ onStart, onOpenProgress }) {
         </div>
       )}
 
-      {!firstRun && (
+      {soonGoals.length > 0 && (
+        <div className="soon">
+          <div className="soon__head"><span>Tes autres objectifs</span></div>
+          <ul className="soon__list">
+            {soonGoals.map((g) => (
+              <li key={g.id} className="soon__row">
+                <span className="soon__emoji">{g.emoji}</span>
+                <span className="soon__text">
+                  <b>{g.label}</b>
+                  <span>{g.tagline}</span>
+                </span>
+                <span className="soon__badge">bientôt</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {onPushups && !firstRun && (
         <button className="link" onClick={onOpenProgress}>Voir ma progression →</button>
       )}
+
+      <button className="link" onClick={onEditGoals}>🎯 Mes objectifs</button>
 
       <InstallButton />
     </div>

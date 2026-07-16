@@ -46,13 +46,15 @@ Installable comme app (PWA) : "Ajouter à l'écran d'accueil" sur mobile.
 - État : Context + `localStorage`
 - Aucune dépendance UI externe (CSS maison, thème sombre mobile-first)
 
-## Feuille de route (phase 2)
+## Objectifs
+
+Au premier lancement, l'app demande **« Pourquoi es-tu là ? »** : tu choisis ce que tu veux travailler
+(pompes, handstand, abdos/L-sit, course). Ce choix pilote les modules affichés sur l'accueil et se
+modifie à tout moment. Les objectifs dont le module n'existe pas encore s'affichent en « bientôt ».
+Liste dans [`src/data/goals.json`](src/data/goals.json).
+
+## Feuille de route
 
 Fait en phase 1 : programme pompes, pauses adaptatives, rappels calendrier + notifs, étirements post-séance.
 
-À intégrer ensuite :
-
-- [ ] Module handstand (progression)
-- [ ] Module abdos / L-sit
-- [ ] Running — intervalles guidés type Couch-to-5K
-- [ ] (option) GPS pour la course, wrapper Capacitor si besoin de natif (Health Connect, GPS arrière-plan, notifs locales fiables app fermée)
+La suite (handstand, abdos/L-sit, running, moteur muscle/repos) est suivie dans [`TICKETS.md`](TICKETS.md).

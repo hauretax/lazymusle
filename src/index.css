@@ -316,6 +316,66 @@ body {
 .reminder__msg { color: var(--accent2); font-size: 13px; font-weight: 600; }
 .reminder__note { color: var(--muted); font-size: 12px; line-height: 1.5; }
 
+/* ---------- Onboarding : pourquoi es-tu là ? ---------- */
+.onboarding__body { display: flex; flex-direction: column; gap: 14px; }
+.onboarding__q { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+.onboarding__sub { color: var(--muted); font-size: 15px; line-height: 1.5; margin-top: -6px; }
+.onboarding__hint { color: var(--accent2); font-size: 13.5px; line-height: 1.5; text-align: center; }
+
+.goals { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.goal {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+}
+.goal:active { transform: scale(0.985); }
+.goal--on { border-color: var(--accent); background: var(--accent-soft); }
+.goal__emoji { font-size: 28px; line-height: 1; }
+.goal__text { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.goal__label { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.goal__tagline { color: var(--muted); font-size: 13px; line-height: 1.4; }
+.goal__soon {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); background: var(--surface2); border: 1px solid var(--border);
+  padding: 3px 8px; border-radius: 999px;
+}
+.goal__check {
+  width: 26px; height: 26px; flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: grid; place-items: center;
+  font-size: 14px; font-weight: 800; color: #fff;
+}
+.goal--on .goal__check { background: var(--accent); border-color: var(--accent); }
+
+.btn:disabled { opacity: 0.4; box-shadow: none; cursor: not-allowed; }
+.btn:disabled:active { transform: none; }
+
+/* ---------- Objectifs pas encore développés ---------- */
+.soon { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.soon__head { font-weight: 800; font-size: 16px; }
+.soon__list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.soon__row { display: flex; align-items: center; gap: 12px; opacity: 0.72; }
+.soon__emoji { font-size: 22px; line-height: 1; }
+.soon__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.soon__text b { font-size: 14.5px; }
+.soon__text span { color: var(--muted); font-size: 12.5px; }
+.soon__badge {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); background: var(--surface2); border: 1px solid var(--border);
+  padding: 3px 8px; border-radius: 999px; flex: none;
+}
+
 /* ---------- Bouton d'installation ---------- */
 .install { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .install__btn { width: 100%; max-width: 340px; }

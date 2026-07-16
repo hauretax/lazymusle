@@ -14,6 +14,7 @@ import {
 import { hydrate, freshState, STATE_VERSION } from '../src/lib/migrate.js'
 import * as hs from '../src/data/handstandProgram.js'
 import * as ls from '../src/data/lsitProgram.js'
+import * as run from '../src/data/runProgram.js'
 
 let fails = 0
 
@@ -306,6 +307,85 @@ eq('pas de tenue → pas de pause', ls.computeRest(0), 0)
   }
   eq('aucune séance ne dépasse 10 min, de 5 à 60 s de max', trop, [])
 }
+
+// ---------- Programme course ----------
+// Le plan Couch-to-5K de Josh Clark, repris tel quel. Ici le calendrier existe
+// vraiment : ces assertions vérifient ma TRANSCRIPTION du plan original.
+
+section('Structure du plan (Couch-to-5K, Josh Clark)')
+eq('9 semaines', run.weeks.length, 9)
+eq('3 séances par semaine', run.weeks.map((w) => w.workouts.length), [3, 3, 3, 3, 3, 3, 3, 3, 3])
+eq('27 séances au total', run.TOTAL_WORKOUTS, 27)
+eq('échauffement : 5 min de marche', [run.WARMUP.sec, run.WARMUP.t ?? run.WARMUP.type], [300, 'walk'])
+eq('rythme 2-2-3, comme les pompes', [1, 2, 3, 4].map(run.gapAfterSession), [2, 2, 3, 2])
+
+section('Transcription du plan, semaine par semaine')
+{
+  // S1 : « alterne 60 s de course et 90 s de marche, pour un total de 20 minutes »
+  const w1 = run.getWorkout(0)
+  eq('S1 : 20 min pile', run.workoutSeconds(run.weeks[0].workouts[0]), 1200)
+  eq('S1 : 8 cycles course/marche', w1.intervals.length, 16)
+  eq('S1 : commence par 60 s de course', [w1.intervals[0].t, w1.intervals[0].sec], ['run', 60])
+  eq('S1 : puis 90 s de marche', [w1.intervals[1].t, w1.intervals[1].sec], ['walk', 90])
+  eq('S1 : 8 min de course au total', w1.runSec, 480)
+
+  // S2 : 90 s / 2 min sur 20 min — le cycle ne tombe pas rond, le dernier est tronqué.
+  const w2 = run.getWorkout(3)
+  eq('S2 : 20 min pile malgré un cycle qui ne tombe pas rond',
+    w2.intervals.reduce((n, x) => n + x.sec, 0), 1200)
+  eq('S2 : aucun intervalle ne dépasse sa consigne',
+    w2.intervals.every((x) => x.sec <= (x.t === 'run' ? 90 : 120)), true)
+
+  // S3 : « deux répétitions de : 90 s course, 90 s marche, 3 min course, 3 min marche »
+  const w3 = run.getWorkout(6)
+  eq('S3 : 8 intervalles (2 × 4)', w3.intervals.length, 8)
+  eq('S3 : la séquence répétée', w3.intervals.map((x) => `${x.t}${x.sec}`),
+    ['run90', 'walk90', 'run180', 'walk180', 'run90', 'walk90', 'run180', 'walk180'])
+
+  // S4 : séquence explicite, 3-5-3-5 min de course
+  const w4 = run.getWorkout(9)
+  eq('S4 : la séquence exacte', w4.intervals.map((x) => `${x.t}${x.sec}`),
+    ['run180', 'walk90', 'run300', 'walk150', 'run180', 'walk90', 'run300'])
+  eq('S4 : 16 min de course', w4.runSec, 960)
+
+  // S5J3 : le premier vrai cap — 20 min sans marcher
+  const w5j3 = run.getWorkout(14)
+  eq('S5J3 : 20 min de course d’un coup', w5j3.intervals, [{ t: 'run', sec: 1200 }])
+  eq('S5J3 : aucune marche', w5j3.intervals.some((x) => x.t === 'walk'), false)
+  eq('S5J3 : l’app prévient que rater n’est pas grave', typeof w5j3.note, 'string')
+
+  // Le palier de S6 à S9 : 22 → 25 → 28 → 30 min
+  eq('S6J3 : 22 min', run.getWorkout(17).runSec, 1320)
+  eq('S7 : 25 min', run.getWorkout(18).runSec, 1500)
+  eq('S8 : 28 min', run.getWorkout(21).runSec, 1680)
+  eq('S9 : 30 min', run.getWorkout(24).runSec, 1800)
+}
+
+section('La course ne recule jamais')
+{
+  // Propriété : le temps de course ne doit jamais diminuer d'une semaine à l'autre.
+  // Un chiffre mal recopié se verrait ici.
+  const parSemaine = run.weeks.map((w) => Math.max(...w.workouts.map(run.runSeconds)))
+  const reculs = []
+  for (let i = 1; i < parSemaine.length; i++) {
+    if (parSemaine[i] < parSemaine[i - 1]) reculs.push(`S${i}→S${i + 1}`)
+  }
+  eq('le plus gros effort de la semaine ne recule jamais', reculs, [])
+  // Le saut de la semaine 5 (16 → 20 min sans marcher) est réel : c'est le cap
+  // que Josh Clark annonce comme le plus dur du plan.
+  eq('progression du plus gros effort, en min',
+    parSemaine.map((s) => s / 60), [8, 9, 9, 16, 20, 22, 25, 28, 30])
+}
+
+section('Repérage d’une séance dans le plan')
+eq('la première', run.locate(0), { weekIndex: 0, workoutIndex: 0 })
+eq('la 4e = semaine 2 jour 1', run.locate(3), { weekIndex: 1, workoutIndex: 0 })
+eq('la dernière = semaine 9 jour 3', run.locate(26), { weekIndex: 8, workoutIndex: 2 })
+eq('au-delà du plan', run.locate(27), null)
+eq('aller-retour index ↔ position', run.indexOf(4, 2), 14)
+eq('la dernière est marquée comme telle', run.getWorkout(26).isFinal, true)
+eq('l’avant-dernière ne l’est pas', run.getWorkout(25).isFinal, false)
+eq('début de semaine, pour refaire une semaine', run.firstIndexOfWeek(4), 12)
 
 // ---------- Migration de l'état sauvegardé ----------
 // C'est la progression réelle de quelqu'un : une migration ratée l'efface en silence.

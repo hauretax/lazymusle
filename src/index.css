@@ -316,6 +316,21 @@ body {
 .reminder__msg { color: var(--accent2); font-size: 13px; font-weight: 600; }
 .reminder__note { color: var(--muted); font-size: 12px; line-height: 1.5; }
 
+/* ---------- Course ---------- */
+.badge--run { background: rgba(52, 209, 122, 0.16); color: var(--success); }
+
+.run__label {
+  font-size: 20px; font-weight: 800; text-align: center;
+  display: flex; gap: 10px; align-items: center; justify-content: center;
+}
+/* Course et marche doivent se distinguer d'un coup d'oeil, en courant. */
+.run--run .ring__progress--run { stroke: var(--success); }
+.run--walk .ring__progress--walk { stroke: var(--accent2); }
+.run--run .run__label { color: var(--success); }
+.run--walk .run__label { color: var(--accent2); }
+.run .session__plan { justify-content: center; gap: 5px; }
+.run .session__plan .chip { padding: 4px 7px; font-size: 12px; }
+
 /* ---------- Handstand ---------- */
 .badge--skill { background: rgba(94, 160, 255, 0.16); color: #7fb2ff; }
 

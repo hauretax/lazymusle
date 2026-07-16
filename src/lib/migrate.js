@@ -41,12 +41,24 @@ export function freshLsit() {
   }
 }
 
+export function freshRun() {
+  return {
+    ...freshProgram(),
+    index: 0, // séance courante dans les 27 du plan Couch-to-5K
+  }
+}
+
 export function freshState() {
   return {
     version: STATE_VERSION,
     createdAt: new Date().toISOString(),
     goals: [], // objectifs choisis à l'onboarding ; vide = onboarding à faire
-    programs: { pushups: freshPushups(), handstand: freshHandstand(), core: freshLsit() },
+    programs: {
+      pushups: freshPushups(),
+      handstand: freshHandstand(),
+      core: freshLsit(),
+      running: freshRun(),
+    },
   }
 }
 
@@ -89,6 +101,7 @@ export function withDefaults(s) {
       pushups: { ...freshPushups(), ...s.programs?.pushups },
       handstand: { ...freshHandstand(), ...s.programs?.handstand },
       core: { ...freshLsit(), ...s.programs?.core },
+      running: { ...freshRun(), ...s.programs?.running },
     },
   }
 }

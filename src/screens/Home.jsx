@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useState } from 'react'
-import { useApp, getNextStep, getHandstandStep, getLsitStep, pushupsOf, handstandOf, lsitOf } from '../store'
+import { useApp, getNextStep, getHandstandStep, getLsitStep, getRunStep, pushupsOf, handstandOf, lsitOf, runOf } from '../store'
 import { GOAL, TOTAL_DAYS, getDay, sessionMinTotal, computeRest, parseSet } from '../data/pushupProgram'
 import * as hs from '../data/handstandProgram'
 import * as lsit from '../data/lsitProgram'
-import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, getGoal, hasProgram } from '../data/goals'
+import * as run from '../data/runProgram'
+import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, getGoal, hasProgram } from '../data/goals'
 import { orderForDay, dayWarnings } from '../lib/schedule'
 import { canNotify, requestNotif, notify, exportSchedule } from '../lib/reminders'
 import InstallButton from '../components/InstallButton'
@@ -39,19 +40,22 @@ function ProgressRing({ done, total }) {
 
 export default function Home({
   onStart, onStartHandstand, onRetestHandstand, onReassessHandstand,
-  onStartLsit, onReassessLsit, onOpenProgress, onEditGoals,
+  onStartLsit, onReassessLsit, onStartRun, onRepeatRunWeek, onOpenProgress, onEditGoals,
 }) {
   const { state } = useApp()
   const step = getNextStep(state)
   const hsStep = getHandstandStep(state)
   const lsitStep = getLsitStep(state)
+  const runStep = getRunStep(state)
   const pushups = pushupsOf(state)
   const handstand = handstandOf(state)
   const lsitProg = lsitOf(state)
+  const runProg = runOf(state)
   const bestMax = pushups.maxHistory.reduce((m, x) => Math.max(m, x.reps), 0)
   const onPushups = state.goals.includes(PUSHUPS_GOAL)
   const onHandstand = state.goals.includes(HANDSTAND_GOAL)
   const onLsit = state.goals.includes(LSIT_GOAL)
+  const onRun = state.goals.includes(RUN_GOAL)
   const firstRun = pushups.levelIndex == null
   const doneCount = pushups.sessions.length
   // Objectifs choisis dont le module n'existe pas encore (voir TICKETS.md).
@@ -254,6 +258,51 @@ export default function Home({
     </>
   )
 
+  const runBlocks = onRun && (
+    <>
+      {runStep.type === 'done' && (
+        <div className="card card--intro">
+          <div className="intro__emoji">🏆</div>
+          <h2>5 km !</h2>
+          <p>Tu as bouclé les 9 semaines. 30 minutes de course d’affilée, depuis le canapé. 🔥</p>
+        </div>
+      )}
+
+      {runStep.type === 'session' && (() => {
+        const w = run.getWorkout(runStep.index)
+        if (!w) return null
+        const du = daysUntil(runProg.nextDate)
+        const ready = du <= 0
+        return (
+          <div className="card card--next">
+            <span className="badge badge--run">Endurance</span>
+            <h2>Semaine {w.weekNumber} · Séance {w.workoutNumber}</h2>
+            <p className="card__sub">{w.summary}</p>
+            <div className="card__meta">
+              <span>{Math.round(w.runSec / 60)} min courues</span>
+              <span>{Math.round(w.totalSec / 60)} min en tout</span>
+              <span>échauffement compris</span>
+            </div>
+            {w.note && <p className="card__rest-note card__rest-note--soft">{w.note}</p>}
+            {runProg.nextDate && !ready && (
+              <p className="card__rest-note">
+                Repos conseillé. Prochaine séance {du === 1 ? 'demain' : `dans ${du} jours`} ({fmtDay(runProg.nextDate)}). Tu peux quand même y aller 👊
+              </p>
+            )}
+            <button className="btn btn--primary btn--big" onClick={onStartRun}>
+              {ready ? 'Commencer la séance' : 'Commencer quand même'}
+            </button>
+            {w.workoutIndex > 0 && (
+              <button className="link" onClick={onRepeatRunWeek}>
+                ↺ Reprendre la semaine au début
+              </button>
+            )}
+          </div>
+        )
+      })()}
+    </>
+  )
+
   const pushupBlocks = onPushups && (
     <>
       {firstRun && (
@@ -355,6 +404,7 @@ export default function Home({
     [HANDSTAND_GOAL]: handstandBlocks,
     [LSIT_GOAL]: lsitBlocks,
     [PUSHUPS_GOAL]: pushupBlocks,
+    [RUN_GOAL]: runBlocks,
   }
 
   return (

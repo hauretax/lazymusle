@@ -59,8 +59,24 @@ Au premier lancement, l'app demande **« Pourquoi es-tu là ? »** : tu choisis 
 modifie à tout moment. Les objectifs dont le module n'existe pas encore s'affichent en « bientôt ».
 Liste dans [`src/data/goals.json`](src/data/goals.json).
 
+## Les modules
+
+| Module | Source des données | Modèle |
+|--------|--------------------|--------|
+| **Pompes** | Push Up Pro, extrait via `adb` | Calendrier : 54 séances, 3 niveaux |
+| **Handstand** | Overcoming Gravity (FIG), FEDEC, forum GymnasticBodies | Tenue max au mur, puis **2 axes** (monter / rattraper) |
+| **Abdos / L-sit** | Overcoming Gravity (FIG) | **2 axes** (se soulever / tendre les jambes) |
+| **Course** | Couch-to-5K, Josh Clark | Calendrier : 9 semaines × 3 séances |
+
+Deux modèles, et le choix n'est pas arbitraire : **quand un calendrier jour-par-jour existe vraiment**
+(pompes, course), on le suit. **Quand il n'existe pas** — et pour le handstand comme le L-sit, aucune
+source sérieuse n'en donne, c'est délibéré — on situe la personne sur des **axes** et le programme se
+dérive de là. Fabriquer un faux calendrier serait de l'invention.
+
+Un **moteur de planning** ([`src/lib/schedule.js`](src/lib/schedule.js)) ordonne les modules actifs sur
+une journée : la technique se travaille frais, avant la force. Il signale aussi les muscles que deux
+exos partagent, d'après les chartes.
+
 ## Feuille de route
 
-Fait en phase 1 : programme pompes, pauses adaptatives, rappels calendrier + notifs, étirements post-séance.
-
-La suite (handstand, abdos/L-sit, running, moteur muscle/repos) est suivie dans [`TICKETS.md`](TICKETS.md).
+Tout est suivi dans [`TICKETS.md`](TICKETS.md), avec les sources et les pièges à ne pas réapprendre.

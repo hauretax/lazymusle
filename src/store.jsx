@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, useCallback } 
 import { levels, pickLevelIndex, gapAfterSession } from './data/pushupProgram'
 import * as handstand from './data/handstandProgram'
 import * as lsit from './data/lsitProgram'
-import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL } from './data/goals'
+import * as run from './data/runProgram'
+import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL } from './data/goals'
 import { freshState, hydrate } from './lib/migrate'
 
 const KEY = 'reps.pushups.v2'
@@ -43,6 +44,19 @@ export function getHandstandStep(state) {
 
   if (h.maxHold == null) return { type: 'test-initial', levelIndex }
   return { type: 'session', levelIndex, progress: { maxHold: h.maxHold } }
+}
+
+export function runOf(state) {
+  return state.programs.running
+}
+
+// Où en est la course. Le calendrier existe (Couch-to-5K), donc c'est séquentiel
+// comme les pompes : une séance à la fois, dans l'ordre.
+export function getRunStep(state) {
+  if (!state.goals?.includes(RUN_GOAL)) return { type: 'off' }
+  const r = runOf(state)
+  if (r.finished) return { type: 'done' }
+  return { type: 'session', index: r.index }
 }
 
 export function lsitOf(state) {
@@ -216,17 +230,46 @@ export function AppProvider({ children }) {
     })
   }, [updateProgram])
 
+  const completeRunSession = useCallback((result) => {
+    updateProgram(RUN_GOAL, (r) => {
+      const now = new Date().toISOString()
+      const nCompleted = r.sessions.length + 1
+      const next = r.index + 1
+      return {
+        ...r,
+        sessions: [...r.sessions, { ...result, date: now }],
+        index: Math.min(next, run.TOTAL_WORKOUTS - 1),
+        finished: next >= run.TOTAL_WORKOUTS,
+        lastSessionDate: now,
+        nextDate: addDays(now, run.gapAfterSession(nCompleted)),
+      }
+    })
+  }, [updateProgram])
+
+  // Refaire la semaine. Josh Clark le prescrit noir sur blanc : « Repeat weeks if
+  // needed and move ahead only when you feel you're ready. » Ce n'est pas un échec,
+  // et l'app ne doit pas le présenter comme tel.
+  const repeatRunWeek = useCallback(() => {
+    updateProgram(RUN_GOAL, (r) => {
+      const at = run.locate(r.index)
+      if (!at) return r
+      return { ...r, index: run.firstIndexOfWeek(at.weekIndex), finished: false }
+    })
+  }, [updateProgram])
+
   const resetAll = useCallback(() => setState(freshState()), [])
 
   const value = useMemo(
     () => ({
       state, recordInitialTest, setGoals, completeSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
-      recordLsitAxes, completeLsitSession, resetAll,
+      recordLsitAxes, completeLsitSession,
+      completeRunSession, repeatRunWeek, resetAll,
     }),
     [state, recordInitialTest, setGoals, completeSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
-      recordLsitAxes, completeLsitSession, resetAll],
+      recordLsitAxes, completeLsitSession,
+      completeRunSession, repeatRunWeek, resetAll],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

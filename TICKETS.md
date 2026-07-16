@@ -159,9 +159,34 @@ C'est un **choix de l'app** — Prilepin ne donne pas de pause — et c'est marq
 Les essais d'équilibre du handstand gardent une pause courte et fixe : c'est de la pratique de skill
 (beaucoup d'essais courts), pas de la force.
 
-### T5 — Running · à faire
+### T5 — Running · fait
 
-Intervalles guidés type Couch-to-5K.
+Le **Couch-to-5K de Josh Clark** (1996, Cool Running), repris intégralement : 9 semaines × 3 séances,
+échauffement de 5 min de marche avant chaque séance, de 60 s de course à 30 min d'affilée.
+
+**Différence de fond avec T3/T4** : ici le calendrier jour-par-jour **existe vraiment** et il est
+public. C'est donc le modèle des pompes qui s'applique — séances séquentielles — pas celui des axes.
+Trois choses viennent de l'auteur lui-même :
+
+- **Le temps ou la distance, indifféremment** : « to measure your runs by time or by distance —
+  either one works just as well ». Notre version chronométrée est donc fidèle, pas un pis-aller, et
+  elle marche sans GPS. Ça rend T6 vraiment optionnel.
+- **Refaire une semaine est prescrit**, pas un échec : « Repeat weeks if needed and move ahead only
+  when you feel you're ready. » → bouton « Reprendre la semaine au début ».
+- **3 séances espacées dans la semaine** → même motif 2-2-3 que les pompes.
+
+- [x] Plan intégral en data, transcription verrouillée par assertions (dont une propriété :
+      le temps de course ne recule jamais d'une semaine à l'autre)
+- [x] Lecteur d'intervalles : bip + vibration à chaque changement d'allure, vert = courir,
+      orange = marcher, pause/reprise, frise de la séance. Pensé pour ne pas regarder l'écran.
+- [x] Vérifié en vrai : les 4 modules cohabitent, le moteur ordonne
+      « Handstand puis L-sit puis Pompes puis Course »
+
+⚠️ **C25K® est une marque déposée** de Josh Clark. L'app attribue le plan dans les données ; elle ne
+s'approprie pas le nom. À garder en tête si le projet sort du cadre perso.
+
+**Non fait** : les étirements post-séance sont ceux des pompes (pecs, triceps, épaules, poignets) —
+ils ne conviennent pas à la course. Un jeu d'étirements jambes reste à ajouter.
 
 ### T6 — GPS / Capacitor · option, à faire
 

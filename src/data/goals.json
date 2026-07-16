@@ -56,11 +56,11 @@
       "emoji": "🏃",
       "label": "Courir 5 km",
       "tagline": "Intervalles guidés, du canapé aux 5 km.",
-      "status": "soon",
+      "status": "available",
       "training": {
         "block": "endurance",
         "muscles": ["jambes"],
-        "source": null
+        "source": "Couch-to-5K, Josh Clark"
       }
     }
   ],

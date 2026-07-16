@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useApp, getNextStep, getHandstandStep, getLsitStep, handstandOf, lsitOf } from './store'
+import { useApp, getNextStep, getHandstandStep, getLsitStep, getRunStep, handstandOf, lsitOf } from './store'
 import { getDay } from './data/pushupProgram'
 import { getSession, AXES as HS_AXES } from './data/handstandProgram'
 import * as lsitProgram from './data/lsitProgram'
+import { getWorkout } from './data/runProgram'
 import Home from './screens/Home'
 import Onboarding from './screens/Onboarding'
 import Test from './screens/Test'
@@ -11,6 +12,7 @@ import HandstandTest from './screens/HandstandTest'
 import Assess from './screens/Assess'
 import HandstandSession from './screens/HandstandSession'
 import LsitSession from './screens/LsitSession'
+import RunSession from './screens/RunSession'
 import Progress from './screens/Progress'
 import Stretch from './screens/Stretch'
 
@@ -19,11 +21,13 @@ export default function App() {
     state, recordInitialTest, setGoals, completeSession,
     recordHandstandTest, recordHandstandAxes, completeHandstandSession,
     recordLsitAxes, completeLsitSession,
+    completeRunSession, repeatRunWeek,
   } = useApp()
   const [view, setView] = useState('home')
   const step = getNextStep(state)
   const hsStep = getHandstandStep(state)
   const lsitStep = getLsitStep(state)
+  const runStep = getRunStep(state)
 
   const start = () => {
     if (step.type === 'test-initial') setView('test')
@@ -153,6 +157,19 @@ export default function App() {
     )
   }
 
+  if (view === 'run-session' && runStep.type === 'session') {
+    return (
+      <RunSession
+        workout={getWorkout(runStep.index)}
+        onQuit={() => setView('home')}
+        onFinish={(result) => {
+          completeRunSession(result)
+          setView('home')
+        }}
+      />
+    )
+  }
+
   if (view === 'session' && step.type === 'session') {
     const day = getDay(step.levelIndex, step.dayIndex)
     return (
@@ -175,6 +192,8 @@ export default function App() {
       onReassessHandstand={() => setView('hs-assess')}
       onStartLsit={() => setView(lsitStep.type === 'assess' ? 'lsit-assess' : 'lsit-session')}
       onReassessLsit={() => setView('lsit-assess')}
+      onStartRun={() => setView('run-session')}
+      onRepeatRunWeek={repeatRunWeek}
       onOpenProgress={() => setView('progress')}
       onEditGoals={() => setView('goals')}
     />

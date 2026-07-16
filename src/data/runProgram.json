@@ -1,0 +1,97 @@
+{
+  "_sources": {
+    "plan": "The Couch-to-5K ® Running Plan, par Josh Clark (1996), publié sur Cool Running. Plan intégral repris tel quel : 9 semaines × 3 séances, échauffement de 5 min de marche rapide avant chaque séance. C25K est une marque déposée de son auteur — l'app attribue le plan, elle ne s'approprie pas le nom.",
+    "tempsOuDistance": "Josh Clark : « There are two ways to follow this program, to measure your runs by time or by distance. Either one works just as well. » On suit le temps — c'est son option, pas un pis-aller, et ça marche sans GPS.",
+    "repeterUneSemaine": "Josh Clark : « If you find the program too strenuous, just stretch it out. Don't feel pressured to continue faster than you're able. Repeat weeks if needed and move ahead only when you feel you're ready. » D'où le bouton pour refaire une semaine.",
+    "rythme": "Josh Clark : « Be sure to space out these three days throughout the week to give yourself a chance to rest and recover between efforts. » 3 séances/semaine espacées — même motif 2-2-3 que les pompes.",
+    "_note": "Contrairement au handstand et au L-sit, le calendrier jour-par-jour existe VRAIMENT ici, et il est public. C'est donc le modèle des pompes qui s'applique : des séances séquentielles, pas des axes."
+  },
+
+  "restPattern": [2, 2, 3],
+  "warmup": { "sec": 300, "type": "walk", "label": "Échauffement" },
+  "goalLabel": "5 km",
+
+  "weeks": [
+    {
+      "week": 1,
+      "summary": "60 s de course / 90 s de marche, pendant 20 min",
+      "workouts": [
+        { "alternate": [{ "t": "run", "sec": 60 }, { "t": "walk", "sec": 90 }], "totalSec": 1200 },
+        { "alternate": [{ "t": "run", "sec": 60 }, { "t": "walk", "sec": 90 }], "totalSec": 1200 },
+        { "alternate": [{ "t": "run", "sec": 60 }, { "t": "walk", "sec": 90 }], "totalSec": 1200 }
+      ]
+    },
+    {
+      "week": 2,
+      "summary": "90 s de course / 2 min de marche, pendant 20 min",
+      "workouts": [
+        { "alternate": [{ "t": "run", "sec": 90 }, { "t": "walk", "sec": 120 }], "totalSec": 1200 },
+        { "alternate": [{ "t": "run", "sec": 90 }, { "t": "walk", "sec": 120 }], "totalSec": 1200 },
+        { "alternate": [{ "t": "run", "sec": 90 }, { "t": "walk", "sec": 120 }], "totalSec": 1200 }
+      ]
+    },
+    {
+      "week": 3,
+      "summary": "2 × (90 s course, 90 s marche, 3 min course, 3 min marche)",
+      "workouts": [
+        { "repeat": 2, "intervals": [{ "t": "run", "sec": 90 }, { "t": "walk", "sec": 90 }, { "t": "run", "sec": 180 }, { "t": "walk", "sec": 180 }] },
+        { "repeat": 2, "intervals": [{ "t": "run", "sec": 90 }, { "t": "walk", "sec": 90 }, { "t": "run", "sec": 180 }, { "t": "walk", "sec": 180 }] },
+        { "repeat": 2, "intervals": [{ "t": "run", "sec": 90 }, { "t": "walk", "sec": 90 }, { "t": "run", "sec": 180 }, { "t": "walk", "sec": 180 }] }
+      ]
+    },
+    {
+      "week": 4,
+      "summary": "3 min, 5 min, 3 min, 5 min de course",
+      "workouts": [
+        { "intervals": [{ "t": "run", "sec": 180 }, { "t": "walk", "sec": 90 }, { "t": "run", "sec": 300 }, { "t": "walk", "sec": 150 }, { "t": "run", "sec": 180 }, { "t": "walk", "sec": 90 }, { "t": "run", "sec": 300 }] },
+        { "intervals": [{ "t": "run", "sec": 180 }, { "t": "walk", "sec": 90 }, { "t": "run", "sec": 300 }, { "t": "walk", "sec": 150 }, { "t": "run", "sec": 180 }, { "t": "walk", "sec": 90 }, { "t": "run", "sec": 300 }] },
+        { "intervals": [{ "t": "run", "sec": 180 }, { "t": "walk", "sec": 90 }, { "t": "run", "sec": 300 }, { "t": "walk", "sec": 150 }, { "t": "run", "sec": 180 }, { "t": "walk", "sec": 90 }, { "t": "run", "sec": 300 }] }
+      ]
+    },
+    {
+      "week": 5,
+      "summary": "La semaine qui change tout : elle finit par 20 min sans marcher",
+      "workouts": [
+        { "intervals": [{ "t": "run", "sec": 300 }, { "t": "walk", "sec": 180 }, { "t": "run", "sec": 300 }, { "t": "walk", "sec": 180 }, { "t": "run", "sec": 300 }] },
+        { "intervals": [{ "t": "run", "sec": 480 }, { "t": "walk", "sec": 300 }, { "t": "run", "sec": 480 }] },
+        { "intervals": [{ "t": "run", "sec": 1200 }], "note": "20 minutes sans marcher. C'est la première grosse marche du plan — si tu la rates, refais la semaine, c'est prévu." }
+      ]
+    },
+    {
+      "week": 6,
+      "summary": "Retour aux intervalles, puis 22 min sans marcher",
+      "workouts": [
+        { "intervals": [{ "t": "run", "sec": 300 }, { "t": "walk", "sec": 180 }, { "t": "run", "sec": 480 }, { "t": "walk", "sec": 180 }, { "t": "run", "sec": 300 }] },
+        { "intervals": [{ "t": "run", "sec": 600 }, { "t": "walk", "sec": 180 }, { "t": "run", "sec": 600 }] },
+        { "intervals": [{ "t": "run", "sec": 1320 }] }
+      ]
+    },
+    {
+      "week": 7,
+      "summary": "25 min de course, 3 fois",
+      "workouts": [
+        { "intervals": [{ "t": "run", "sec": 1500 }] },
+        { "intervals": [{ "t": "run", "sec": 1500 }] },
+        { "intervals": [{ "t": "run", "sec": 1500 }] }
+      ]
+    },
+    {
+      "week": 8,
+      "summary": "28 min de course, 3 fois",
+      "workouts": [
+        { "intervals": [{ "t": "run", "sec": 1680 }] },
+        { "intervals": [{ "t": "run", "sec": 1680 }] },
+        { "intervals": [{ "t": "run", "sec": 1680 }] }
+      ]
+    },
+    {
+      "week": 9,
+      "summary": "30 min de course — les 5 km",
+      "workouts": [
+        { "intervals": [{ "t": "run", "sec": 1800 }] },
+        { "intervals": [{ "t": "run", "sec": 1800 }] },
+        { "intervals": [{ "t": "run", "sec": 1800 }], "note": "La dernière séance. 30 minutes, 5 km. Bravo." }
+      ]
+    }
+  ]
+}

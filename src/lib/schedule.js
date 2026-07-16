@@ -1,7 +1,7 @@
 // Moteur de planning : quels exos un jour donné, dans quel ordre, sans se marcher dessus.
 // Les profils (bloc, muscles) vivent dans goals.json ; ici on ne fait que raisonner dessus.
 // Logique pure, sans React ni localStorage : testable telle quelle.
-import { trainingOf, muscleLabel, STRETCHING } from '../data/goals'
+import { trainingOf, muscleLabel, STRETCHING } from '../data/goals.js'
 
 // Ordre d'une séance. Le skill se travaille frais, avant que la force ne fatigue :
 // Steven Low, "The Fundamentals of Bodyweight Strength Training" —

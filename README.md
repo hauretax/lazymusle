@@ -33,9 +33,15 @@ La progression de l'utilisateur (séances faites, max, dates) est stockée en JS
 ```bash
 npm install
 npm run dev      # http://localhost:5173
+npm run check    # vérifie la logique pure (planning, formules pompes)
 npm run build    # build de prod (PWA installable)
 npm run preview  # sert le build
 ```
+
+`npm run check` est un simple script Node, sans framework de test. Il ne couvre que ce qui n'est
+**pas** visible à l'écran : le moteur de planning ([`src/lib/schedule.js`](src/lib/schedule.js), dont
+les règles ne se déclenchent pas encore — voir [`TICKETS.md`](TICKETS.md)) et les formules du
+programme pompes. Le reste (écrans, parcours) se vérifie dans le navigateur.
 
 Installable comme app (PWA) : "Ajouter à l'écran d'accueil" sur mobile.
 

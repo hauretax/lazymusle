@@ -1,6 +1,8 @@
 // Logique du programme. Les DONNÉES (niveaux, séries, réglages de pause) vivent
 // dans pushupProgram.json — ce fichier ne fait que les lire et les exposer.
-import program from './pushupProgram.json'
+// L'attribut `with { type: 'json' }` permet à Node de charger ce module tel quel
+// (`npm run check`), en plus de Vite.
+import program from './pushupProgram.json' with { type: 'json' }
 
 export const GOAL = program.goal
 export const REST_PATTERN = program.restPattern

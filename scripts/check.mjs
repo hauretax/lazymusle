@@ -161,23 +161,57 @@ eq('pas de max → pas de séries', hs.computeSets(0), 0)
 section('Validation : chaque tenue se compare à SON niveau, jamais à un autre')
 eq('44 s au mur ne valident pas le mur (45 s)', hs.reachedGoal(0, 44), false)
 eq('45 s au mur valident le mur', hs.reachedGoal(0, 45), true)
-eq('30 s en équilibre libre valident l’équilibre', hs.reachedGoal(1, 30), true)
-// Le piège : 44 s AU MUR dépassent les 30 s de l'équilibre libre. Comparer les deux
-// déclarait le programme terminé pour un débutant. Les exercices sont différents.
-eq('44 s au mur ne valident PAS l’équilibre libre par accident', hs.reachedGoal(0, 44), false)
+// Le piège d'origine : un seul champ « tenue max » comparé à l'objectif d'un autre
+// niveau déclarait le programme fini pour un débutant. Réglé deux fois plutôt qu'une :
+// le temps ne valide que les niveaux chronométrés, et l'équilibre a ses propres axes.
+eq('aucun temps, même énorme, ne valide l’équilibre', hs.reachedGoal(1, 9999), false)
 eq('pas de tenue mesurée ne valide rien', hs.reachedGoal(0, null), false)
 eq('dernier niveau identifié', [hs.isLastLevel(0), hs.isLastLevel(1)], [false, true])
 
-section('Séance dérivée de la tenue max')
+section('Séance dérivée de l’état du niveau')
 {
-  const s = hs.getSession(0, 40)
+  const s = hs.getSession(0, { maxHold: 40 })
   eq('niveau mur : mode tenue', s.mode, 'hold')
   eq('2 tenues de 25 s, pause 90 s', [s.sets, s.hold, s.restSec], [2, 25, 90])
-  const p = hs.getSession(1, 50)
-  eq('niveau équilibre : mode pratique', p.mode, 'practice')
-  eq('essais courts et nombreux', p.attempts > 5, true)
-  eq('niveau inexistant', hs.getSession(9, 40), null)
+  eq('niveau inexistant', hs.getSession(9, { maxHold: 40 }), null)
 }
+
+section('Niveau « L’équilibre » : deux axes, pas un chrono')
+eq('les deux axes existent', hs.AXES.map((a) => a.id), ['entry', 'balance'])
+eq('monter : 6 étapes, du mur au press', hs.getAxis('entry').steps.length, 6)
+eq('rattraper : 5 étapes, de rien à la correction continue', hs.getAxis('balance').steps.length, 5)
+eq('axe inconnu', hs.getAxis('nawak'), null)
+eq('étape suivante sur un axe', hs.nextStep('balance', 'toe-pulls').id, 'heel-pulls')
+eq('pas d’étape après la dernière', hs.nextStep('balance', 'sustained'), null)
+eq('étape inconnue → pas de suivante', hs.nextStep('balance', 'nawak'), null)
+eq('dernière étape de l’axe', hs.isAxisComplete('entry', 'press'), true)
+eq('étape intermédiaire', hs.isAxisComplete('entry', 'lunge-free'), false)
+
+{
+  // Le point clé : les deux axes sont INDÉPENDANTS. Savoir monter en fente sans
+  // savoir rattraper est un cas réel, et l'inverse aussi.
+  eq('monter au bout mais pas rattraper → pas fini',
+    hs.axesComplete({ entry: 'press', balance: 'toe-pulls' }), false)
+  eq('rattraper au bout mais pas monter → pas fini',
+    hs.axesComplete({ entry: 'wall-walk', balance: 'sustained' }), false)
+  eq('les deux au bout → fini', hs.axesComplete({ entry: 'press', balance: 'sustained' }), true)
+  eq('axes non situés → pas fini', hs.axesComplete(null), false)
+  eq('un seul axe renseigné → pas fini', hs.axesComplete({ entry: 'press' }), false)
+}
+
+{
+  const s = hs.getSession(1, { axes: { entry: 'lunge-wall', balance: 'toe-pulls' } })
+  eq('mode axes', s.mode, 'axes')
+  eq('une consigne par axe', s.drills.map((d) => d.axisId), ['entry', 'balance'])
+  eq('la consigne est l’étape courante, pas la suivante',
+    s.drills.map((d) => d.step.id), ['lunge-wall', 'toe-pulls'])
+  eq('essais courts et nombreux', s.attempts > 5, true)
+  eq('axes non situés → pas de séance', hs.getSession(1, {}), null)
+}
+
+section('Le chrono ne s’applique qu’aux niveaux chronométrés')
+eq('l’équilibre ne se valide pas au temps', hs.reachedGoal(1, 9999), false)
+eq('le mur, si', hs.reachedGoal(0, 45), true)
 
 
 // ---------- Migration de l'état sauvegardé ----------

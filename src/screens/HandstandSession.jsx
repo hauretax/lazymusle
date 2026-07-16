@@ -14,7 +14,7 @@ export default function HandstandSession({ session, onFinish, onQuit }) {
 
   useEffect(() => { primeAudio() }, [])
 
-  const isPractice = session.mode === 'practice'
+  const isPractice = session.mode === 'axes'
   const total = isPractice ? session.attempts : session.sets
   const holdSec = isPractice ? session.attemptSec : session.hold
   const restSec = session.restSec
@@ -56,6 +56,24 @@ export default function HandstandSession({ session, onFinish, onQuit }) {
           <div className="hs__note">
             <b>{BAIL.title}</b> — {BAIL.how}
           </div>
+
+          {session.drills?.length > 0 && (
+            <>
+              <h2 className="hs__h">Ce que tu travailles aujourd’hui</h2>
+              <ul className="prep">
+                {session.drills.map((d) => (
+                  <li key={d.axisId} className="prep__row">
+                    <span className="prep__sec">{d.emoji}</span>
+                    <span className="prep__text">
+                      <b>{d.axisLabel} · {d.step.label}</b>
+                      <span>{d.step.how}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
           <button className="btn btn--primary btn--big" onClick={() => setPhase('hold')}>
             Poignets prêts, on y va
           </button>

@@ -7,6 +7,7 @@ import Onboarding from './screens/Onboarding'
 import Test from './screens/Test'
 import Session from './screens/Session'
 import HandstandTest from './screens/HandstandTest'
+import HandstandAssess from './screens/HandstandAssess'
 import HandstandSession from './screens/HandstandSession'
 import Progress from './screens/Progress'
 import Stretch from './screens/Stretch'
@@ -14,7 +15,7 @@ import Stretch from './screens/Stretch'
 export default function App() {
   const {
     state, recordInitialTest, setGoals, completeSession,
-    recordHandstandTest, completeHandstandSession,
+    recordHandstandTest, recordHandstandAxes, completeHandstandSession,
   } = useApp()
   const [view, setView] = useState('home')
   const step = getNextStep(state)
@@ -26,7 +27,9 @@ export default function App() {
   }
 
   const startHandstand = () => {
-    setView(hsStep.type === 'test-initial' ? 'hs-test' : 'hs-session')
+    if (hsStep.type === 'test-initial') setView('hs-test')
+    else if (hsStep.type === 'assess') setView('hs-assess')
+    else setView('hs-session')
   }
 
   // Aucun objectif choisi (1er lancement, ou après une réinitialisation) : on demande avant tout.
@@ -88,10 +91,23 @@ export default function App() {
     )
   }
 
+  if (view === 'hs-assess') {
+    return (
+      <HandstandAssess
+        initial={handstandOf(state).axes}
+        onCancel={() => setView('home')}
+        onValidate={(axes) => {
+          recordHandstandAxes(axes)
+          setView('home')
+        }}
+      />
+    )
+  }
+
   if (view === 'hs-session' && hsStep.type === 'session') {
     return (
       <HandstandSession
-        session={getSession(hsStep.levelIndex, hsStep.maxHold)}
+        session={getSession(hsStep.levelIndex, hsStep.progress)}
         onQuit={() => setView('home')}
         onFinish={(result) => {
           completeHandstandSession(result)
@@ -120,6 +136,7 @@ export default function App() {
       onStart={start}
       onStartHandstand={startHandstand}
       onRetestHandstand={() => setView('hs-test')}
+      onReassessHandstand={() => setView('hs-assess')}
       onOpenProgress={() => setView('progress')}
       onEditGoals={() => setView('goals')}
     />

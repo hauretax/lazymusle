@@ -5,6 +5,8 @@
     "skill": "Steven Low, The Fundamentals of Bodyweight Strength Training : 5-10 min de handstand, tôt dans la séance, sans arriver à la fatigue. https://stevenlow.org/the-fundamentals-of-bodyweight-strength-training/",
     "poignetsEtSortie": "GMB : préparation des poignets obligatoire, savoir sortir de la position fait partie de la progression. https://gmb.io/handstand/",
     "seuil45s": "Parth Rajguru (forum GymnasticBodies) : 45-60 s au mur avant de travailler sérieusement l'équilibre. CONTESTÉ sur le même forum par A. Mainente et D. McManamon, pour qui l'alignement prime sur le chrono → repère, pas verrou.",
+    "etapesEquilibre": "FEDEC, Manual for Acrobatics: Handstand, hand to hand, banquine, chap. 6 — manuel des écoles de cirque professionnelles européennes. Sépare « BEGINNING HANDSTAND » (appui facial en marchant les mains, poitrine au mur, groupé jambes fléchies depuis l'accroupi, fente avec short step / long step) et « LIFTING TO HANDSTAND » (tuck / straddle / pike press). https://www.fedec.eu/en/file/file/96/inline/EN%20FEDEC_manual-EPE_chap6.pdf",
+    "correctionsEquilibre": "Toe pulls / heel pulls et corrections doigts-paume : largement convergents entre sources de vulgarisation (fit.gg, Mend Colorado), pas de source primaire trouvée. Principe : les doigts freinent la chute vers l'arrière, la paume pousse quand on part vers l'avant.",
     "_attention": "Contrairement aux pompes (données réelles extraites de Push Up Pro), il n'existe pas de calendrier jour-par-jour sourcé pour le handstand, et c'est délibéré : GMB refuse de numéroter ses étapes. D'où un programme piloté par la tenue max, pas par un planning. Voir TICKETS.md T3."
   },
 
@@ -33,14 +35,45 @@
     {
       "id": 2,
       "name": "L’équilibre",
-      "mode": "practice",
+      "mode": "axes",
       "exercise": "Équilibre libre",
-      "testLabel": "Tenue max en équilibre libre",
-      "testHow": "Kick-up, puis tiens en équilibre libre le plus longtemps possible. Rien à voir avec la tenue au mur : on repart de zéro, c'est normal.",
-      "how": "Kick-up doux, et cherche l'équilibre par la pression des doigts. Beaucoup d'essais courts. Jamais jusqu'à l'échec.",
+      "how": "Beaucoup d'essais courts. Jamais jusqu'à l'échec.",
       "why": "L'équilibre est une compétence : elle se travaille frais et souvent, pas en s'épuisant.",
-      "goal": 30,
-      "goalNote": "Tenir 30 s en équilibre libre demande souvent 9 à 18 mois. La progression n'est pas linéaire : stagner des semaines est normal, pas un échec."
+      "goalNote": "Tenir l'équilibre libre demande souvent 9 à 18 mois. La progression n'est pas linéaire : stagner des semaines est normal, pas un échec."
+    }
+  ],
+
+  "_axesNote": "On ne demande pas « combien de temps tu tiens » : à ce niveau la réponse est souvent 0 s, et elle ne dit pas quoi travailler. On demande OÙ on en est sur deux axes indépendants — monter, et rattraper. Chaque axe progresse à son rythme : on peut monter en fente sans savoir corriger, et l'inverse.",
+
+  "axes": [
+    {
+      "id": "entry",
+      "label": "Monter",
+      "emoji": "🙌",
+      "question": "Comment tu arrives en handstand ?",
+      "hint": "Le plus abouti que tu fasses de façon fiable, pas ton meilleur jour.",
+      "steps": [
+        { "id": "walk-support", "label": "En marchant les mains vers un appui", "how": "Depuis l'appui facial, marche les mains vers la boîte jusqu'à ce que le dos et les bras soient verticaux, puis monte une jambe, puis les deux." },
+        { "id": "wall-walk", "label": "Poitrine au mur, en marchant des pieds", "how": "Depuis l'appui facial haut, marche les mains vers le mur. Le front et les pointes touchent le mur." },
+        { "id": "tuck", "label": "Du sol, en groupé jambes fléchies", "how": "Depuis l'accroupi. Le dos sans cambrure, mains à plat, index parallèles, épaules au-dessus du centre des mains." },
+        { "id": "lunge-wall", "label": "En fente jambes tendues, mais je finis au mur", "how": "Fente, jambe arrière qui monte en levier, jambe avant qui suit. Contrôlé, pas un coup de pied." },
+        { "id": "lunge-free", "label": "En fente sans mur, je trouve parfois l'équilibre", "how": "Short step : les épaules se placent dès que les mains touchent le sol. C'est la technique de l'équilibriste." },
+        { "id": "press", "label": "En force, sans élan", "how": "Tuck, straddle ou pike press. Corps et membres au plus près de la ligne d'équilibre, épaules au-dessus des mains." }
+      ]
+    },
+    {
+      "id": "balance",
+      "label": "Rattraper",
+      "emoji": "🖐️",
+      "question": "Qu'est-ce que tu sais rattraper ?",
+      "hint": "Les doigts freinent la chute vers l'arrière, la paume pousse quand tu pars vers l'avant.",
+      "steps": [
+        { "id": "none", "label": "Rien : je tombe ou je repose les pieds", "how": "Normal au début. Avant tout : savoir sortir en roue, sinon la peur bloque tout le reste." },
+        { "id": "toe-pulls", "label": "Poitrine au mur, je décolle un pied puis les deux", "how": "Toe pulls : décolle un pied, tiens 3 temps, repose. Puis les deux. Les pointes retouchent le mur quand tu perds l'équilibre." },
+        { "id": "heel-pulls", "label": "Dos au mur, je tire les talons et je reviens", "how": "Heel pulls : depuis les talons au mur, déplace le poids jusqu'à ce que les pieds flottent. Tiens 1 à 5 s, puis reviens au mur. Ça entraîne l'autre sens de correction." },
+        { "id": "fingers", "label": "Je rattrape aux doigts et à la paume", "how": "Déséquilibre-toi volontairement vers l'arrière et rattrape aux doigts. Puis vers l'avant, et rattrape à la base de la paume. C'est ça, la vraie compétence." },
+        { "id": "sustained", "label": "Je corrige en continu, libre", "how": "Les corrections deviennent invisibles. À partir de là, tenir plus longtemps n'est plus que du raffinement." }
+      ]
     }
   ],
 

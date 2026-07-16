@@ -28,7 +28,8 @@ export function freshPushups() {
 export function freshHandstand() {
   return {
     ...freshProgram(),
-    maxHold: null, // tenue max en secondes ; pas de calendrier, tout se dérive d'elle
+    maxHold: null, // niveau « Le mur » : tenue max en secondes, elle dérive la séance
+    axes: null, // niveau « L'équilibre » : { entry, balance } — pas un temps, une position
   }
 }
 

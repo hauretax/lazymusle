@@ -7,6 +7,7 @@
 import program from './handstandProgram.json' with { type: 'json' }
 
 export const levels = program.levels
+export const AXES = program.axes
 export const TEST = program.test
 export const PREP = program.prep
 export const BAIL = program.bail
@@ -47,27 +48,73 @@ export function sessionVolume(maxHoldSec) {
   return computeHold(maxHoldSec) * computeSets(maxHoldSec)
 }
 
-// Description d'une séance, dérivée de la tenue max du moment.
-export function getSession(levelIndex, maxHoldSec) {
+// ---- Niveau « L'équilibre » : deux axes indépendants ----
+// On ne mesure pas un temps ici : on situe la personne sur « monter » et sur
+// « rattraper ». Les deux avancent à leur rythme (voir `_axesNote` dans le JSON).
+
+export function getAxis(axisId) {
+  return AXES.find((a) => a.id === axisId) || null
+}
+
+export function getStep(axisId, stepId) {
+  return getAxis(axisId)?.steps.find((s) => s.id === stepId) || null
+}
+
+export function stepIndex(axisId, stepId) {
+  const steps = getAxis(axisId)?.steps
+  if (!steps) return -1
+  return steps.findIndex((s) => s.id === stepId)
+}
+
+// L'étape à travailler : celle où on en est. La suivante n'arrive que quand
+// on valide celle-ci — pas de saut, la progression n'est pas linéaire.
+export function nextStep(axisId, stepId) {
+  const steps = getAxis(axisId)?.steps || []
+  const i = stepIndex(axisId, stepId)
+  return i >= 0 && i < steps.length - 1 ? steps[i + 1] : null
+}
+
+export function isAxisComplete(axisId, stepId) {
+  const steps = getAxis(axisId)?.steps || []
+  return steps.length > 0 && stepIndex(axisId, stepId) === steps.length - 1
+}
+
+// Le handstand est « tenu » quand les deux axes sont au bout : monter en force
+// ET corriger en continu.
+export function axesComplete(axes) {
+  return !!axes && AXES.every((a) => isAxisComplete(a.id, axes[a.id]))
+}
+
+// Description d'une séance, dérivée de l'état du niveau.
+export function getSession(levelIndex, progress) {
   const level = levels[levelIndex]
   if (!level) return null
 
-  if (level.mode === 'practice') {
-    const attempts = Math.max(1, Math.round((level.minutes ?? PRACTICE.minutes) * 60
+  if (level.mode === 'axes') {
+    const axes = progress?.axes
+    if (!axes) return null
+    const attempts = Math.max(1, Math.round((PRACTICE.minutes * 60)
       / (PRACTICE.attemptSec + PRACTICE.restSec)))
     return {
       levelIndex,
       levelName: level.name,
-      mode: 'practice',
+      mode: 'axes',
       exercise: level.exercise,
       how: level.how,
-      goal: level.goal,
+      // Une séance = travailler l'étape courante de chaque axe.
+      drills: AXES.map((a) => ({
+        axisId: a.id,
+        axisLabel: a.label,
+        emoji: a.emoji,
+        step: getStep(a.id, axes[a.id]),
+      })).filter((d) => d.step),
       attempts,
       attemptSec: PRACTICE.attemptSec,
       restSec: PRACTICE.restSec,
     }
   }
 
+  const maxHoldSec = progress?.maxHold
   return {
     levelIndex,
     levelName: level.name,
@@ -81,12 +128,13 @@ export function getSession(levelIndex, maxHoldSec) {
   }
 }
 
-// Le niveau est validé quand la tenue max atteint SON objectif. Comparer une tenue
-// à l'objectif d'un autre niveau n'a pas de sens : au mur et en équilibre libre,
-// ce sont deux exercices différents.
+// Le niveau est validé quand la tenue max atteint SON objectif. Ne vaut que pour les
+// niveaux chronométrés : au niveau « L'équilibre », c'est les axes qui font foi, pas
+// un temps. Comparer une tenue à l'objectif d'un autre niveau n'a aucun sens.
 export function reachedGoal(levelIndex, maxHoldSec) {
   const level = levels[levelIndex]
-  return !!level && maxHoldSec != null && maxHoldSec >= level.goal
+  if (!level || level.mode !== 'hold') return false
+  return maxHoldSec != null && maxHoldSec >= level.goal
 }
 
 export function isLastLevel(levelIndex) {

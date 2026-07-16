@@ -24,14 +24,24 @@ export function handstandOf(state) {
   return state.programs.handstand
 }
 
-// Où en est le handstand. Pas de calendrier : tout se dérive de la tenue max.
+// Où en est le handstand. Pas de calendrier : chaque niveau se dérive de son propre
+// état — la tenue max au mur, la position sur les deux axes à l'équilibre.
 export function getHandstandStep(state) {
   if (!state.goals?.includes(HANDSTAND_GOAL)) return { type: 'off' }
   const h = handstandOf(state)
   if (h.finished) return { type: 'done' }
-  // Aussi le cas d'une promotion : l'exercice change, la tenue reste à mesurer.
-  if (h.maxHold == null) return { type: 'test-initial' }
-  return { type: 'session', levelIndex: h.levelIndex ?? 0, maxHold: h.maxHold }
+
+  const levelIndex = h.levelIndex ?? 0
+  const level = handstand.levels[levelIndex]
+
+  if (level?.mode === 'axes') {
+    // Après une promotion, les axes restent à situer : c'est un autre exercice.
+    if (!h.axes) return { type: 'assess', levelIndex }
+    return { type: 'session', levelIndex, progress: { axes: h.axes } }
+  }
+
+  if (h.maxHold == null) return { type: 'test-initial', levelIndex }
+  return { type: 'session', levelIndex, progress: { maxHold: h.maxHold } }
 }
 
 export function getNextStep(state) {
@@ -140,6 +150,17 @@ export function AppProvider({ children }) {
     })
   }, [updateProgram])
 
+  // Niveau « L'équilibre » : on ne mesure pas un temps, on situe la personne sur
+  // « monter » et « rattraper ». Les deux axes avancent indépendamment.
+  const recordHandstandAxes = useCallback((axes) => {
+    updateProgram(HANDSTAND_GOAL, (h) => ({
+      ...h,
+      axes,
+      finished: handstand.axesComplete(axes),
+      axesHistory: [...(h.axesHistory ?? []), { date: new Date().toISOString(), ...axes }],
+    }))
+  }, [updateProgram])
+
   const completeHandstandSession = useCallback((result) => {
     updateProgram(HANDSTAND_GOAL, (h) => {
       const now = new Date().toISOString()
@@ -157,10 +178,10 @@ export function AppProvider({ children }) {
   const value = useMemo(
     () => ({
       state, recordInitialTest, setGoals, completeSession,
-      recordHandstandTest, completeHandstandSession, resetAll,
+      recordHandstandTest, recordHandstandAxes, completeHandstandSession, resetAll,
     }),
     [state, recordInitialTest, setGoals, completeSession,
-      recordHandstandTest, completeHandstandSession, resetAll],
+      recordHandstandTest, recordHandstandAxes, completeHandstandSession, resetAll],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

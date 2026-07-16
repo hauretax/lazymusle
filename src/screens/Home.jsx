@@ -36,7 +36,9 @@ function ProgressRing({ done, total }) {
   )
 }
 
-export default function Home({ onStart, onStartHandstand, onRetestHandstand, onOpenProgress, onEditGoals }) {
+export default function Home({
+  onStart, onStartHandstand, onRetestHandstand, onReassessHandstand, onOpenProgress, onEditGoals,
+}) {
   const { state } = useApp()
   const step = getNextStep(state)
   const hsStep = getHandstandStep(state)
@@ -108,16 +110,31 @@ export default function Home({ onStart, onStartHandstand, onRetestHandstand, onO
         )
       })()}
 
+      {hsStep.type === 'assess' && (
+        <div className="card card--intro">
+          <div className="intro__emoji">🤸</div>
+          <h2>L’équilibre</h2>
+          <p>
+            Tu quittes le mur. Ici on ne chronomètre plus : on regarde <b>où tu en es</b> sur deux
+            choses qui avancent séparément — <b>monter</b>, et <b>rattraper</b>.
+          </p>
+          <button className="btn btn--primary btn--big" onClick={onStartHandstand}>
+            Situer où j’en suis
+          </button>
+        </div>
+      )}
+
       {hsStep.type === 'done' && (
         <div className="card card--intro">
           <div className="intro__emoji">🏆</div>
           <h2>Handstand tenu !</h2>
-          <p>Tu tiens <b>{handstand.maxHold} s</b> en équilibre libre. Respect. 🔥</p>
+          <p>Tu montes en force et tu corriges en continu. Respect. 🔥</p>
         </div>
       )}
 
       {hsStep.type === 'session' && (() => {
-        const s = hs.getSession(hsStep.levelIndex, hsStep.maxHold)
+        const s = hs.getSession(hsStep.levelIndex, hsStep.progress)
+        if (!s) return null
         const level = hs.levels[hsStep.levelIndex]
         const du = daysUntil(handstand.nextDate)
         const ready = du <= 0
@@ -125,31 +142,46 @@ export default function Home({ onStart, onStartHandstand, onRetestHandstand, onO
           <div className="card card--next">
             <span className="badge badge--skill">Technique</span>
             <h2>{level.name}</h2>
-            <p className="card__sub">{s.exercise} · tenue max {hsStep.maxHold} s</p>
-            <div className="card__meta">
-              {s.mode === 'hold' ? (
-                <>
+            {s.mode === 'hold' ? (
+              <>
+                <p className="card__sub">{s.exercise} · tenue max {hsStep.progress.maxHold} s</p>
+                <div className="card__meta">
                   <span>{s.sets} tenues</span>
                   <span>{s.hold}s chacune</span>
                   <span>pause {s.restSec}s</span>
-                </>
-              ) : (
-                <>
-                  <span>{s.attempts} essais</span>
-                  <span>{s.attemptSec}s max</span>
-                </>
-              )}
-            </div>
-            <p className="card__rest-note card__rest-note--soft">
-              Objectif du niveau : <b>{level.goal} s</b>. {level.goalNote}
-            </p>
+                </div>
+                <p className="card__rest-note card__rest-note--soft">
+                  Objectif du niveau : <b>{level.goal} s</b>. {level.goalNote}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="card__sub">{s.attempts} essais de {s.attemptSec}s · jamais à l’échec</p>
+                <ul className="drills">
+                  {s.drills.map((d) => (
+                    <li key={d.axisId} className="drills__row">
+                      <span className="drills__emoji">{d.emoji}</span>
+                      <span className="drills__text">
+                        <span className="drills__axis">{d.axisLabel}</span>
+                        <b>{d.step.label}</b>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="card__rest-note card__rest-note--soft">{level.goalNote}</p>
+              </>
+            )}
             {handstand.nextDate && !ready && (
               <p className="card__sub">Fait aujourd’hui — reviens demain, c’est une compétence.</p>
             )}
             <button className="btn btn--primary btn--big" onClick={onStartHandstand}>
               {ready ? 'Commencer' : 'Refaire une séance'}
             </button>
-            <button className="link" onClick={onRetestHandstand}>⏱️ Retester ma tenue max</button>
+            {s.mode === 'hold' ? (
+              <button className="link" onClick={onRetestHandstand}>⏱️ Retester ma tenue max</button>
+            ) : (
+              <button className="link" onClick={onReassessHandstand}>🤸 J’ai progressé, resituer</button>
+            )}
           </div>
         )
       })()}

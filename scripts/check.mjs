@@ -12,6 +12,7 @@ import {
   getDay, remainingDays, daysInLevel, isTestDay, levels, GOAL, TOTAL_DAYS,
 } from '../src/data/pushupProgram.js'
 import { hydrate, freshState, STATE_VERSION } from '../src/lib/migrate.js'
+import * as hs from '../src/data/handstandProgram.js'
 
 let fails = 0
 
@@ -110,6 +111,74 @@ eq('le jour de test vise le max du niveau', getDay(0, 9).values, ['20+'])
 eq('tout le programme depuis le départ', remainingDays(0, 0).length, 54)
 eq('depuis le test du Niveau 1', remainingDays(0, 9).length, 45)
 eq('niveau non commencé', remainingDays(null, 0).length, 0)
+
+// ---------- Programme handstand ----------
+// Pas de calendrier : tout se dérive de la tenue max (voir TICKETS.md T3).
+
+section('Tenues de travail : 60-70 % de la tenue max (Prilepin isométrique)')
+eq('tenue max 40 s → 25 s', hs.computeHold(40), 25)
+eq('tenue max 20 s → 13 s', hs.computeHold(20), 13)
+eq('tenue max 60 s → 40 s', hs.computeHold(60), 40)
+eq('tenue max 12 s → 8 s (et pas 10 : l’arrondi à 5 s fausserait le %)', hs.computeHold(12), 8)
+eq('pas de tenue max → pas de séance', hs.computeHold(0), 0)
+{
+  // La règle sourcée : la tenue de travail reste dans 60-70 % du max.
+  // Tolérance à ±5 points, l'arrondi ne pouvant pas tomber juste partout.
+  const horsPlage = []
+  for (let m = 5; m <= 120; m++) {
+    const r = hs.computeHold(m) / m
+    if (r < 0.55 || r > 0.75) horsPlage.push(`${m}s→${Math.round(r * 100)}%`)
+  }
+  eq('de 5 à 120 s, toujours proche des 60-70 %', horsPlage, [])
+}
+{
+  // Sécurité : ne jamais demander de tenir plus longtemps que son max.
+  const infaisables = []
+  for (let m = 1; m <= 120; m++) {
+    if (hs.computeHold(m) > m) infaisables.push(`${m}s→${hs.computeHold(m)}s`)
+  }
+  eq('jamais plus long que la tenue max', infaisables, [])
+}
+
+section('Volume : viser 36-65 s au total, sans aller à l’échec')
+{
+  // Sur la plage du niveau « Le mur » (tenue max < 45 s), une fois le débutant
+  // absolu écarté : lui, le plafond de séries le maintient sous la fourchette,
+  // et c'est voulu — il lui faut du conditionnement, pas du volume.
+  const horsPlage = []
+  for (let m = 8; m < 45; m++) {
+    const v = hs.sessionVolume(m)
+    if (v < hs.HOLD.volumeMin || v > hs.HOLD.volumeMax) horsPlage.push(`${m}s→${v}s`)
+  }
+  eq('volume dans la fourchette sur tout le niveau « Le mur »', horsPlage, [])
+}
+eq('tenue max 40 s → 2 tenues de 25 s', [hs.computeSets(40), hs.computeHold(40)], [2, 25])
+eq('tenue max 20 s → 4 tenues de 13 s', [hs.computeSets(20), hs.computeHold(20)], [4, 13])
+eq('débutant : séance courte, plafonnée', hs.computeSets(5) <= hs.HOLD.maxSets, true)
+eq('au moins une tenue dès qu’il y a un max', hs.computeSets(1) >= 1, true)
+eq('pas de max → pas de séries', hs.computeSets(0), 0)
+
+section('Validation : chaque tenue se compare à SON niveau, jamais à un autre')
+eq('44 s au mur ne valident pas le mur (45 s)', hs.reachedGoal(0, 44), false)
+eq('45 s au mur valident le mur', hs.reachedGoal(0, 45), true)
+eq('30 s en équilibre libre valident l’équilibre', hs.reachedGoal(1, 30), true)
+// Le piège : 44 s AU MUR dépassent les 30 s de l'équilibre libre. Comparer les deux
+// déclarait le programme terminé pour un débutant. Les exercices sont différents.
+eq('44 s au mur ne valident PAS l’équilibre libre par accident', hs.reachedGoal(0, 44), false)
+eq('pas de tenue mesurée ne valide rien', hs.reachedGoal(0, null), false)
+eq('dernier niveau identifié', [hs.isLastLevel(0), hs.isLastLevel(1)], [false, true])
+
+section('Séance dérivée de la tenue max')
+{
+  const s = hs.getSession(0, 40)
+  eq('niveau mur : mode tenue', s.mode, 'hold')
+  eq('2 tenues de 25 s, pause 90 s', [s.sets, s.hold, s.restSec], [2, 25, 90])
+  const p = hs.getSession(1, 50)
+  eq('niveau équilibre : mode pratique', p.mode, 'practice')
+  eq('essais courts et nombreux', p.attempts > 5, true)
+  eq('niveau inexistant', hs.getSession(9, 40), null)
+}
+
 
 // ---------- Migration de l'état sauvegardé ----------
 // C'est la progression réelle de quelqu'un : une migration ratée l'efface en silence.

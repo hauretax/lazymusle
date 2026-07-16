@@ -1,0 +1,77 @@
+{
+  "_sources": {
+    "progression": "Overcoming Gravity 2e éd. (Steven Low), charte Handstand : Wall HS (niveaux FIG 1-3) → Free HS (4-5). https://stevenlow.org/overcoming-gravity/",
+    "formuleTenues": "Prilepin pour isométriques (Steven Low) : tenues à 60-70 % de la tenue max, volume total 36-65 s, jamais jusqu'à l'échec. https://stevenlow.org/prilepin-tables-for-bodyweight-strength-isometric-and-eccentric-exercises/",
+    "skill": "Steven Low, The Fundamentals of Bodyweight Strength Training : 5-10 min de handstand, tôt dans la séance, sans arriver à la fatigue. https://stevenlow.org/the-fundamentals-of-bodyweight-strength-training/",
+    "poignetsEtSortie": "GMB : préparation des poignets obligatoire, savoir sortir de la position fait partie de la progression. https://gmb.io/handstand/",
+    "seuil45s": "Parth Rajguru (forum GymnasticBodies) : 45-60 s au mur avant de travailler sérieusement l'équilibre. CONTESTÉ sur le même forum par A. Mainente et D. McManamon, pour qui l'alignement prime sur le chrono → repère, pas verrou.",
+    "_attention": "Contrairement aux pompes (données réelles extraites de Push Up Pro), il n'existe pas de calendrier jour-par-jour sourcé pour le handstand, et c'est délibéré : GMB refuse de numéroter ses étapes. D'où un programme piloté par la tenue max, pas par un planning. Voir TICKETS.md T3."
+  },
+
+  "restDays": 1,
+  "_restDaysSource": "Le handstand est une compétence : elle se travaille frais et souvent. Douglas Wadle (forum GymnasticBodies) conseille 10 min/jour, à la condition de « ne pas faire beaucoup de travail de force » — condition tenue ici : on ne programme que du skill léger (5-10 min, jamais à l'échec, cf. Steven Low), pas de HSPU. Les jours de pompes, le moteur passe le handstand en premier. Pas de consensus dans le milieu : 3 à 7 fois/semaine selon les intervenants. L'app propose, elle ne force pas.",
+
+  "test": {
+    "label": "Tenue max, poitrine au mur",
+    "how": "Monte poitrine au mur et tiens le plus longtemps possible, en gardant l'alignement. Arrête-toi dès que le dos se cambre : c'est ça, ta tenue.",
+    "minSec": 3
+  },
+
+  "levels": [
+    {
+      "id": 1,
+      "name": "Le mur",
+      "mode": "hold",
+      "exercise": "Poitrine au mur",
+      "testLabel": "Tenue max, poitrine au mur",
+      "testHow": "Monte poitrine au mur et tiens le plus longtemps possible, en gardant l'alignement. Arrête-toi dès que le dos se cambre : c'est ça, ta tenue.",
+      "how": "Face au mur, monte en marchant des pieds jusqu'à ce que le ventre touche. Bras tendus, tête neutre, côtes basses, pointes tendues.",
+      "why": "C'est le mur face à toi qui apprend l'alignement. Dos au mur, c'est plus facile à monter mais ça installe la « banane » — très dure à corriger ensuite.",
+      "goal": 45,
+      "goalNote": "Repère, pas un verrou : le seuil des 45 s est contesté. Si ton alignement est bon, tu peux tenter l'équilibre avant."
+    },
+    {
+      "id": 2,
+      "name": "L’équilibre",
+      "mode": "practice",
+      "exercise": "Équilibre libre",
+      "testLabel": "Tenue max en équilibre libre",
+      "testHow": "Kick-up, puis tiens en équilibre libre le plus longtemps possible. Rien à voir avec la tenue au mur : on repart de zéro, c'est normal.",
+      "how": "Kick-up doux, et cherche l'équilibre par la pression des doigts. Beaucoup d'essais courts. Jamais jusqu'à l'échec.",
+      "why": "L'équilibre est une compétence : elle se travaille frais et souvent, pas en s'épuisant.",
+      "goal": 30,
+      "goalNote": "Tenir 30 s en équilibre libre demande souvent 9 à 18 mois. La progression n'est pas linéaire : stagner des semaines est normal, pas un échec."
+    }
+  ],
+
+  "hold": {
+    "pct": 0.65,
+    "volumeTarget": 50,
+    "volumeMin": 36,
+    "volumeMax": 65,
+    "maxSets": 8,
+    "roundTo": 5,
+    "roundToAbove": 20,
+    "restSec": 90,
+    "_restSource": "CHOIX DE L'APP, pas une source : Prilepin ne donne pas de pause entre tenues. 90 s = le plancher de pause des pompes, cohérent avec des tenues jamais menées à l'échec."
+  },
+
+  "practice": {
+    "minutes": 8,
+    "attemptSec": 20,
+    "restSec": 30,
+    "_source": "Les 5-10 min viennent de Steven Low. Le découpage en essais de 20 s / 30 s de pause est un CHOIX DE L'APP pour rendre la pratique guidable."
+  },
+
+  "prep": [
+    { "name": "Poignets en flexion", "sec": 30, "how": "À quatre pattes, paumes au sol doigts vers les genoux. Recule doucement le bassin." },
+    { "name": "Poignets en extension", "sec": 30, "how": "À quatre pattes, dos des mains au sol, doigts vers les genoux. Charge très progressivement." },
+    { "name": "Bascules poignets", "sec": 30, "how": "Paumes au sol, balance le poids d'avant en arrière, doigts bien écartés et actifs." }
+  ],
+
+  "bail": {
+    "title": "Savoir tomber",
+    "how": "Si tu pars trop loin : tourne les épaules et pose un pied à côté, comme une roue. Ne cherche jamais à te réceptionner en arrière.",
+    "why": "Tu tomberas, forcément. Apprendre à sortir fait partie de la progression — ce n'est pas une option."
+  }
+}

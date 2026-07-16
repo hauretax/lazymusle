@@ -25,12 +25,19 @@ export function freshPushups() {
   }
 }
 
+export function freshHandstand() {
+  return {
+    ...freshProgram(),
+    maxHold: null, // tenue max en secondes ; pas de calendrier, tout se dérive d'elle
+  }
+}
+
 export function freshState() {
   return {
     version: STATE_VERSION,
     createdAt: new Date().toISOString(),
     goals: [], // objectifs choisis à l'onboarding ; vide = onboarding à faire
-    programs: { pushups: freshPushups() },
+    programs: { pushups: freshPushups(), handstand: freshHandstand() },
   }
 }
 
@@ -71,6 +78,7 @@ export function withDefaults(s) {
       ...base.programs,
       ...s.programs,
       pushups: { ...freshPushups(), ...s.programs?.pushups },
+      handstand: { ...freshHandstand(), ...s.programs?.handstand },
     },
   }
 }

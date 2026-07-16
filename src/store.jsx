@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import { levels, pickLevelIndex, gapAfterSession } from './data/pushupProgram'
-import { PUSHUPS_GOAL } from './data/goals'
+import * as handstand from './data/handstandProgram'
+import { PUSHUPS_GOAL, HANDSTAND_GOAL } from './data/goals'
 import { freshState, hydrate } from './lib/migrate'
 
 const KEY = 'reps.pushups.v2'
@@ -17,6 +18,20 @@ function load() {
 
 export function pushupsOf(state) {
   return state.programs.pushups
+}
+
+export function handstandOf(state) {
+  return state.programs.handstand
+}
+
+// Où en est le handstand. Pas de calendrier : tout se dérive de la tenue max.
+export function getHandstandStep(state) {
+  if (!state.goals?.includes(HANDSTAND_GOAL)) return { type: 'off' }
+  const h = handstandOf(state)
+  if (h.finished) return { type: 'done' }
+  // Aussi le cas d'une promotion : l'exercice change, la tenue reste à mesurer.
+  if (h.maxHold == null) return { type: 'test-initial' }
+  return { type: 'session', levelIndex: h.levelIndex ?? 0, maxHold: h.maxHold }
 }
 
 export function getNextStep(state) {
@@ -104,11 +119,48 @@ export function AppProvider({ children }) {
     })
   }, [updateProgram])
 
+  // Le test de tenue max sert à la fois de placement et de re-test : c'est lui qui
+  // fait progresser le niveau, faute de calendrier (voir TICKETS.md T3).
+  //
+  // Le max appartient à SON niveau : au mur au niveau 1, en équilibre libre au
+  // niveau 2. Les deux ne se comparent pas — 44 s au mur, c'est un débutant ; 30 s
+  // en équilibre libre, c'est un an de travail. D'où la remise à zéro à la promotion :
+  // l'exercice change, la mesure aussi.
+  const recordHandstandTest = useCallback((sec) => {
+    updateProgram(HANDSTAND_GOAL, (h) => {
+      const at = h.levelIndex ?? 0
+      const last = handstand.levels.length - 1
+      const passed = handstand.reachedGoal(at, sec)
+      const maxHistory = [...h.maxHistory, { date: new Date().toISOString(), sec, levelIndex: at }]
+
+      if (passed && at < last) {
+        return { ...h, levelIndex: at + 1, maxHold: null, maxHistory }
+      }
+      return { ...h, levelIndex: at, maxHold: sec, finished: passed && at === last, maxHistory }
+    })
+  }, [updateProgram])
+
+  const completeHandstandSession = useCallback((result) => {
+    updateProgram(HANDSTAND_GOAL, (h) => {
+      const now = new Date().toISOString()
+      return {
+        ...h,
+        sessions: [...h.sessions, { ...result, date: now }],
+        lastSessionDate: now,
+        nextDate: addDays(now, handstand.REST_DAYS),
+      }
+    })
+  }, [updateProgram])
+
   const resetAll = useCallback(() => setState(freshState()), [])
 
   const value = useMemo(
-    () => ({ state, recordInitialTest, setGoals, completeSession, resetAll }),
-    [state, recordInitialTest, setGoals, completeSession, resetAll],
+    () => ({
+      state, recordInitialTest, setGoals, completeSession,
+      recordHandstandTest, completeHandstandSession, resetAll,
+    }),
+    [state, recordInitialTest, setGoals, completeSession,
+      recordHandstandTest, completeHandstandSession, resetAll],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

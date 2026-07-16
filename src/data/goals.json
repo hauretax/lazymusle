@@ -27,8 +27,8 @@
       "id": "handstand",
       "emoji": "🤸",
       "label": "Tenir en handstand",
-      "tagline": "Progression vers l’équilibre sur les mains.",
-      "status": "soon",
+      "tagline": "Tenue max au mur, puis l’équilibre libre.",
+      "status": "available",
       "training": {
         "block": "skill",
         "muscles": ["deltoides-anterieurs", "trapezes", "triceps", "gainage"],

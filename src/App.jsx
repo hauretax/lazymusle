@@ -1,21 +1,32 @@
 import { useState } from 'react'
-import { useApp, getNextStep } from './store'
+import { useApp, getNextStep, getHandstandStep, handstandOf } from './store'
 import { getDay } from './data/pushupProgram'
+import { getSession } from './data/handstandProgram'
 import Home from './screens/Home'
 import Onboarding from './screens/Onboarding'
 import Test from './screens/Test'
 import Session from './screens/Session'
+import HandstandTest from './screens/HandstandTest'
+import HandstandSession from './screens/HandstandSession'
 import Progress from './screens/Progress'
 import Stretch from './screens/Stretch'
 
 export default function App() {
-  const { state, recordInitialTest, setGoals, completeSession } = useApp()
+  const {
+    state, recordInitialTest, setGoals, completeSession,
+    recordHandstandTest, completeHandstandSession,
+  } = useApp()
   const [view, setView] = useState('home')
   const step = getNextStep(state)
+  const hsStep = getHandstandStep(state)
 
   const start = () => {
     if (step.type === 'test-initial') setView('test')
     else if (step.type === 'session') setView('session')
+  }
+
+  const startHandstand = () => {
+    setView(hsStep.type === 'test-initial' ? 'hs-test' : 'hs-session')
   }
 
   // Aucun objectif choisi (1er lancement, ou après une réinitialisation) : on demande avant tout.
@@ -64,6 +75,32 @@ export default function App() {
     )
   }
 
+  if (view === 'hs-test') {
+    return (
+      <HandstandTest
+        levelIndex={handstandOf(state).levelIndex ?? 0}
+        onCancel={() => setView('home')}
+        onValidate={(sec) => {
+          recordHandstandTest(sec)
+          setView('home')
+        }}
+      />
+    )
+  }
+
+  if (view === 'hs-session' && hsStep.type === 'session') {
+    return (
+      <HandstandSession
+        session={getSession(hsStep.levelIndex, hsStep.maxHold)}
+        onQuit={() => setView('home')}
+        onFinish={(result) => {
+          completeHandstandSession(result)
+          setView('home')
+        }}
+      />
+    )
+  }
+
   if (view === 'session' && step.type === 'session') {
     const day = getDay(step.levelIndex, step.dayIndex)
     return (
@@ -81,6 +118,8 @@ export default function App() {
   return (
     <Home
       onStart={start}
+      onStartHandstand={startHandstand}
+      onRetestHandstand={() => setView('hs-test')}
       onOpenProgress={() => setView('progress')}
       onEditGoals={() => setView('goals')}
     />

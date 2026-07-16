@@ -8,8 +8,8 @@ export const goals = data.goals
 export const muscleLabels = data.muscles
 export const STRETCHING = data.stretching
 
-// Seul module développé à ce jour : les autres objectifs sont en "bientôt".
 export const PUSHUPS_GOAL = 'pushups'
+export const HANDSTAND_GOAL = 'handstand'
 
 export function getGoal(id) {
   return goals.find((g) => g.id === id) || null

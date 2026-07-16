@@ -129,12 +129,31 @@ dont l'auteur admet l'avoir « rassemblée auprès de différents pratiquants »
 **Test initial** : la tenue max (poitrine au mur), en secondes — l'équivalent du max de pompes.
 **Sécurité** : préparation des poignets et apprentissage de la sortie sont des étapes, pas des options.
 
-### T4 — Module abdos / L-sit · à faire
+### T4 — Module abdos / L-sit · fait
 
-**Déjà sourcé** : la progression L-sit est dans la **même charte OG** que le handstand (colonne 9) —
-Tuck L-Sit → 1 Leg Bent L-Sit → L-Sit → Straddle L-Sit → RTO L-Sit → V-Sit 45° → 75° → 100° → 120° →
-140° → 155° → 170° → Manna. La charte Miscellaneous donne aussi les planches (25 s → 60 s → 1 bras
-1 jambe). Même formule isométrique que T3 (60-70 % de la tenue max).
+Même méthode que l'équilibre du handstand : **deux axes, pas de chrono déclaré**.
+
+- [x] Axe **Se soulever** (support) : assis → parallettes → sol → anneaux. Le premier verrou est la
+      **dépression scapulaire** — au sol les mains sont plus basses, il faut se hisser bien plus haut.
+- [x] Axe **Tendre les jambes** (forme) : groupé → groupé avancé → une jambe → L complet → straddle →
+      V-sit, d'après la charte OG (colonne 9), construite sur le Code de Pointage FIG.
+- [x] Axes **indépendants** : on peut tenir un L complet sur parallettes sans décoller un groupé au sol.
+- [x] **L'app mesure la tenue max en séance** au lieu de la demander : première fois sur une
+      combinaison support/forme → séance de calibration ; ensuite la formule de Prilepin dose. Un relevé
+      par combinaison — un L complet sur parallettes et un groupé au sol n'ont rien à voir.
+- [x] Formule isométrique extraite dans `lib/isometrics.js`, partagée avec le handstand.
+- [x] Écran d'auto-évaluation `Assess.jsx` généralisé, partagé lui aussi.
+
+**Insight à garder** : ce qui bloque un L-sit, ce n'est souvent pas la force mais la **souplesse des
+ischios** — plus ils sont raides, plus les fléchisseurs de hanche doivent tirer fort pour tenir les
+jambes à 90°. C'est dans les consignes de l'axe « tendre les jambes », et la prep a un bloc compression.
+
+⚠️ **Tension non résolue, à trancher à l'usage** : pour un débutant (tenue max ~8 s), la formule de
+Prilepin donne **8 tenues de 5 s avec 90 s de pause** = plus de 12 min, presque que du repos. Or Steven
+Low dit que le skill se travaille en **5-10 min**. Les deux prescriptions se contredisent sur les tenues
+courtes. La pause de 90 s est un choix de l'app (Prilepin n'en donne pas) : elle est probablement trop
+longue pour des tenues de 5 s. Piste : rendre la pause proportionnelle à la tenue, comme les pauses
+adaptatives des pompes — mais sans source, c'est à décider.
 
 ### T5 — Running · à faire
 

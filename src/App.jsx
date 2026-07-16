@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { useApp, getNextStep, getHandstandStep, handstandOf } from './store'
+import { useApp, getNextStep, getHandstandStep, getLsitStep, handstandOf, lsitOf } from './store'
 import { getDay } from './data/pushupProgram'
-import { getSession } from './data/handstandProgram'
+import { getSession, AXES as HS_AXES } from './data/handstandProgram'
+import * as lsitProgram from './data/lsitProgram'
 import Home from './screens/Home'
 import Onboarding from './screens/Onboarding'
 import Test from './screens/Test'
 import Session from './screens/Session'
 import HandstandTest from './screens/HandstandTest'
-import HandstandAssess from './screens/HandstandAssess'
+import Assess from './screens/Assess'
 import HandstandSession from './screens/HandstandSession'
+import LsitSession from './screens/LsitSession'
 import Progress from './screens/Progress'
 import Stretch from './screens/Stretch'
 
@@ -16,10 +18,12 @@ export default function App() {
   const {
     state, recordInitialTest, setGoals, completeSession,
     recordHandstandTest, recordHandstandAxes, completeHandstandSession,
+    recordLsitAxes, completeLsitSession,
   } = useApp()
   const [view, setView] = useState('home')
   const step = getNextStep(state)
   const hsStep = getHandstandStep(state)
+  const lsitStep = getLsitStep(state)
 
   const start = () => {
     if (step.type === 'test-initial') setView('test')
@@ -93,11 +97,43 @@ export default function App() {
 
   if (view === 'hs-assess') {
     return (
-      <HandstandAssess
+      <Assess
+        title="L’équilibre"
+        intro="Deux choses différentes, qui avancent chacune à leur rythme : arriver en haut, et y rester. On peut savoir monter sans savoir se rattraper — et l’inverse."
+        axes={HS_AXES}
         initial={handstandOf(state).axes}
         onCancel={() => setView('home')}
         onValidate={(axes) => {
           recordHandstandAxes(axes)
+          setView('home')
+        }}
+      />
+    )
+  }
+
+  if (view === 'lsit-assess') {
+    return (
+      <Assess
+        title="L-sit"
+        intro="Deux choses différentes, qui avancent chacune à leur rythme : décoller du sol, et tendre les jambes. On peut tenir un L complet sur parallettes sans décoller un groupé au sol."
+        axes={lsitProgram.AXES}
+        initial={lsitOf(state).axes}
+        onCancel={() => setView('home')}
+        onValidate={(axes) => {
+          recordLsitAxes(axes)
+          setView('home')
+        }}
+      />
+    )
+  }
+
+  if (view === 'lsit-session' && lsitStep.type === 'session') {
+    return (
+      <LsitSession
+        session={lsitProgram.getSession(lsitStep.progress)}
+        onQuit={() => setView('home')}
+        onFinish={(result) => {
+          completeLsitSession(result)
           setView('home')
         }}
       />
@@ -137,6 +173,8 @@ export default function App() {
       onStartHandstand={startHandstand}
       onRetestHandstand={() => setView('hs-test')}
       onReassessHandstand={() => setView('hs-assess')}
+      onStartLsit={() => setView(lsitStep.type === 'assess' ? 'lsit-assess' : 'lsit-session')}
+      onReassessLsit={() => setView('lsit-assess')}
       onOpenProgress={() => setView('progress')}
       onEditGoals={() => setView('goals')}
     />

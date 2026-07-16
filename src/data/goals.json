@@ -13,6 +13,7 @@
   "goals": [
     {
       "id": "pushups",
+      "short": "Pompes",
       "emoji": "💪",
       "label": "100 pompes d’affilée",
       "tagline": "3 niveaux, une séance à la fois.",
@@ -25,6 +26,7 @@
     },
     {
       "id": "handstand",
+      "short": "Handstand",
       "emoji": "🤸",
       "label": "Tenir en handstand",
       "tagline": "Tenue max au mur, puis l’équilibre libre.",
@@ -37,10 +39,11 @@
     },
     {
       "id": "core",
+      "short": "L-sit",
       "emoji": "🧘",
       "label": "Abdos / L-sit",
-      "tagline": "Gainage et L-sit, du sol aux barres.",
-      "status": "soon",
+      "tagline": "Se soulever, puis tendre les jambes.",
+      "status": "available",
       "training": {
         "block": "skill",
         "muscles": ["gainage", "deltoides-posterieurs", "dos"],
@@ -49,6 +52,7 @@
     },
     {
       "id": "running",
+      "short": "Course",
       "emoji": "🏃",
       "label": "Courir 5 km",
       "tagline": "Intervalles guidés, du canapé aux 5 km.",

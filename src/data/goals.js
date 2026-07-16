@@ -10,6 +10,7 @@ export const STRETCHING = data.stretching
 
 export const PUSHUPS_GOAL = 'pushups'
 export const HANDSTAND_GOAL = 'handstand'
+export const LSIT_GOAL = 'core'
 
 export function getGoal(id) {
   return goals.find((g) => g.id === id) || null

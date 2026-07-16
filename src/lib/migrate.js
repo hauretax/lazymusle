@@ -33,12 +33,20 @@ export function freshHandstand() {
   }
 }
 
+export function freshLsit() {
+  return {
+    ...freshProgram(),
+    axes: null, // { support, shape } — pas un temps, une position
+    bests: {}, // meilleure tenue relevée EN SÉANCE, par combinaison support/forme
+  }
+}
+
 export function freshState() {
   return {
     version: STATE_VERSION,
     createdAt: new Date().toISOString(),
     goals: [], // objectifs choisis à l'onboarding ; vide = onboarding à faire
-    programs: { pushups: freshPushups(), handstand: freshHandstand() },
+    programs: { pushups: freshPushups(), handstand: freshHandstand(), core: freshLsit() },
   }
 }
 
@@ -80,6 +88,7 @@ export function withDefaults(s) {
       ...s.programs,
       pushups: { ...freshPushups(), ...s.programs?.pushups },
       handstand: { ...freshHandstand(), ...s.programs?.handstand },
+      core: { ...freshLsit(), ...s.programs?.core },
     },
   }
 }

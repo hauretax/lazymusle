@@ -13,6 +13,7 @@ import {
 } from '../src/data/pushupProgram.js'
 import { hydrate, freshState, STATE_VERSION } from '../src/lib/migrate.js'
 import * as hs from '../src/data/handstandProgram.js'
+import * as ls from '../src/data/lsitProgram.js'
 
 let fails = 0
 
@@ -213,6 +214,63 @@ section('Le chrono ne s’applique qu’aux niveaux chronométrés')
 eq('l’équilibre ne se valide pas au temps', hs.reachedGoal(1, 9999), false)
 eq('le mur, si', hs.reachedGoal(0, 45), true)
 
+
+// ---------- Programme L-sit ----------
+// Même méthode que l'équilibre : deux axes, et l'app MESURE la tenue max en séance
+// au lieu de la demander.
+
+section('L-sit : deux axes, comme l’équilibre')
+eq('les deux axes', ls.AXES.map((a) => a.id), ['support', 'shape'])
+eq('se soulever : du sol aux anneaux', ls.getAxis('support').steps.length, 5)
+eq('tendre les jambes : du groupé au V-sit', ls.getAxis('shape').steps.length, 6)
+eq('progression de forme conforme à la charte OG',
+  ls.getAxis('shape').steps.map((s) => s.id),
+  ['tuck', 'adv-tuck', 'one-leg', 'full-l', 'straddle', 'v-sit'])
+eq('étape suivante', ls.nextStep('shape', 'tuck').id, 'adv-tuck')
+eq('rien après le V-sit', ls.nextStep('shape', 'v-sit'), null)
+
+{
+  // Indépendants, comme pour le handstand : un L complet sur parallettes n'implique
+  // pas de décoller un groupé au sol.
+  eq('forme au bout mais pas le support → pas fini',
+    ls.axesComplete({ support: 'bars-support', shape: 'v-sit' }), false)
+  eq('support au bout mais pas la forme → pas fini',
+    ls.axesComplete({ support: 'rings', shape: 'tuck' }), false)
+  eq('les deux au bout → fini', ls.axesComplete({ support: 'rings', shape: 'v-sit' }), true)
+  eq('axes non situés → pas fini', ls.axesComplete(null), false)
+}
+
+section('L-sit : la tenue max est mesurée, pas déclarée')
+{
+  const axes = { support: 'floor-lift', shape: 'tuck' }
+  eq('un relevé par combinaison support/forme', ls.bestKey(axes), 'floor-lift/tuck')
+  eq('changer de forme change la combinaison',
+    ls.bestKey({ support: 'floor-lift', shape: 'full-l' }), 'floor-lift/full-l')
+  eq('pas d’axes → pas de clé', ls.bestKey(null), null)
+
+  // Première fois sur cette combinaison : rien à prescrire, on mesure.
+  const cal = ls.getSession({ axes, bests: {} })
+  eq('sans relevé → séance de calibration', cal.mode, 'calibration')
+  eq('une consigne par axe', cal.drills.map((d) => d.axisId), ['support', 'shape'])
+
+  // Une fois qu'on a mesuré, la formule de Prilepin reprend la main.
+  const s = ls.getSession({ axes, bests: { 'floor-lift/tuck': 20 } })
+  eq('avec relevé → tenues dosées', s.mode, 'hold')
+  eq('4 tenues de 13 s (65 % de 20 s)', [s.sets, s.hold], [4, 13])
+  eq('le relevé est repris tel quel', s.best, 20)
+
+  // Le relevé d'une AUTRE combinaison ne doit pas servir ici.
+  const autre = ls.getSession({ axes, bests: { 'bars-support/full-l': 40 } })
+  eq('un relevé d’une autre combinaison ne compte pas', autre.mode, 'calibration')
+
+  eq('axes non situés → pas de séance', ls.getSession({}), null)
+  eq('étape inconnue → pas de séance',
+    ls.getSession({ axes: { support: 'nawak', shape: 'tuck' }, bests: {} }), null)
+}
+
+section('L-sit : la formule isométrique est bien la même que le handstand')
+eq('même tenue de travail à max égal', ls.computeHold(40), hs.computeHold(40))
+eq('même nombre de séries', ls.computeSets(40), hs.computeSets(40))
 
 // ---------- Migration de l'état sauvegardé ----------
 // C'est la progression réelle de quelqu'un : une migration ratée l'efface en silence.

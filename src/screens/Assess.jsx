@@ -1,30 +1,27 @@
 import { useState } from 'react'
-import { AXES, levels } from '../data/handstandProgram'
 
-// Au niveau « L'équilibre », demander « combien de temps tu tiens » ne sert à rien :
-// la réponse est souvent 0 s et elle ne dit pas quoi travailler. On situe la personne
-// sur deux axes indépendants — monter, et rattraper — et la séance en découle.
-export default function HandstandAssess({ initial, onValidate, onCancel }) {
+// Auto-évaluation sur plusieurs axes indépendants. Sert le handstand comme le L-sit.
+//
+// Le principe, dans les deux cas : demander « combien de temps tu tiens » ne dit pas
+// quoi travailler, et un débutant ne sait pas s'auto-chronométrer proprement. On
+// demande où il en est, et la séance en découle.
+export default function Assess({ title, intro, axes, initial, onValidate, onCancel }) {
   const [picked, setPicked] = useState(initial ?? {})
-  const level = levels.find((l) => l.mode === 'axes')
-  const complete = AXES.every((a) => picked[a.id])
+  const complete = axes.every((a) => picked[a.id])
 
   return (
     <div className="screen onboarding">
       <header className="topbar">
         <button className="iconbtn" onClick={onCancel} aria-label="Retour">←</button>
-        <span className="topbar__title">{level.name}</span>
+        <span className="topbar__title">{title}</span>
         <span />
       </header>
 
       <div className="onboarding__body">
         <h1 className="onboarding__q">Où en es-tu ?</h1>
-        <p className="onboarding__sub">
-          Deux choses différentes, qui avancent chacune à leur rythme : arriver en haut, et y rester.
-          On peut savoir monter sans savoir se rattraper — et l’inverse.
-        </p>
+        <p className="onboarding__sub">{intro}</p>
 
-        {AXES.map((axis) => (
+        {axes.map((axis) => (
           <div key={axis.id} className="axis">
             <div className="axis__head">
               <span className="axis__emoji">{axis.emoji}</span>

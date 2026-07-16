@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useState } from 'react'
-import { useApp, getNextStep, getHandstandStep, pushupsOf, handstandOf } from '../store'
+import { useApp, getNextStep, getHandstandStep, getLsitStep, pushupsOf, handstandOf, lsitOf } from '../store'
 import { GOAL, TOTAL_DAYS, getDay, sessionMinTotal, computeRest, parseSet } from '../data/pushupProgram'
 import * as hs from '../data/handstandProgram'
-import { PUSHUPS_GOAL, HANDSTAND_GOAL, getGoal, hasProgram } from '../data/goals'
-import { orderForDay, sharedMuscleLabels } from '../lib/schedule'
+import * as lsit from '../data/lsitProgram'
+import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, getGoal, hasProgram } from '../data/goals'
+import { orderForDay, dayWarnings } from '../lib/schedule'
 import { canNotify, requestNotif, notify, exportSchedule } from '../lib/reminders'
 import InstallButton from '../components/InstallButton'
 
@@ -37,27 +38,30 @@ function ProgressRing({ done, total }) {
 }
 
 export default function Home({
-  onStart, onStartHandstand, onRetestHandstand, onReassessHandstand, onOpenProgress, onEditGoals,
+  onStart, onStartHandstand, onRetestHandstand, onReassessHandstand,
+  onStartLsit, onReassessLsit, onOpenProgress, onEditGoals,
 }) {
   const { state } = useApp()
   const step = getNextStep(state)
   const hsStep = getHandstandStep(state)
+  const lsitStep = getLsitStep(state)
   const pushups = pushupsOf(state)
   const handstand = handstandOf(state)
+  const lsitProg = lsitOf(state)
   const bestMax = pushups.maxHistory.reduce((m, x) => Math.max(m, x.reps), 0)
   const onPushups = state.goals.includes(PUSHUPS_GOAL)
   const onHandstand = state.goals.includes(HANDSTAND_GOAL)
+  const onLsit = state.goals.includes(LSIT_GOAL)
   const firstRun = pushups.levelIndex == null
   const doneCount = pushups.sessions.length
   // Objectifs choisis dont le module n'existe pas encore (voir TICKETS.md).
   const soonGoals = state.goals.filter((id) => !hasProgram(id)).map(getGoal).filter(Boolean)
 
-  // Deux exos actifs : c'est le moteur qui décide de l'ordre (le skill se travaille
-  // frais, avant la force) et signale les muscles qu'ils partagent.
+  // Plusieurs exos actifs : c'est le moteur qui décide de l'ordre (le skill se
+  // travaille frais, avant la force) et signale les muscles qu'ils partagent.
   const activeToday = orderForDay(state.goals.filter(hasProgram))
-  const bothToday = activeToday.length > 1
-  const shared = bothToday ? sharedMuscleLabels(activeToday[0], activeToday[1]) : []
-  const handstandFirst = bothToday && activeToday[0] === HANDSTAND_GOAL
+  const ordre = activeToday.map((id) => getGoal(id)?.short).filter(Boolean)
+  const chevauchements = dayWarnings(activeToday).filter((w) => w.type === 'muscles')
 
   const [notifStatus, setNotifStatus] = useState(canNotify() ? Notification.permission : 'unsupported')
   const [remindMsg, setRemindMsg] = useState('')
@@ -188,6 +192,68 @@ export default function Home({
     </>
   )
 
+  const lsitBlocks = onLsit && (
+    <>
+      {lsitStep.type === 'assess' && (
+        <div className="card card--intro">
+          <div className="intro__emoji">🧘</div>
+          <h2>Abdos / L-sit</h2>
+          <p>
+            Comme l’équilibre : on ne chronomètre pas, on regarde <b>où tu en es</b> sur deux choses
+            qui avancent séparément — <b>décoller du sol</b>, et <b>tendre les jambes</b>.
+          </p>
+          <button className="btn btn--primary btn--big" onClick={onStartLsit}>
+            Situer où j’en suis
+          </button>
+        </div>
+      )}
+
+      {lsitStep.type === 'done' && (
+        <div className="card card--intro">
+          <div className="intro__emoji">🏆</div>
+          <h2>L-sit maîtrisé !</h2>
+          <p>Tu tiens le V-sit aux anneaux. Il reste le Manna, si tu veux souffrir. 🔥</p>
+        </div>
+      )}
+
+      {lsitStep.type === 'session' && (() => {
+        const s = lsit.getSession(lsitStep.progress)
+        if (!s) return null
+        const du = daysUntil(lsitProg.nextDate)
+        const ready = du <= 0
+        return (
+          <div className="card card--next">
+            <span className="badge badge--skill">Technique</span>
+            <h2>L-sit</h2>
+            {s.mode === 'calibration' ? (
+              <p className="card__sub">Une tenue max pour se caler · l’app dose ensuite toute seule</p>
+            ) : (
+              <p className="card__sub">{s.sets} tenues de {s.hold}s · pause {s.restSec}s · meilleur relevé {s.best}s</p>
+            )}
+            <ul className="drills">
+              {s.drills.map((d) => (
+                <li key={d.axisId} className="drills__row">
+                  <span className="drills__emoji">{d.emoji}</span>
+                  <span className="drills__text">
+                    <span className="drills__axis">{d.axisLabel}</span>
+                    <b>{d.step.label}</b>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {lsitProg.nextDate && !ready && (
+              <p className="card__sub">Fait aujourd’hui — reviens demain.</p>
+            )}
+            <button className="btn btn--primary btn--big" onClick={onStartLsit}>
+              {s.mode === 'calibration' ? 'Mesurer ma tenue' : ready ? 'Commencer' : 'Refaire une séance'}
+            </button>
+            <button className="link" onClick={onReassessLsit}>🧘 J’ai progressé, resituer</button>
+          </div>
+        )
+      })()}
+    </>
+  )
+
   const pushupBlocks = onPushups && (
     <>
       {firstRun && (
@@ -285,7 +351,11 @@ export default function Home({
   )
 
   // L'ordre des blocs vient du moteur, pas d'un choix codé ici (voir TICKETS.md T2).
-  const blocks = { [HANDSTAND_GOAL]: handstandBlocks, [PUSHUPS_GOAL]: pushupBlocks }
+  const blocks = {
+    [HANDSTAND_GOAL]: handstandBlocks,
+    [LSIT_GOAL]: lsitBlocks,
+    [PUSHUPS_GOAL]: pushupBlocks,
+  }
 
   return (
     <div className="screen home">
@@ -309,12 +379,15 @@ export default function Home({
         </div>
       )}
 
-      {bothToday && shared.length > 0 && (
+      {ordre.length > 1 && (
         <div className="order">
-          <b>{handstandFirst ? 'Handstand puis pompes' : 'Pompes puis handstand'}</b>
+          <b>{ordre.join(' puis ')}</b>
           <span>
-            Les deux tapent sur {shared.join(' et ').toLowerCase()}. La technique se travaille
-            frais — avant que la force ne fatigue.
+            La technique se travaille frais — avant que la force ne fatigue.
+            {chevauchements.map((w) => {
+              const noms = w.goalIds.map((id) => getGoal(id)?.short).join(' et ')
+              return ` ${noms} tapent tous les deux sur ${w.muscles.join(' et ').toLowerCase()}.`
+            })}
           </span>
         </div>
       )}

@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import { levels, pickLevelIndex, gapAfterSession } from './data/pushupProgram'
 import * as handstand from './data/handstandProgram'
-import { PUSHUPS_GOAL, HANDSTAND_GOAL } from './data/goals'
+import * as lsit from './data/lsitProgram'
+import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL } from './data/goals'
 import { freshState, hydrate } from './lib/migrate'
 
 const KEY = 'reps.pushups.v2'
@@ -42,6 +43,19 @@ export function getHandstandStep(state) {
 
   if (h.maxHold == null) return { type: 'test-initial', levelIndex }
   return { type: 'session', levelIndex, progress: { maxHold: h.maxHold } }
+}
+
+export function lsitOf(state) {
+  return state.programs.core
+}
+
+// Où en est le L-sit. Même méthode que l'équilibre : deux axes, pas de chrono déclaré.
+export function getLsitStep(state) {
+  if (!state.goals?.includes(LSIT_GOAL)) return { type: 'off' }
+  const l = lsitOf(state)
+  if (l.finished) return { type: 'done' }
+  if (!l.axes) return { type: 'assess' }
+  return { type: 'session', progress: { axes: l.axes, bests: l.bests } }
 }
 
 export function getNextStep(state) {
@@ -173,15 +187,46 @@ export function AppProvider({ children }) {
     })
   }, [updateProgram])
 
+  const recordLsitAxes = useCallback((axes) => {
+    updateProgram(LSIT_GOAL, (l) => ({
+      ...l,
+      axes,
+      finished: lsit.axesComplete(axes),
+      axesHistory: [...(l.axesHistory ?? []), { date: new Date().toISOString(), ...axes }],
+    }))
+  }, [updateProgram])
+
+  // L'app apprend la tenue max depuis les séances au lieu de la demander : on garde
+  // le meilleur relevé par combinaison support/forme, c'est lui qui dose la suite.
+  const completeLsitSession = useCallback((result) => {
+    updateProgram(LSIT_GOAL, (l) => {
+      const now = new Date().toISOString()
+      const key = lsit.bestKey(l.axes)
+      const bests = { ...l.bests }
+      if (key && result.best > 0) {
+        bests[key] = Math.max(bests[key] ?? 0, result.best)
+      }
+      return {
+        ...l,
+        bests,
+        sessions: [...l.sessions, { ...result, axes: l.axes, date: now }],
+        lastSessionDate: now,
+        nextDate: addDays(now, lsit.REST_DAYS),
+      }
+    })
+  }, [updateProgram])
+
   const resetAll = useCallback(() => setState(freshState()), [])
 
   const value = useMemo(
     () => ({
       state, recordInitialTest, setGoals, completeSession,
-      recordHandstandTest, recordHandstandAxes, completeHandstandSession, resetAll,
+      recordHandstandTest, recordHandstandAxes, completeHandstandSession,
+      recordLsitAxes, completeLsitSession, resetAll,
     }),
     [state, recordInitialTest, setGoals, completeSession,
-      recordHandstandTest, recordHandstandAxes, completeHandstandSession, resetAll],
+      recordHandstandTest, recordHandstandAxes, completeHandstandSession,
+      recordLsitAxes, completeLsitSession, resetAll],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

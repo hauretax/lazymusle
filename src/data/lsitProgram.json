@@ -1,0 +1,70 @@
+{
+  "_sources": {
+    "formeDesJambes": "Overcoming Gravity 2e éd. (Steven Low), charte Handstand colonne 9 — construite sur le Code de Pointage de la FIG : Tuck L-Sit → 1 Leg Bent L-Sit → L-Sit → Straddle L-Sit → RTO L-Sit → V-Sit 45° → 75° → ... → Manna. https://stevenlow.org/overcoming-gravity/",
+    "formuleTenues": "Prilepin pour isométriques (Steven Low) : tenues à 60-70 % de la tenue max, volume 36-65 s, jamais à l'échec. Même formule que le handstand, dans lib/isometrics.js.",
+    "verrous": "Trois limiteurs convergents entre sources : (1) la dépression scapulaire — au sol les mains sont au niveau du sol, il faut bien plus de force pour se hisser assez haut, « sans ça tu ne décolles pas » ; (2) les fléchisseurs de hanche ; (3) la souplesse des ischios — plus ils sont raides, plus les fléchisseurs doivent tirer fort pour tenir les jambes à 90°. Sources de vulgarisation convergentes (GMB, Breaking Muscle, thecompleteathleteguide), pas de source primaire.",
+    "support": "GMB, L-Sit Hold Progression. https://gmb.io/l-sit/",
+    "_attention": "Comme le handstand, et contrairement aux pompes : pas de calendrier jour-par-jour sourcé. Le programme se dérive de la position sur les deux axes, et la tenue de travail du meilleur relevé EN SÉANCE — on ne demande pas à la personne de s'auto-chronométrer."
+  },
+
+  "restDays": 1,
+  "_restDaysSource": "Comme le handstand : travail de skill léger, jamais à l'échec, donc quasi quotidien possible. Les jours de pompes, le moteur le passe en premier. CHOIX DE L'APP, aligné sur le handstand.",
+
+  "_axesNote": "Même méthode que l'équilibre du handstand : on ne demande pas « combien de temps tu tiens » — la réponse ne dit pas quoi travailler, et un débutant ne sait pas s'auto-chronométrer proprement. On situe la personne sur deux axes indépendants. Se soulever et tendre les jambes ne progressent pas ensemble : on peut tenir un L complet sur parallettes sans décoller un groupé au sol.",
+
+  "axes": [
+    {
+      "id": "support",
+      "label": "Se soulever",
+      "emoji": "🙌",
+      "question": "D’où tu arrives à décoller ?",
+      "hint": "Plus les mains sont basses, plus il faut pousser les épaules vers le bas. C’est le premier verrou : sans ça, tu ne décolles pas.",
+      "steps": [
+        { "id": "none", "label": "Assis, je ne décolle pas encore", "how": "Travaille la dépression scapulaire : assis, mains au sol ou sur des livres, pousse les épaules vers le bas sans plier les bras. Le bassin ne bouge pas encore, c’est normal." },
+        { "id": "bars-support", "label": "Sur barres ou parallettes, je décolle", "how": "Support hold : bras tendus, épaules basses et loin des oreilles, poitrine haute. Tiens sans que les épaules remontent." },
+        { "id": "bars-hold", "label": "Sur parallettes, je tiens franchement", "how": "Même position, mais les épaules restent basses tout du long et le bassin ne redescend pas." },
+        { "id": "floor-lift", "label": "Au sol, je décolle le bassin", "how": "Mains à plat au sol, doigts vers l’avant, bras tendus. Bien plus dur : les mains sont au niveau du sol, il faut se hisser beaucoup plus haut." },
+        { "id": "rings", "label": "Aux anneaux, tournés vers l’extérieur", "how": "RTO : anneaux tournés vers l’extérieur. Le support devient instable, les épaules doivent tout tenir." }
+      ]
+    },
+    {
+      "id": "shape",
+      "label": "Tendre les jambes",
+      "emoji": "🦵",
+      "question": "Jusqu’où tu tends les jambes ?",
+      "hint": "Si ça coince, c’est souvent la souplesse des ischios avant la force : plus ils sont raides, plus tes fléchisseurs de hanche doivent tirer fort.",
+      "steps": [
+        { "id": "tuck", "label": "Genoux groupés vers la poitrine", "how": "Tuck L-sit. Genoux au plus près de la poitrine : plus ils sont serrés, plus c’est facile." },
+        { "id": "adv-tuck", "label": "Groupé, genoux avancés", "how": "Groupé avancé : commence à ouvrir les genoux vers l’avant. Prépare l’extension complète." },
+        { "id": "one-leg", "label": "Une jambe tendue, l’autre groupée", "how": "Alterne les jambes. Le côté tendu te dit lequel de tes deux côtés est le plus raide." },
+        { "id": "full-l", "label": "Les deux jambes tendues, à l’horizontale", "how": "L complet : genoux verrouillés, pointes tendues, épaules basses, poitrine haute. Vise des tenues propres de 10-20 s avant de chercher plus long." },
+        { "id": "straddle", "label": "Jambes tendues et écartées", "how": "Straddle L-sit : jambes écartées, plus haut que l’horizontale. Demande de la souplesse de hanche." },
+        { "id": "v-sit", "label": "Jambes tendues au-dessus de l’horizontale", "how": "V-sit : les jambes montent vers la verticale. Compression et force de hanche." }
+      ]
+    }
+  ],
+
+  "hold": {
+    "pct": 0.65,
+    "volumeTarget": 50,
+    "volumeMin": 36,
+    "volumeMax": 65,
+    "maxSets": 8,
+    "roundTo": 5,
+    "roundToAbove": 20,
+    "restSec": 90,
+    "_restSource": "CHOIX DE L'APP, pas une source : Prilepin ne donne pas de pause entre tenues. Aligné sur le handstand."
+  },
+
+  "calibration": {
+    "label": "Une tenue pour se caler",
+    "how": "Tiens la position le plus longtemps possible, en gardant la forme. Arrête-toi dès qu’elle se casse. L’app se sert de ce relevé pour doser les prochaines séances.",
+    "maxSec": 120
+  },
+
+  "prep": [
+    { "name": "Dépression scapulaire", "sec": 30, "how": "Assis, mains au sol à côté des hanches. Pousse les épaules vers le bas sans plier les bras. C’est le mouvement qui te fait décoller." },
+    { "name": "Compression jambes tendues", "sec": 30, "how": "Assis jambes tendues, attrape les tibias et tire le buste vers les jambes. C’est ça qui libère tes fléchisseurs de hanche." },
+    { "name": "Poignets", "sec": 30, "how": "Paumes au sol, balance le poids d’avant en arrière, doigts écartés et actifs." }
+  ]
+}

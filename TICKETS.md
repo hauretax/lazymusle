@@ -32,23 +32,77 @@ Vérifié dans le navigateur : 1er lancement, migration d'un state v2 en plein N
 intacte), édition des objectifs, cas « aucun module prêt » (seuls des objectifs « bientôt » cochés),
 retrait puis remise des pompes (progression conservée), réinitialisation → l'onboarding revient.
 
-### T2 — Moteur muscle / repos · à faire
+### T2 — Moteur muscle / repos · en cours
 
 Dès qu'il y a plusieurs exos à pratiquer, il faut gérer les repos sur les différents jours et
 alterner les groupes musculaires pour ne pas épuiser. Prérequis de T3/T4/T5.
 
-- Blocs d'effort : reps / tenue / souplesse
-- Rotation des groupes musculaires, gestion des combos (ex. pompes + handstand le même jour)
+- Blocs d'effort : **force** (reps), **skill** (tenue), **souplesse**
+- Muscles par exo, pour détecter les chevauchements
 - Remplace le rythme fixe 2-2-3 actuel, propre aux pompes
+
+**Décidé** (16/07/2026, sur la base de la recherche T3) :
+
+- **Combos autorisés le même jour, skill avant force.** C'est l'ordre prescrit par Steven Low
+  (échauffement → skill → force → étirements). Ça laisse le handstand tourner quasi tous les jours
+  sans casser le 3×/semaine des pompes.
+- Le moteur protège les **veilles de test**.
+- Chevauchement musculaire réel, d'après les chartes OG : pompes = deltoïdes antérieurs, pectoraux,
+  scapulaires, triceps · handstand = deltoïdes antérieurs, trapèzes, triceps, core →
+  **communs : deltoïdes antérieurs + triceps**.
+- Garde-fou tiré du forum GB : le handstand quotidien n'est valable que **si la charge de force reste
+  modérée** — donc la charge pompes doit peser dans la décision.
 
 ### T3 — Module handstand · à faire
 
-Chercher une vraie progression (sources sérieuses, comme les données Push Up Pro), puis l'intégrer.
-Probablement des tenues chronométrées plutôt que des reps → dépend de T2.
+Progression **pilotée par la tenue max, pas par un calendrier** (voir « Le piège » plus bas).
+
+**Sources retenues** (recherche du 16/07/2026) :
+
+- [Overcoming Gravity 2e éd., Steven Low](https://stevenlow.org/overcoming-gravity/) — la référence la
+  plus rigoureuse, chartes construites sur le Code de Pointage de la FIG.
+  [PDF des chartes](https://stevenlow.org/wp-content/uploads/2017/02/OG2ChartsPrint.pdf) (charte
+  Handstand = p.30 du livre, exercices p.318).
+- [Prilepin pour isométriques](https://stevenlow.org/prilepin-tables-for-bodyweight-strength-isometric-and-eccentric-exercises/)
+  — **la formule** : tenues à **60-70 % de la tenue max**, volume total **36-65 s par exercice**,
+  **jamais jusqu'à l'échec** (« ça dégrade la qualité des séries suivantes »).
+- [Les fondamentaux, Steven Low](https://stevenlow.org/the-fundamentals-of-bodyweight-strength-training/)
+  — ordre de séance : échauffement → **skill** → force → étirements. 5-10 min de handstand mural pour
+  un débutant, sans arriver à la fatigue. Réévaluation tous les 6-8 semaines.
+- [GMB](https://gmb.io/handstand/) — 10 étapes, préparation des poignets obligatoire, apprendre à
+  **sortir de la position** (roue/cartwheel) fait partie de la progression.
+- Forum [GymnasticBodies — fréquence](https://www.gymnasticbodies.com/forum/topic/12597-handstand-training-frequency/)
+  et [mur → équilibre libre](https://www.gymnasticbodies.com/forum/topic/12391-how-long-of-a-wall-handstand-before-serious-freestanding/).
+
+**Progression OG (charte Handstand, colonne 1)** : Wall HS (niveaux FIG 1-3) → Free HS (4-5) →
+One-Arm HS (10, hors périmètre). Les handstand push-ups sont une **colonne à part**, pas la suite.
+
+**Le piège — à ne pas oublier** : le programme jour-par-jour façon Push Up Pro **n'existe pas** pour le
+handstand, et c'est volontaire. GMB refuse explicitement de numéroter ses étapes (« des pièces de
+Tetris, pas des étapes ») parce que ça va de 6-8 semaines à plusieurs années selon les gens. Les
+sources sérieuses donnent des **niveaux + une formule**, jamais un calendrier. Fabriquer un
+« Jour 7 : 4 × 25 s », ce serait de l'invention — contrairement aux pompes où les données sont réelles.
+
+**Absence de consensus, à assumer dans l'app** : la fréquence va de 3×/sem (Alessandro Mainente, Team
+Leader du forum) à 7×/sem selon les intervenants. Le conseil « quotidien » de Douglas Wadle est
+conditionné : « **si tu ne fais pas beaucoup de travail de force** ». Le seuil des 45-60 s de tenue au
+mur avant l'équilibre libre (Parth Rajguru) est **contesté** sur le même forum par Mainente et
+McManamon, pour qui l'alignement prime sur le chrono → à présenter comme un repère, pas comme un
+verrou.
+
+⚠️ Attention aux blogs d'apps : la règle « 3×/sem pendant 3-6 mois pour préparer les articulations
+puis 5×/sem », très reprise, vient d'un [blog sans qualifications](https://umovesg.com/blogs/handstands-training/how-often-should-you-practice-handstands)
+dont l'auteur admet l'avoir « rassemblée auprès de différents pratiquants ». Ce n'est pas une source.
+
+**Test initial** : la tenue max (poitrine au mur), en secondes — l'équivalent du max de pompes.
+**Sécurité** : préparation des poignets et apprentissage de la sortie sont des étapes, pas des options.
 
 ### T4 — Module abdos / L-sit · à faire
 
-Même approche que T3 : trouver la progression, puis l'intégrer.
+**Déjà sourcé** : la progression L-sit est dans la **même charte OG** que le handstand (colonne 9) —
+Tuck L-Sit → 1 Leg Bent L-Sit → L-Sit → Straddle L-Sit → RTO L-Sit → V-Sit 45° → 75° → 100° → 120° →
+140° → 155° → 170° → Manna. La charte Miscellaneous donne aussi les planches (25 s → 60 s → 1 bras
+1 jambe). Même formule isométrique que T3 (60-70 % de la tenue max).
 
 ### T5 — Running · à faire
 

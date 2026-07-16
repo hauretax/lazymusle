@@ -173,8 +173,12 @@ section('Séance dérivée de l’état du niveau')
 {
   const s = hs.getSession(0, { maxHold: 40 })
   eq('niveau mur : mode tenue', s.mode, 'hold')
-  eq('2 tenues de 25 s, pause 90 s', [s.sets, s.hold, s.restSec], [2, 25, 90])
+  eq('2 tenues de 25 s, pause adaptée à 80 s', [s.sets, s.hold, s.restSec], [2, 25, 80])
   eq('niveau inexistant', hs.getSession(9, { maxHold: 40 }), null)
+
+  // Une petite tenue ne doit plus déclencher une pause de grosse série.
+  const debutant = hs.getSession(0, { maxHold: 8 })
+  eq('tenue de 5 s → pause de 30 s, pas 90', [debutant.hold, debutant.restSec], [5, 30])
 }
 
 section('Niveau « L’équilibre » : deux axes, pas un chrono')
@@ -271,6 +275,37 @@ section('L-sit : la tenue max est mesurée, pas déclarée')
 section('L-sit : la formule isométrique est bien la même que le handstand')
 eq('même tenue de travail à max égal', ls.computeHold(40), hs.computeHold(40))
 eq('même nombre de séries', ls.computeSets(40), hs.computeSets(40))
+eq('même pause à tenue égale', ls.computeRest(25), hs.computeRest(25))
+
+section('Pauses adaptées à la durée de la tenue')
+eq('tenue de 5 s → plancher 30 s (et pas 90)', ls.computeRest(5), 30)
+eq('tenue de 13 s → 50 s', ls.computeRest(13), 50)
+eq('tenue de 25 s → 80 s', ls.computeRest(25), 80)
+eq('tenue de 40 s → 115 s', ls.computeRest(40), 115)
+eq('tenue très longue → plafond 180 s', ls.computeRest(300), 180)
+eq('pas de tenue → pas de pause', ls.computeRest(0), 0)
+{
+  // La pause doit CROÎTRE avec la tenue : c'est tout l'intérêt.
+  const anomalies = []
+  for (let h = 1; h < 80; h++) {
+    if (ls.computeRest(h + 1) < ls.computeRest(h)) anomalies.push(`${h}→${h + 1}`)
+  }
+  eq('jamais décroissante', anomalies, [])
+}
+{
+  // Le défaut qui a motivé le changement : 8 tenues de 5 s × 90 s de pause = 12 min,
+  // presque que du repos, alors que le skill se travaille en 5-10 min (Steven Low).
+  const debutant = ls.sessionSeconds(8)
+  eq('débutant (max 8 s) : séance sous 10 min', debutant <= 600, true)
+  eq('débutant : ce n’est plus 12 min de repos', debutant < 700, true)
+
+  // Et la séance reste courte à tous les niveaux : on ne bascule pas dans l'autre excès.
+  const trop = []
+  for (let m = 5; m <= 60; m++) {
+    if (ls.sessionSeconds(m) > 600) trop.push(`${m}s→${Math.round(ls.sessionSeconds(m) / 60)}min`)
+  }
+  eq('aucune séance ne dépasse 10 min, de 5 à 60 s de max', trop, [])
+}
 
 // ---------- Migration de l'état sauvegardé ----------
 // C'est la progression réelle de quelqu'un : une migration ratée l'efface en silence.

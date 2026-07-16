@@ -39,3 +39,24 @@ export function computeSets(maxHoldSec, p) {
 export function sessionVolume(maxHoldSec, p) {
   return computeHold(maxHoldSec, p) * computeSets(maxHoldSec, p)
 }
+
+// Pause entre tenues, adaptée à la DURÉE de la tenue.
+//
+// CHOIX DE L'APP, pas une source : Prilepin ne donne pas de pause. Même forme que
+// les pauses adaptatives des pompes — clamp(base + effort × facteur, min, max) —
+// parce qu'une pause fixe est absurde aux deux bouts : 90 s après une tenue de 5 s,
+// la séance n'est plus que du repos ; et c'est trop peu après 60 s de tenue.
+export function computeRest(holdSec, p) {
+  if (!(holdSec > 0)) return 0
+  const raw = p.base + holdSec * p.perSec
+  const rounded = Math.round(raw / p.roundTo) * p.roundTo
+  return Math.min(p.max, Math.max(p.min, rounded))
+}
+
+// Durée totale d'une séance de tenues : les tenues, plus les pauses entre elles.
+export function sessionSeconds(maxHoldSec, holdParams, restParams) {
+  const sets = computeSets(maxHoldSec, holdParams)
+  if (sets < 1) return 0
+  const hold = computeHold(maxHoldSec, holdParams)
+  return sets * hold + (sets - 1) * computeRest(hold, restParams)
+}

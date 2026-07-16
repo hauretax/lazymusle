@@ -148,12 +148,16 @@ Même méthode que l'équilibre du handstand : **deux axes, pas de chrono décla
 ischios** — plus ils sont raides, plus les fléchisseurs de hanche doivent tirer fort pour tenir les
 jambes à 90°. C'est dans les consignes de l'axe « tendre les jambes », et la prep a un bloc compression.
 
-⚠️ **Tension non résolue, à trancher à l'usage** : pour un débutant (tenue max ~8 s), la formule de
-Prilepin donne **8 tenues de 5 s avec 90 s de pause** = plus de 12 min, presque que du repos. Or Steven
-Low dit que le skill se travaille en **5-10 min**. Les deux prescriptions se contredisent sur les tenues
-courtes. La pause de 90 s est un choix de l'app (Prilepin n'en donne pas) : elle est probablement trop
-longue pour des tenues de 5 s. Piste : rendre la pause proportionnelle à la tenue, comme les pauses
-adaptatives des pompes — mais sans source, c'est à décider.
+**Tension résolue** (16/07/2026) : la pause fixe de 90 s donnait, pour un débutant, 8 tenues de 5 s
+étalées sur 12 min de repos — alors que le skill se travaille en 5-10 min (Steven Low). Les pauses sont
+maintenant **adaptées à la durée de la tenue**, comme celles des pompes le sont à l'effort :
+`clamp(15 + tenue × 2,5, 30, 180)`. Une tenue de 5 s → 30 s de pause ; 40 s → 115 s. La séance du
+débutant passe de 12,7 min à 4,2 min. Vérifié par propriété : aucune séance ne dépasse 10 min entre 5 et
+60 s de tenue max, et la pause ne décroît jamais quand la tenue augmente.
+
+C'est un **choix de l'app** — Prilepin ne donne pas de pause — et c'est marqué dans les deux JSON.
+Les essais d'équilibre du handstand gardent une pause courte et fixe : c'est de la pratique de skill
+(beaucoup d'essais courts), pas de la force.
 
 ### T5 — Running · à faire
 

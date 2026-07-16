@@ -10,6 +10,7 @@ import * as iso from '../lib/isometrics.js'
 export const AXES = program.axes
 export const PREP = program.prep
 export const HOLD = program.hold
+export const REST = program.rest
 export const CALIBRATION = program.calibration
 export const REST_DAYS = program.restDays
 
@@ -58,6 +59,9 @@ export function bestFor(axes, bests) {
 export const computeHold = (maxHoldSec) => iso.computeHold(maxHoldSec, HOLD)
 export const computeSets = (maxHoldSec) => iso.computeSets(maxHoldSec, HOLD)
 export const sessionVolume = (maxHoldSec) => iso.sessionVolume(maxHoldSec, HOLD)
+// Pause adaptée à la durée de la tenue, comme les pompes adaptent à l'effort.
+export const computeRest = (holdSec) => iso.computeRest(holdSec, REST)
+export const sessionSeconds = (maxHoldSec) => iso.sessionSeconds(maxHoldSec, HOLD, REST)
 
 // Une séance : les consignes de l'étape courante de chaque axe, et un dosage.
 // Tant qu'on n'a pas de relevé pour cette combinaison, la séance est une simple
@@ -83,16 +87,17 @@ export function getSession(progress) {
       label: CALIBRATION.label,
       how: CALIBRATION.how,
       maxSec: CALIBRATION.maxSec,
-      restSec: HOLD.restSec,
     }
   }
 
+  const hold = computeHold(best)
   return {
     mode: 'hold',
     drills,
     best,
-    hold: computeHold(best),
+    hold,
     sets: computeSets(best),
-    restSec: HOLD.restSec,
+    restSec: computeRest(hold),
+    totalSec: sessionSeconds(best),
   }
 }

@@ -13,6 +13,7 @@ export const TEST = program.test
 export const PREP = program.prep
 export const BAIL = program.bail
 export const HOLD = program.hold
+export const REST = program.rest
 export const PRACTICE = program.practice
 export const REST_DAYS = program.restDays
 
@@ -21,6 +22,11 @@ export const REST_DAYS = program.restDays
 export const computeHold = (maxHoldSec) => iso.computeHold(maxHoldSec, HOLD)
 export const computeSets = (maxHoldSec) => iso.computeSets(maxHoldSec, HOLD)
 export const sessionVolume = (maxHoldSec) => iso.sessionVolume(maxHoldSec, HOLD)
+// Pause adaptée à la durée de la tenue. Ne concerne que les tenues au mur : les
+// essais d'équilibre gardent une pause courte et fixe, c'est de la pratique de
+// skill (beaucoup d'essais, jamais à l'échec), pas de la force.
+export const computeRest = (holdSec) => iso.computeRest(holdSec, REST)
+export const sessionSeconds = (maxHoldSec) => iso.sessionSeconds(maxHoldSec, HOLD, REST)
 
 // ---- Niveau « L'équilibre » : deux axes indépendants ----
 // On ne mesure pas un temps ici : on situe la personne sur « monter » et sur
@@ -89,6 +95,7 @@ export function getSession(levelIndex, progress) {
   }
 
   const maxHoldSec = progress?.maxHold
+  const hold = computeHold(maxHoldSec)
   return {
     levelIndex,
     levelName: level.name,
@@ -96,9 +103,10 @@ export function getSession(levelIndex, progress) {
     exercise: level.exercise,
     how: level.how,
     goal: level.goal,
-    hold: computeHold(maxHoldSec),
+    hold,
     sets: computeSets(maxHoldSec),
-    restSec: HOLD.restSec,
+    restSec: computeRest(hold),
+    totalSec: sessionSeconds(maxHoldSec),
   }
 }
 

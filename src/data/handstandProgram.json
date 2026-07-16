@@ -84,9 +84,16 @@
     "volumeMax": 65,
     "maxSets": 8,
     "roundTo": 5,
-    "roundToAbove": 20,
-    "restSec": 90,
-    "_restSource": "CHOIX DE L'APP, pas une source : Prilepin ne donne pas de pause entre tenues. 90 s = le plancher de pause des pompes, cohérent avec des tenues jamais menées à l'échec."
+    "roundToAbove": 20
+  },
+
+  "rest": {
+    "base": 15,
+    "perSec": 2.5,
+    "min": 30,
+    "max": 180,
+    "roundTo": 5,
+    "_source": "CHOIX DE L'APP, pas une source : Prilepin ne donne pas de pause entre tenues. Même forme que les pauses adaptatives des pompes — clamp(base + effort × facteur, min, max). Aligné sur le L-sit."
   },
 
   "practice": {

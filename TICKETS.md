@@ -73,6 +73,11 @@ Progression **pilotée par la tenue max, pas par un calendrier** (voir « Le pi�
 - [x] Séance : prep poignets + sortie, puis tenues dérivées du max ; la tenue réelle est
       enregistrée si on redescend avant la fin
 - [x] Deux niveaux (mur → équilibre libre), avec les nuances affichées et non masquées
+- [x] Niveau « L'équilibre » : **deux axes** (monter / rattraper) plutôt qu'un chrono — étapes
+      formalisées d'après le [manuel FEDEC](https://www.fedec.eu/en/file/file/96/inline/EN%20FEDEC_manual-EPE_chap6.pdf)
+      (écoles de cirque professionnelles européennes), qui sépare « BEGINNING HANDSTAND » et
+      « LIFTING TO HANDSTAND ». Les deux axes sont **indépendants** : on peut monter en fente sans
+      savoir rattraper, et l'inverse. Demander un temps ici donnait 0 s et ne pilotait rien.
 
 **Piège trouvé en vérifiant, à ne pas réintroduire** : une tenue max n'a de sens que **rapportée à
 son niveau**. 44 s au mur, c'est un débutant ; 30 s en équilibre libre, c'est ~un an de travail.

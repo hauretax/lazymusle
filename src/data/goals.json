@@ -1,32 +1,67 @@
 {
+  "muscles": {
+    "deltoides-anterieurs": "Deltoïdes antérieurs",
+    "deltoides-posterieurs": "Deltoïdes postérieurs",
+    "pectoraux": "Pectoraux",
+    "scapulaires": "Muscles scapulaires",
+    "trapezes": "Trapèzes",
+    "triceps": "Triceps",
+    "gainage": "Gainage",
+    "dos": "Dos",
+    "jambes": "Jambes"
+  },
   "goals": [
     {
       "id": "pushups",
       "emoji": "💪",
       "label": "100 pompes d’affilée",
       "tagline": "3 niveaux, une séance à la fois.",
-      "status": "available"
+      "status": "available",
+      "training": {
+        "block": "strength",
+        "muscles": ["deltoides-anterieurs", "pectoraux", "scapulaires", "triceps"],
+        "source": "Overcoming Gravity 2e éd., charte Pushing"
+      }
     },
     {
       "id": "handstand",
       "emoji": "🤸",
       "label": "Tenir en handstand",
       "tagline": "Progression vers l’équilibre sur les mains.",
-      "status": "soon"
+      "status": "soon",
+      "training": {
+        "block": "skill",
+        "muscles": ["deltoides-anterieurs", "trapezes", "triceps", "gainage"],
+        "source": "Overcoming Gravity 2e éd., charte Handstand"
+      }
     },
     {
       "id": "core",
       "emoji": "🧘",
       "label": "Abdos / L-sit",
       "tagline": "Gainage et L-sit, du sol aux barres.",
-      "status": "soon"
+      "status": "soon",
+      "training": {
+        "block": "skill",
+        "muscles": ["gainage", "deltoides-posterieurs", "dos"],
+        "source": "Overcoming Gravity 2e éd., charte Handstand (colonne L-sit)"
+      }
     },
     {
       "id": "running",
       "emoji": "🏃",
       "label": "Courir 5 km",
       "tagline": "Intervalles guidés, du canapé aux 5 km.",
-      "status": "soon"
+      "status": "soon",
+      "training": {
+        "block": "endurance",
+        "muscles": ["jambes"],
+        "source": null
+      }
     }
-  ]
+  ],
+  "stretching": {
+    "block": "mobility",
+    "muscles": []
+  }
 }

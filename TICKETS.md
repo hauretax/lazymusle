@@ -32,14 +32,27 @@ Vérifié dans le navigateur : 1er lancement, migration d'un state v2 en plein N
 intacte), édition des objectifs, cas « aucun module prêt » (seuls des objectifs « bientôt » cochés),
 retrait puis remise des pompes (progression conservée), réinitialisation → l'onboarding revient.
 
-### T2 — Moteur muscle / repos · en cours
+### T2 — Moteur muscle / repos · socle fait, finition avec T3
 
 Dès qu'il y a plusieurs exos à pratiquer, il faut gérer les repos sur les différents jours et
 alterner les groupes musculaires pour ne pas épuiser. Prérequis de T3/T4/T5.
 
-- Blocs d'effort : **force** (reps), **skill** (tenue), **souplesse**
-- Muscles par exo, pour détecter les chevauchements
-- Remplace le rythme fixe 2-2-3 actuel, propre aux pompes
+**Fait** :
+
+- [x] Profils d'entraînement en data (`goals.json`) : bloc + muscles + source, par exo
+- [x] Moteur pur `src/lib/schedule.js` : ordre des blocs, chevauchement musculaire, plan du jour,
+      avertissements, conflit de veille de test
+- [x] Vérifié : 24 assertions passent, y compris le cas pompes + handstand
+
+**Pas fait, et ça ne peut pas l'être avant T3** : le moteur n'a qu'un seul module à arbitrer
+aujourd'hui, donc aucune de ses règles ne se déclenche dans l'app. Il n'y a **rien à voir à l'écran**
+et rien à vérifier en usage réel. L'UI multi-exos (plan du jour ordonné, avertissements affichés,
+date de prochaine séance par exo) arrive avec T3, quand il y aura deux programmes à faire cohabiter —
+la coder maintenant, ce serait deviner.
+
+- [ ] Remplacer le rythme fixe 2-2-3 (propre aux pompes) par une date de prochaine séance par exo
+- [ ] Afficher le plan du jour ordonné + les avertissements
+- [ ] Vérifier en usage réel avec deux modules actifs
 
 **Décidé** (16/07/2026, sur la base de la recherche T3) :
 

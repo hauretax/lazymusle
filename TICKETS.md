@@ -192,3 +192,40 @@ ils ne conviennent pas à la course. Un jeu d'étirements jambes reste à ajoute
 
 GPS pour la course. Wrapper Capacitor si on a besoin de natif : Health Connect, GPS en arrière-plan,
 notifications locales fiables app fermée.
+
+### T7 — Choisir sa séance · en cours (reste le passage à l'œil)
+
+Les modules à calendrier (pompes, course) ne servent que **la séance suivante**, et rien d'autre.
+Impossible de refaire un jour, d'en sauter quand c'est trop simple, ou de dire « en vrai, j'en suis
+là ». C'est le manque le plus gros de l'app aujourd'hui.
+
+- [x] Écran **« Le programme »** par module à calendrier : toutes les séances, on tape une case →
+      aperçu de la séance → « Faire cette séance ». Pompes (54) et course (27). Grille partagée
+      (`components/PlanGrid.jsx`), réutilisée en lecture seule par « Ma progression ».
+- [x] **« Validé » vient de l'historique, pas du curseur.** C'est le vrai fond du ticket :
+      `Progress.isDone` déduisait « fait » de la position du curseur, donc sauter au jour 11
+      validerait rétroactivement les 10 premiers. Chaque séance faite est déjà enregistrée avec sa
+      position (`levelIndex`/`dayIndex` pour les pompes, `index` pour la course) — c'est **ça** qui
+      peint la grille (`lib/progress.js`). Les jours sautés restent gris, et le restent.
+- [x] Un **test raté n'est pas un test validé** : état distinct (tenté), sinon la grille ment.
+      Le réussir ensuite le valide ; le rater après l'avoir réussi ne le dévalide pas.
+- [x] Le compteur de l'accueil compte les **séances distinctes validées**, pas les entrées
+      d'historique — refaire un jour ne le compte pas deux fois.
+- [x] Rétroactif sans migration : l'historique existant porte déjà les positions, donc une
+      progression séquentielle s'affiche à l'identique.
+
+**Vérifié** : 24 assertions de plus dans `npm run check` (jours sautés non validés, doublons,
+test raté puis réussi, niveaux qui ne se mélangent pas, historique corrompu). Et un rendu SSR des
+4 écrans sur un état « 3 premiers jours sautés » : une seule case verte sur 54, compteur à 1,
+case proposée marquée, test raté à part.
+
+**Pas encore fait** : le passage à l'œil dans le navigateur (le pilotage Chrome n'était pas
+disponible dans la session). À faire avant de clore : taper une case → l'aperçu suit → « Faire cette
+séance » → la séance qui se lance est la bonne → au retour, le curseur est bien après elle.
+
+**Pas concernés : handstand et L-sit.** Il n'y a pas de jour à choisir — la séance se dérive des axes
+(T3/T4), pas d'un calendrier. Le geste équivalent y existe déjà : « J'ai progressé, resituer ».
+
+**Choix assumé** : choisir une séance **déplace le curseur** ; la suivante s'enchaîne à partir de là.
+On peut donc sauter un niveau entier (pompes) — l'app le dit au moment de choisir au lieu de
+l'interdire, comme elle laisse déjà s'entraîner un jour de repos (« Commencer quand même »).

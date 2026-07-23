@@ -246,6 +246,17 @@ export function AppProvider({ children }) {
     })
   }, [updateProgram])
 
+  // Choisir sa séance (TICKETS.md T7). Le curseur va où on décide d'aller, et la
+  // suite s'enchaîne à partir de là. Il ne touche pas à l'historique : les jours
+  // sautés restent non validés, celui qu'on refait reste validé.
+  const goToPushupDay = useCallback((levelIndex, dayIndex) => {
+    updateProgram(PUSHUPS_GOAL, (p) => ({ ...p, levelIndex, dayIndex, finished: false }))
+  }, [updateProgram])
+
+  const goToRunWorkout = useCallback((index) => {
+    updateProgram(RUN_GOAL, (r) => ({ ...r, index, finished: false }))
+  }, [updateProgram])
+
   // Refaire la semaine. Josh Clark le prescrit noir sur blanc : « Repeat weeks if
   // needed and move ahead only when you feel you're ready. » Ce n'est pas un échec,
   // et l'app ne doit pas le présenter comme tel.
@@ -264,12 +275,14 @@ export function AppProvider({ children }) {
       state, recordInitialTest, setGoals, completeSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
       recordLsitAxes, completeLsitSession,
-      completeRunSession, repeatRunWeek, resetAll,
+      completeRunSession, repeatRunWeek,
+      goToPushupDay, goToRunWorkout, resetAll,
     }),
     [state, recordInitialTest, setGoals, completeSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
       recordLsitAxes, completeLsitSession,
-      completeRunSession, repeatRunWeek, resetAll],
+      completeRunSession, repeatRunWeek,
+      goToPushupDay, goToRunWorkout, resetAll],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

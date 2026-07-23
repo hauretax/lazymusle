@@ -14,6 +14,8 @@ import HandstandSession from './screens/HandstandSession'
 import LsitSession from './screens/LsitSession'
 import RunSession from './screens/RunSession'
 import Progress from './screens/Progress'
+import PushupPlan from './screens/PushupPlan'
+import RunPlan from './screens/RunPlan'
 import Stretch from './screens/Stretch'
 
 export default function App() {
@@ -22,6 +24,7 @@ export default function App() {
     recordHandstandTest, recordHandstandAxes, completeHandstandSession,
     recordLsitAxes, completeLsitSession,
     completeRunSession, repeatRunWeek,
+    goToPushupDay, goToRunWorkout,
   } = useApp()
   const [view, setView] = useState('home')
   const step = getNextStep(state)
@@ -68,6 +71,31 @@ export default function App() {
 
   if (view === 'progress') {
     return <Progress onBack={() => setView('home')} />
+  }
+
+  // Choisir sa séance : le curseur se déplace, puis on enchaîne direct dessus.
+  if (view === 'pushup-plan') {
+    return (
+      <PushupPlan
+        onBack={() => setView('home')}
+        onPick={(levelIndex, dayIndex) => {
+          goToPushupDay(levelIndex, dayIndex)
+          setView('session')
+        }}
+      />
+    )
+  }
+
+  if (view === 'run-plan') {
+    return (
+      <RunPlan
+        onBack={() => setView('home')}
+        onPick={(index) => {
+          goToRunWorkout(index)
+          setView('run-session')
+        }}
+      />
+    )
   }
 
   if (view === 'stretch') {
@@ -194,6 +222,8 @@ export default function App() {
       onReassessLsit={() => setView('lsit-assess')}
       onStartRun={() => setView('run-session')}
       onRepeatRunWeek={repeatRunWeek}
+      onOpenPushupPlan={() => setView('pushup-plan')}
+      onOpenRunPlan={() => setView('run-plan')}
       onOpenProgress={() => setView('progress')}
       onEditGoals={() => setView('goals')}
     />

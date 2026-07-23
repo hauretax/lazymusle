@@ -7,6 +7,7 @@ PWA React pour progresser jusqu'à **100 pompes d'affilée**, basée sur le syst
 
 - **Test initial** → te place sur l'un des **3 niveaux** selon ton max (`< 20` → N1, `20–49` → N2, `≥ 50` → N3).
 - **Séances séquentielles** (5 séries de pompes) : l'app en sert **une à la fois**.
+- **Tu choisis ta séance** : l'app propose la suivante, mais « 📅 Choisir ma séance » ouvre tout le programme — refaire un jour, en sauter quand c'est trop simple, revenir en arrière. Seules les séances **vraiment faites** sont validées : sauter au jour 11 ne coche pas les 10 premiers, et un test raté reste un test raté.
 - **Dernier jour de chaque niveau = un test** à réussir pour débloquer le niveau suivant (20 → 50 → **100**).
 - **Pauses adaptées à l'effort** : `pause (s) = clamp(60 + reps × 3,2, 90, 300)` → ~90 s sur les séries légères, jusqu'à 5 min sur les grosses séries.
 - **Rythme conseillé** : ~3 séances/semaine (motif 2-2-3 jours entre séances). L'app affiche la date de la prochaine séance mais te laisse libre.
@@ -40,8 +41,9 @@ npm run preview  # sert le build
 
 `npm run check` est un simple script Node, sans framework de test. Il ne couvre que ce qui n'est
 **pas** visible à l'écran : le moteur de planning ([`src/lib/schedule.js`](src/lib/schedule.js), dont
-les règles ne se déclenchent pas encore — voir [`TICKETS.md`](TICKETS.md)) et les formules du
-programme pompes. Le reste (écrans, parcours) se vérifie dans le navigateur.
+les règles ne se déclenchent pas encore — voir [`TICKETS.md`](TICKETS.md)), les formules du
+programme pompes, et ce qui compte comme séance validée
+([`src/lib/progress.js`](src/lib/progress.js)). Le reste (écrans, parcours) se vérifie dans le navigateur.
 
 Installable comme app (PWA) : "Ajouter à l'écran d'accueil" sur mobile.
 

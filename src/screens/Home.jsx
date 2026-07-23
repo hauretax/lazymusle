@@ -6,6 +6,7 @@ import * as lsit from '../data/lsitProgram'
 import * as run from '../data/runProgram'
 import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, getGoal, hasProgram } from '../data/goals'
 import { orderForDay, dayWarnings } from '../lib/schedule'
+import { countPushupDone } from '../lib/progress'
 import { canNotify, requestNotif, notify, exportSchedule } from '../lib/reminders'
 import InstallButton from '../components/InstallButton'
 
@@ -40,7 +41,8 @@ function ProgressRing({ done, total }) {
 
 export default function Home({
   onStart, onStartHandstand, onRetestHandstand, onReassessHandstand,
-  onStartLsit, onReassessLsit, onStartRun, onRepeatRunWeek, onOpenProgress, onEditGoals,
+  onStartLsit, onReassessLsit, onStartRun, onRepeatRunWeek,
+  onOpenPushupPlan, onOpenRunPlan, onOpenProgress, onEditGoals,
 }) {
   const { state } = useApp()
   const step = getNextStep(state)
@@ -57,7 +59,9 @@ export default function Home({
   const onLsit = state.goals.includes(LSIT_GOAL)
   const onRun = state.goals.includes(RUN_GOAL)
   const firstRun = pushups.levelIndex == null
-  const doneCount = pushups.sessions.length
+  // Séances distinctes validées, pas entrées d'historique : on peut refaire un jour,
+  // et un jour sauté n'est pas validé (voir lib/progress).
+  const doneCount = countPushupDone(pushups.sessions)
   // Objectifs choisis dont le module n'existe pas encore (voir TICKETS.md).
   const soonGoals = state.goals.filter((id) => !hasProgram(id)).map(getGoal).filter(Boolean)
 
@@ -265,6 +269,7 @@ export default function Home({
           <div className="intro__emoji">🏆</div>
           <h2>5 km !</h2>
           <p>Tu as bouclé les 9 semaines. 30 minutes de course d’affilée, depuis le canapé. 🔥</p>
+          <button className="link" onClick={onOpenRunPlan}>📅 Refaire une séance</button>
         </div>
       )}
 
@@ -297,6 +302,7 @@ export default function Home({
                 ↺ Reprendre la semaine au début
               </button>
             )}
+            <button className="link" onClick={onOpenRunPlan}>📅 Choisir ma séance</button>
           </div>
         )
       })()}
@@ -324,6 +330,7 @@ export default function Home({
           <h2>Objectif atteint !</h2>
           <p>Meilleur max : <b>{bestMax} pompes</b>. Tu as bouclé les 3 niveaux. Respect. 🔥</p>
           <button className="btn btn--ghost" onClick={onOpenProgress}>Voir ma progression</button>
+          <button className="link" onClick={onOpenPushupPlan}>📅 Refaire une séance</button>
         </div>
       )}
 
@@ -363,6 +370,7 @@ export default function Home({
             <button className="btn btn--primary btn--big" onClick={onStart}>
               {ready ? 'Commencer la séance' : 'Commencer quand même'}
             </button>
+            <button className="link" onClick={onOpenPushupPlan}>📅 Choisir ma séance</button>
           </div>
         )
       })()}

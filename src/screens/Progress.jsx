@@ -1,5 +1,7 @@
 import { useApp, pushupsOf } from '../store'
-import { levels, daysInLevel, TOTAL_DAYS } from '../data/pushupProgram'
+import { levels, daysInLevel, isTestDay, TOTAL_DAYS } from '../data/pushupProgram'
+import { pushupKey, pushupStatuses, countPushupDone, DONE, TRIED } from '../lib/progress'
+import PlanGrid, { PlanLegend } from '../components/PlanGrid'
 
 function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
@@ -11,11 +13,25 @@ export default function Progress({ onBack }) {
   const bestMax = pushups.maxHistory.reduce((m, x) => Math.max(m, x.reps), 0)
   const totalPompes = pushups.sessions.reduce((a, s) => a + (s.total || 0), 0)
 
-  // Un jour (L, D) est "fait" si le curseur est passé au-delà.
-  const isDone = (L, D) =>
-    pushups.finished || pushups.levelIndex > L || (pushups.levelIndex === L && pushups.dayIndex > D)
-  const isCurrent = (L, D) =>
-    !pushups.finished && pushups.levelIndex === L && pushups.dayIndex === D
+  // Un jour est validé s'il a VRAIMENT été fait — l'historique le dit, pas le curseur.
+  // Le curseur ne marque plus que la séance proposée (voir lib/progress, TICKETS.md T7).
+  const status = pushupStatuses(pushups.sessions)
+  const groups = levels.map((lv, L) => ({
+    id: lv.id,
+    name: lv.name,
+    meta: `test ${lv.test} · ${daysInLevel(L)} jours`,
+    cells: Array.from({ length: daysInLevel(L) }, (_, D) => {
+      const st = status.get(pushupKey(L, D))
+      return {
+        key: pushupKey(L, D),
+        label: D + 1,
+        isTest: isTestDay(L, D),
+        done: st === DONE,
+        tried: st === TRIED,
+        current: !pushups.finished && pushups.levelIndex === L && pushups.dayIndex === D,
+      }
+    }),
+  }))
 
   const confirmReset = () => {
     if (confirm('Réinitialiser toute ta progression ? Cette action est définitive.')) resetAll()
@@ -36,30 +52,11 @@ export default function Progress({ onBack }) {
       </div>
 
       <h3 className="progress__h">Les 3 niveaux</h3>
-      {levels.map((lv, L) => {
-        const n = daysInLevel(L)
-        return (
-          <div key={lv.id} className="lvl">
-            <div className="lvl__head">
-              <span className="lvl__name">{lv.name}</span>
-              <span className="lvl__meta">test {lv.test} · {n} jours</span>
-            </div>
-            <div className="lvl__cells">
-              {Array.from({ length: n }, (_, D) => {
-                const test = D === n - 1
-                const done = isDone(L, D)
-                const cur = isCurrent(L, D)
-                return (
-                  <span key={D} className={'cell' + (done ? ' cell--done' : '') + (cur ? ' cell--cur' : '') + (test ? ' cell--test' : '')}>
-                    {done ? '✓' : test ? '★' : D + 1}
-                  </span>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
-      <p className="progress__sub">{pushups.sessions.length} / {TOTAL_DAYS} séances · rythme conseillé 3×/semaine</p>
+      <PlanGrid groups={groups} />
+      <PlanLegend tried />
+      <p className="progress__sub">
+        {countPushupDone(pushups.sessions)} / {TOTAL_DAYS} séances validées · rythme conseillé 3×/semaine
+      </p>
 
       {pushups.maxHistory.length > 0 && (
         <>

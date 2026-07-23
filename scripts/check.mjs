@@ -12,6 +12,9 @@ import {
   getDay, remainingDays, daysInLevel, isTestDay, levels, GOAL, TOTAL_DAYS,
 } from '../src/data/pushupProgram.js'
 import { hydrate, freshState, STATE_VERSION } from '../src/lib/migrate.js'
+import {
+  pushupKey, pushupStatuses, countPushupDone, runDone, countRunDone, DONE, TRIED,
+} from '../src/lib/progress.js'
 import * as hs from '../src/data/handstandProgram.js'
 import * as ls from '../src/data/lsitProgram.js'
 import * as run from '../src/data/runProgram.js'
@@ -464,6 +467,72 @@ section('État neuf')
   const f = freshState()
   eq('aucun objectif', f.goals, [])
   eq('pompes prêtes mais non commencées', [f.programs.pushups.levelIndex, f.programs.pushups.dayIndex], [null, 0])
+}
+
+// ---------- Ce qui est validé (T7) ----------
+
+section('Validé = fait, pas « le curseur est passé par là »')
+{
+  // Le cas qui a motivé le ticket : on saute les 10 premiers jours et on fait le 11e.
+  const sauté = [{ levelIndex: 0, dayIndex: 10, isTest: false, total: 30 }]
+  eq('les jours sautés ne sont pas validés', countPushupDone(sauté), 1)
+  eq('le jour 1 reste gris', pushupStatuses(sauté).get(pushupKey(0, 0)), undefined)
+  eq('le jour fait est validé', pushupStatuses(sauté).get(pushupKey(0, 10)), DONE)
+
+  const séquentiel = [0, 1, 2].map((d) => ({ levelIndex: 0, dayIndex: d, isTest: false }))
+  eq('une progression séquentielle s’affiche à l’identique', countPushupDone(séquentiel), 3)
+}
+
+section('Refaire un jour ne le compte pas deux fois')
+{
+  const refait = [
+    { levelIndex: 0, dayIndex: 3, isTest: false, total: 20 },
+    { levelIndex: 0, dayIndex: 3, isTest: false, total: 24 },
+    { levelIndex: 0, dayIndex: 4, isTest: false, total: 26 },
+  ]
+  eq('2 séances distinctes pour 3 entrées', countPushupDone(refait), 2)
+  eq('le compteur ne dépasse jamais le programme', countPushupDone(
+    remainingDays(0, 0).concat(remainingDays(0, 0)).map((d) => ({ ...d, isTest: false })),
+  ) <= TOTAL_DAYS, true)
+}
+
+section('Un test raté n’est pas un test validé')
+{
+  const raté = [{ levelIndex: 0, dayIndex: 10, isTest: true, passed: false, total: 14 }]
+  eq('tenté, pas validé', pushupStatuses(raté).get(pushupKey(0, 10)), TRIED)
+  eq('il ne compte pas dans le total', countPushupDone(raté), 0)
+
+  const puisRéussi = [...raté, { levelIndex: 0, dayIndex: 10, isTest: true, passed: true, total: 21 }]
+  eq('le réussir ensuite le valide', pushupStatuses(puisRéussi).get(pushupKey(0, 10)), DONE)
+
+  const puisRaté = [...puisRéussi, { levelIndex: 0, dayIndex: 10, isTest: true, passed: false, total: 12 }]
+  eq('le rater après ne le dévalide pas', pushupStatuses(puisRaté).get(pushupKey(0, 10)), DONE)
+}
+
+section('Les niveaux ne se mélangent pas')
+{
+  const deux = [
+    { levelIndex: 0, dayIndex: 2, isTest: false },
+    { levelIndex: 1, dayIndex: 2, isTest: false },
+  ]
+  eq('même jour, niveaux différents = deux séances', countPushupDone(deux), 2)
+}
+
+section('Course : une séance terminée est une séance validée')
+{
+  const r = [{ index: 0 }, { index: 5 }, { index: 5 }]
+  eq('doublon ignoré', countRunDone(r), 2)
+  eq('la 6e est validée', runDone(r).has(5), true)
+  eq('la 2e ne l’est pas', runDone(r).has(1), false)
+  eq('semaine 2 séance 1 = index 3', run.indexOf(1, 0), 3)
+  eq('index et position se répondent', run.locate(run.indexOf(4, 2)), { weekIndex: 4, workoutIndex: 2 })
+}
+
+section('Historique douteux : on ne plante pas')
+{
+  eq('sans historique', countPushupDone(undefined), 0)
+  eq('entrées incomplètes ignorées', countPushupDone([{}, { levelIndex: 0 }, null]), 0)
+  eq('course : index non entier ignoré', countRunDone([{ index: null }, { index: '2' }]), 0)
 }
 
 console.log(fails === 0

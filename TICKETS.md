@@ -229,3 +229,35 @@ séance » → la séance qui se lance est la bonne → au retour, le curseur es
 **Choix assumé** : choisir une séance **déplace le curseur** ; la suivante s'enchaîne à partir de là.
 On peut donc sauter un niveau entier (pompes) — l'app le dit au moment de choisir au lieu de
 l'interdire, comme elle laisse déjà s'entraîner un jour de repos (« Commencer quand même »).
+
+### T8 — Abandonner une séance · fait
+
+Avant, la croix ✕ d'une séance de pompes **jetait tout** : les séries déjà faites disparaissaient,
+rien n'était enregistré. C'était le pire des deux mondes — on culpabilise *et* on perd son travail.
+
+- [x] ✕ demande confirmation au lieu de quitter sec ; « Je continue 💪 » revient dans la séance
+- [x] Les pompes faites **comptent** : séries validées + celles de la série en cours (steppeur)
+- [x] La séance est **repoussée à demain**, le curseur ne bouge pas — on la retrouve telle quelle
+- [x] Un **message qui remonte le moral**, choisi selon la part de séance faite (`data/encouragement.json`)
+- [x] À partir de **la moitié des pompes prévues**, l'app propose les **étirements** : le corps a bossé
+- [x] Un abandon n'est **pas** une séance validée : statut à part dans la grille (ni vert, ni gris)
+- [x] Rien à migrer : une séance sans le champ `abandoned` reste une séance faite
+
+**Vérifié** : 21 assertions de plus dans `npm run check` (statuts, abandon puis séance refaite,
+test lâché ≠ test raté, message jamais vide et jamais aléatoire, seuil des étirements). Et le
+parcours complet dans le navigateur, sur un état « Niveau 1, jour 4 » : ✕ pendant la pause (pas de
+steppeur, la série est finie), « Je continue » qui revient bien dans la séance, ✕ en pleine série
+avec 3 pompes déclarées → 14/25 = 56 % → étirements proposés → historique `N1 · J4 abandon
+14 pompes`, case bleue dans la grille, compteur toujours à 3/54, prochaine séance « demain ».
+Et ✕ sans rien avoir fait : on sort sans rien écrire.
+
+**Choix assumé** : abandonner ne pénalise rien. Pas de série cassée, pas de score qui tombe — les
+pompes faites sont comptées dans le total, et la séance revient demain à l'identique.
+
+**Périmètre** : les pompes seulement. Course, handstand et L-sit gardent leur ✕ actuel ; le geste y
+a moins de sens (pas de compteur de reps à sauver) et ça se fera avec leur propre ticket.
+
+### T9 — Calendrier / journal in-app · à faire
+
+Un calendrier dans l'app qui dit **ce qui a été fait chaque jour**, tous modules confondus, avec les
+séances validées, les tests, et les abandons.

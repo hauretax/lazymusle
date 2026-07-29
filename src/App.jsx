@@ -20,7 +20,7 @@ import Stretch from './screens/Stretch'
 
 export default function App() {
   const {
-    state, recordInitialTest, setGoals, completeSession,
+    state, recordInitialTest, setGoals, completeSession, abandonSession,
     recordHandstandTest, recordHandstandAxes, completeHandstandSession,
     recordLsitAxes, completeLsitSession,
     completeRunSession, repeatRunWeek,
@@ -207,6 +207,10 @@ export default function App() {
         onFinish={(result) => {
           completeSession(result)
           setView('stretch')
+        }}
+        onAbandon={(result, next) => {
+          abandonSession(result)
+          setView(next === 'stretch' ? 'stretch' : 'home')
         }}
       />
     )

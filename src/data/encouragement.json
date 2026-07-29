@@ -1,0 +1,37 @@
+{
+  "_doc": "Ce que l'app dit quand on abandonne une séance en cours (TICKETS.md T8). Aucune source ici : c'est du ton, pas de la méthode. La règle tenue : ne jamais culpabiliser, toujours nommer ce qui a été fait.",
+  "stretchThreshold": 0.5,
+  "_stretchThresholdDoc": "À partir de cette part de la séance faite, on propose les étirements : les muscles ont vraiment travaillé.",
+  "buckets": [
+    {
+      "min": 0.5,
+      "_when": "la moitié de la séance ou plus",
+      "lines": [
+        "Le gros du boulot est fait. Ça, personne ne te l’enlève.",
+        "Plus de la moitié dans les bras : c’est une vraie séance, pas un abandon.",
+        "Tu t’arrêtes au bon moment. Savoir s’arrêter fait partie du programme.",
+        "Belle dose quand même. Le reste attendra demain, tranquille."
+      ]
+    },
+    {
+      "min": 0.2,
+      "_when": "entre un cinquième et la moitié",
+      "lines": [
+        "Commencée vaut mieux que sautée. Tes pompes sont comptées.",
+        "Pas ton jour, ça arrive — même aux meilleurs. On garde ce que tu as fait.",
+        "Tu es venu et tu as poussé. C’est déjà plus que la veille.",
+        "On note ça et on remet le couvert demain 👊"
+      ]
+    },
+    {
+      "min": 0,
+      "_when": "quelques pompes seulement",
+      "lines": [
+        "T’es venu, c’est déjà ça. À demain.",
+        "Petite séance, séance quand même. Elle compte.",
+        "Un jour sans. Ça arrive, et ça ne casse rien.",
+        "Le corps dit non aujourd’hui — on l’écoute. Demain, on verra."
+      ]
+    }
+  ]
+}

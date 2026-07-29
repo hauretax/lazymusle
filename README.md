@@ -12,6 +12,7 @@ PWA React pour progresser jusqu'à **100 pompes d'affilée**, basée sur le syst
 - **Pauses adaptées à l'effort** : `pause (s) = clamp(60 + reps × 3,2, 90, 300)` → ~90 s sur les séries légères, jusqu'à 5 min sur les grosses séries.
 - **Rythme conseillé** : ~3 séances/semaine (motif 2-2-3 jours entre séances). L'app affiche la date de la prochaine séance mais te laisse libre.
 - **Rappels jour J** : export du planning complet en calendrier `.ics` (rappel natif iPhone/Android même app fermée) + notifications Web quand l'app est ouverte.
+- **Abandonner sans rien perdre** : la croix demande confirmation, compte les pompes faites (la série en cours comprise), repousse la séance à **demain** et te dit un mot gentil. À partir de la moitié des pompes prévues, elle propose les étirements — les muscles ont bossé. Un abandon n'est pas une séance validée, mais ce n'est pas rien.
 - **Étirements** : routine de récupération (7 étirements illustrés) proposée à la fin de chaque séance, guidée et skippable. Données dans [`src/data/stretches.json`](src/data/stretches.json).
 
 | Niveau | Jours | 1re séance | Test final |

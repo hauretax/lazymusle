@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import RestTimer from '../components/RestTimer'
-import { parseSet, computeRest, levels } from '../data/pushupProgram'
+import { parseSet, computeRest, levels, sessionMinTotal } from '../data/pushupProgram'
 import { primeAudio, vibrate } from '../lib/feedback'
+import { abandonMessage, shouldStretch } from '../lib/encouragement'
 
 function MaxSet({ target, isTest, onValidate }) {
   const [reps, setReps] = useState(target)
@@ -38,10 +39,12 @@ function FixedSet({ target, onDone }) {
   )
 }
 
-export default function Session({ session, onFinish, onQuit }) {
+export default function Session({ session, onFinish, onQuit, onAbandon }) {
   const { levelName, dayNumber, totalDays, values, isTest } = session
   const [idx, setIdx] = useState(0)
-  const [phase, setPhase] = useState('active') // 'active' | 'rest' | 'done'
+  const [phase, setPhase] = useState('active') // 'active' | 'rest' | 'quit' | 'abandoned' | 'done'
+  const [resume, setResume] = useState('active') // où revenir si on renonce à abandonner
+  const [partial, setPartial] = useState(0) // pompes faites dans la série lâchée en route
   const [results, setResults] = useState([])
   const [restSec, setRestSec] = useState(90)
 
@@ -68,6 +71,101 @@ export default function Session({ session, onFinish, onQuit }) {
   }
 
   const total = results.reduce((a, b) => a + b, 0)
+
+  // Abandonner (TICKETS.md T8) : ce qui est fait est fait, et ça se compte.
+  const plannedTotal = sessionMinTotal(values)
+  const doneTotal = total + partial
+  const ratio = plannedTotal > 0 ? doneTotal / plannedTotal : 0
+
+  const askQuit = () => {
+    setResume(phase)
+    setPartial(0)
+    setPhase('quit')
+  }
+
+  const leaveAbandoned = (next) => onAbandon({
+    levelIndex: session.levelIndex,
+    dayIndex: session.dayIndex,
+    isTest,
+    target: session.target,
+    planned: values,
+    plannedTotal,
+    results,
+    partial,
+    total: doneTotal,
+    stoppedAtSet: idx + 1,
+  }, next)
+
+  if (phase === 'quit') {
+    return (
+      <div className="screen session">
+        <div className="summary">
+          <p className="summary__emoji">🤔</p>
+          <h2 className="summary__title">On s’arrête là ?</h2>
+          <p className="summary__testline">
+            {doneTotal > 0 ? (
+              <>Tu as fait <b>{doneTotal}</b> pompes sur les {plannedTotal} prévues — elles seront comptées.</>
+            ) : (
+              <>Rien de validé pour l’instant : quitter n’enregistrera rien.</>
+            )}
+          </p>
+
+          {/* Lâcher au milieu d'une série, c'est le cas normal : ces pompes-là comptent aussi. */}
+          {resume === 'active' && (
+            <div className="quit__partial">
+              <p className="quit__label">Et dans la série en cours ?</p>
+              <div className="stepper stepper--sm">
+                <button className="stepper__btn" onClick={() => setPartial((r) => Math.max(0, r - 1))}>−</button>
+                <div className="stepper__value">{partial}</div>
+                <button className="stepper__btn" onClick={() => setPartial((r) => r + 1)}>+</button>
+              </div>
+            </div>
+          )}
+
+          <button className="btn btn--primary btn--big" onClick={() => setPhase(resume)}>
+            Je continue 💪
+          </button>
+          <button className="link" onClick={() => (doneTotal > 0 ? setPhase('abandoned') : onQuit())}>
+            {doneTotal > 0 ? 'J’arrête là' : 'Quitter la séance'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (phase === 'abandoned') {
+    const stretch = shouldStretch(ratio)
+    return (
+      <div className="screen session">
+        <div className="summary">
+          <p className="summary__emoji">👊</p>
+          <h2 className="summary__title">Séance en pause</h2>
+          <p className="summary__testline">{abandonMessage(ratio, doneTotal)}</p>
+          <div className="summary__stats">
+            <div className="stat"><span className="stat__num">{doneTotal}</span><span className="stat__lbl">pompes comptées</span></div>
+            <div className="stat"><span className="stat__num">{results.length}/{values.length}</span><span className="stat__lbl">séries faites</span></div>
+            <div className="stat"><span className="stat__num">{Math.round(ratio * 100)}%</span><span className="stat__lbl">de la séance</span></div>
+          </div>
+          <p className="card__rest-note">
+            Cette séance est repoussée à <b>demain</b> — tu la retrouveras telle quelle, rien n’est perdu.
+          </p>
+          {stretch ? (
+            <>
+              <p className="summary__testline">Plus de la moitié dans les bras : tes muscles ont bossé, étire-les. 🧘</p>
+              <button className="btn btn--primary btn--big" onClick={() => leaveAbandoned('stretch')}>
+                Faire les étirements
+              </button>
+              <button className="link" onClick={() => leaveAbandoned('home')}>Rentrer à l’accueil</button>
+            </>
+          ) : (
+            <button className="btn btn--primary btn--big" onClick={() => leaveAbandoned('home')}>
+              Retour à l’accueil
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   if (phase === 'done') {
     const best = results.length ? Math.max(...results) : 0
@@ -117,7 +215,7 @@ export default function Session({ session, onFinish, onQuit }) {
   return (
     <div className="screen session">
       <header className="session__head">
-        <button className="iconbtn" onClick={onQuit} aria-label="Quitter">✕</button>
+        <button className="iconbtn" onClick={askQuit} aria-label="Quitter">✕</button>
         <div className="session__title">
           <strong>{isTest ? `${levelName} · Test` : `${levelName} · Jour ${dayNumber}`}</strong>
           <span>{isTest ? `Objectif ${session.target} pompes` : `Jour ${dayNumber}/${totalDays}`}</span>

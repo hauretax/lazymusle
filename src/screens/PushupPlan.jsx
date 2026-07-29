@@ -3,7 +3,7 @@ import { useApp, pushupsOf } from '../store'
 import {
   levels, daysInLevel, isTestDay, getDay, sessionMinTotal, computeRest, parseSet, TOTAL_DAYS,
 } from '../data/pushupProgram'
-import { pushupKey, pushupStatuses, countPushupDone, DONE, TRIED } from '../lib/progress'
+import { pushupKey, pushupStatuses, countPushupDone, DONE, TRIED, ABANDONED } from '../lib/progress'
 import PlanGrid, { PlanLegend } from '../components/PlanGrid'
 
 // Les 54 séances du programme pompes, et le droit d'en choisir une : refaire un jour,
@@ -28,8 +28,9 @@ export default function PushupPlan({ onBack, onPick }) {
         isTest: test,
         done: st === DONE,
         tried: st === TRIED,
+        abandoned: st === ABANDONED,
         current: !p.finished && p.levelIndex === L && p.dayIndex === D,
-        aria: `${lv.name}, ${test ? 'test' : `jour ${D + 1}`}${st === DONE ? ', validée' : ''}`,
+        aria: `${lv.name}, ${test ? 'test' : `jour ${D + 1}`}${st === DONE ? ', validée' : ''}${st === ABANDONED ? ', abandonnée' : ''}`,
       }
     }),
   }))
@@ -53,7 +54,7 @@ export default function PushupPlan({ onBack, onPick }) {
       </p>
 
       <PlanGrid groups={groups} selected={selected} onSelect={setSelected} />
-      <PlanLegend tried />
+      <PlanLegend tried abandoned={[...status.values()].includes(ABANDONED)} />
 
       {day && (
         <div className="card card--next plan__pick">
@@ -85,6 +86,11 @@ export default function PushupPlan({ onBack, onPick }) {
           {st === TRIED && (
             <p className="card__rest-note">
               Test déjà tenté, pas réussi. Il se valide à <b>{day.target} pompes</b>.
+            </p>
+          )}
+          {st === ABANDONED && (
+            <p className="card__rest-note">
+              Séance commencée puis lâchée en route. Les pompes faites sont comptées, la séance reste à faire.
             </p>
           )}
           {jumps && (

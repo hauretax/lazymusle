@@ -13,8 +13,10 @@ import {
 } from '../src/data/pushupProgram.js'
 import { hydrate, freshState, STATE_VERSION } from '../src/lib/migrate.js'
 import {
-  pushupKey, pushupStatuses, countPushupDone, runDone, countRunDone, DONE, TRIED,
+  pushupKey, pushupStatuses, countPushupDone, runDone, countRunDone,
+  sessionStatus, DONE, TRIED, ABANDONED,
 } from '../src/lib/progress.js'
+import { abandonMessage, shouldStretch, STRETCH_THRESHOLD } from '../src/lib/encouragement.js'
 import * as hs from '../src/data/handstandProgram.js'
 import * as ls from '../src/data/lsitProgram.js'
 import * as run from '../src/data/runProgram.js'
@@ -533,6 +535,55 @@ section('Historique douteux : on ne plante pas')
   eq('sans historique', countPushupDone(undefined), 0)
   eq('entrées incomplètes ignorées', countPushupDone([{}, { levelIndex: 0 }, null]), 0)
   eq('course : index non entier ignoré', countRunDone([{ index: null }, { index: '2' }]), 0)
+}
+
+// ---------- Abandonner une séance (T8) ----------
+
+section('Une séance abandonnée n’est pas une séance faite')
+{
+  const lâchée = [{ levelIndex: 0, dayIndex: 2, isTest: false, total: 9, abandoned: true }]
+  eq('statut à part', pushupStatuses(lâchée).get(pushupKey(0, 2)), ABANDONED)
+  eq('elle ne valide pas le jour', countPushupDone(lâchée), 0)
+
+  const puisFaite = [...lâchée, { levelIndex: 0, dayIndex: 2, isTest: false, total: 24 }]
+  eq('la refaire en entier la valide', pushupStatuses(puisFaite).get(pushupKey(0, 2)), DONE)
+  eq('et elle compte pour une', countPushupDone(puisFaite), 1)
+
+  const lâchéeAprès = [...puisFaite, { levelIndex: 0, dayIndex: 2, isTest: false, total: 4, abandoned: true }]
+  eq('l’abandonner ensuite ne la dévalide pas', pushupStatuses(lâchéeAprès).get(pushupKey(0, 2)), DONE)
+
+  const testLâché = [{ levelIndex: 0, dayIndex: 10, isTest: true, passed: null, total: 8, abandoned: true }]
+  eq('un test lâché n’est pas un test raté', pushupStatuses(testLâché).get(pushupKey(0, 10)), ABANDONED)
+  const testAussiRaté = [...testLâché, { levelIndex: 0, dayIndex: 10, isTest: true, passed: false, total: 15 }]
+  eq('mais un test vraiment tenté prime sur l’abandon', pushupStatuses(testAussiRaté).get(pushupKey(0, 10)), TRIED)
+}
+
+section('Statut d’une séance')
+{
+  eq('séance normale terminée', sessionStatus({ isTest: false }), DONE)
+  eq('test réussi', sessionStatus({ isTest: true, passed: true }), DONE)
+  eq('test raté', sessionStatus({ isTest: true, passed: false }), TRIED)
+  eq('abandon', sessionStatus({ isTest: false, abandoned: true }), ABANDONED)
+  eq('historique d’avant T8 : rien ne change', sessionStatus({ isTest: false, abandoned: undefined }), DONE)
+}
+
+section('Message d’abandon : jamais vide, jamais aléatoire')
+{
+  const ratios = [0, 0.01, 0.19, 0.2, 0.34, 0.49, 0.5, 0.75, 1, 1.4]
+  eq('un message pour chaque part de séance', ratios.every((r) => abandonMessage(r, 3).length > 0), true)
+  eq('deux fois le même appel, le même message', abandonMessage(0.6, 7), abandonMessage(0.6, 7))
+  eq('ratio absurde : on ne plante pas', [abandonMessage(NaN, 0), abandonMessage(-1, 0)].every((m) => m.length > 0), true)
+  eq('seed absurde : on ne plante pas', abandonMessage(0.3, NaN).length > 0, true)
+  eq('le palier haut ne dit pas la même chose que le bas', abandonMessage(0.9, 0) !== abandonMessage(0.05, 0), true)
+}
+
+section('Étirements proposés à partir de la moitié de la séance')
+{
+  eq('seuil documenté dans la data', STRETCH_THRESHOLD, 0.5)
+  eq('pile la moitié : oui', shouldStretch(0.5), true)
+  eq('juste en dessous : non', shouldStretch(0.49), false)
+  eq('séance vide : non', shouldStretch(0), false)
+  eq('ratio absurde : non', shouldStretch(NaN), false)
 }
 
 console.log(fails === 0

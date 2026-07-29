@@ -13,23 +13,36 @@
 
 export const DONE = 'done'
 export const TRIED = 'tried' // test tenté mais raté — coché, ce serait un mensonge
+export const ABANDONED = 'abandoned' // séance commencée puis lâchée en route (T8)
+
+// Quand un jour porte plusieurs séances, la meilleure gagne — dans les deux sens :
+// un test raté après un test réussi ne dévalide pas le jour, et le réussir après
+// l'avoir raté le valide. Un rang, pas un ordre d'arrivée.
+const RANK = { [DONE]: 3, [TRIED]: 2, [ABANDONED]: 1 }
 
 export function pushupKey(levelIndex, dayIndex) {
   return `${levelIndex}:${dayIndex}`
 }
 
-// Map `levelIndex:dayIndex` -> 'done' | 'tried'.
-// Un jour normal terminé est validé. Un jour de test ne l'est que s'il est réussi :
-// c'est le max qui débloque le niveau, pas le fait d'avoir essayé.
+// Ce que vaut UNE séance. Un jour normal terminé est validé. Un jour de test ne
+// l'est que s'il est réussi : c'est le max qui débloque le niveau, pas le fait
+// d'avoir essayé. Une séance abandonnée n'est pas faite — mais elle n'est pas
+// rien : les pompes comptent quand même (voir TICKETS.md T8).
+export function sessionStatus(s) {
+  if (s?.abandoned) return ABANDONED
+  if (s?.isTest && !s.passed) return TRIED
+  return DONE
+}
+
+// Map `levelIndex:dayIndex` -> 'done' | 'tried' | 'abandoned'.
 export function pushupStatuses(sessions = []) {
   const out = new Map()
   for (const s of sessions) {
     if (s?.levelIndex == null || s?.dayIndex == null) continue
     const key = pushupKey(s.levelIndex, s.dayIndex)
-    const status = s.isTest && !s.passed ? TRIED : DONE
-    // 'done' l'emporte, dans les deux sens : un test raté après un test réussi ne
-    // dévalide pas le jour, et le réussir après l'avoir raté le valide.
-    if (status === DONE || !out.has(key)) out.set(key, status)
+    const status = sessionStatus(s)
+    const seen = out.get(key)
+    if (!seen || RANK[status] > RANK[seen]) out.set(key, status)
   }
   return out
 }

@@ -157,6 +157,22 @@ export function AppProvider({ children }) {
     })
   }, [updateProgram])
 
+  // Abandonner en route (TICKETS.md T8). Le curseur ne bouge PAS : la séance
+  // revient telle quelle. Ce qui change : les pompes faites sont enregistrées, et
+  // la séance est repoussée à demain plutôt qu'au prochain jour du motif 2-2-3 —
+  // on n'a pas encaissé la charge complète, pas la peine d'attendre autant.
+  const abandonSession = useCallback((result) => {
+    updateProgram(PUSHUPS_GOAL, (p) => {
+      const now = new Date().toISOString()
+      return {
+        ...p,
+        sessions: [...p.sessions, { ...result, abandoned: true, passed: null, date: now }],
+        lastSessionDate: now,
+        nextDate: addDays(now, 1),
+      }
+    })
+  }, [updateProgram])
+
   // Le test de tenue max sert à la fois de placement et de re-test : c'est lui qui
   // fait progresser le niveau, faute de calendrier (voir TICKETS.md T3).
   //
@@ -272,13 +288,13 @@ export function AppProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      state, recordInitialTest, setGoals, completeSession,
+      state, recordInitialTest, setGoals, completeSession, abandonSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
       recordLsitAxes, completeLsitSession,
       completeRunSession, repeatRunWeek,
       goToPushupDay, goToRunWorkout, resetAll,
     }),
-    [state, recordInitialTest, setGoals, completeSession,
+    [state, recordInitialTest, setGoals, completeSession, abandonSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
       recordLsitAxes, completeLsitSession,
       completeRunSession, repeatRunWeek,

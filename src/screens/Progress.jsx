@@ -1,6 +1,6 @@
 import { useApp, pushupsOf } from '../store'
 import { levels, daysInLevel, isTestDay, TOTAL_DAYS } from '../data/pushupProgram'
-import { pushupKey, pushupStatuses, countPushupDone, DONE, TRIED } from '../lib/progress'
+import { pushupKey, pushupStatuses, countPushupDone, DONE, TRIED, ABANDONED } from '../lib/progress'
 import PlanGrid, { PlanLegend } from '../components/PlanGrid'
 
 function fmtDate(iso) {
@@ -11,7 +11,9 @@ export default function Progress({ onBack }) {
   const { state, resetAll } = useApp()
   const pushups = pushupsOf(state)
   const bestMax = pushups.maxHistory.reduce((m, x) => Math.max(m, x.reps), 0)
+  // Les séances abandonnées comptent ici : les pompes ont été faites (TICKETS.md T8).
   const totalPompes = pushups.sessions.reduce((a, s) => a + (s.total || 0), 0)
+  const nAbandons = pushups.sessions.filter((s) => s.abandoned).length
 
   // Un jour est validé s'il a VRAIMENT été fait — l'historique le dit, pas le curseur.
   // Le curseur ne marque plus que la séance proposée (voir lib/progress, TICKETS.md T7).
@@ -28,6 +30,7 @@ export default function Progress({ onBack }) {
         isTest: isTestDay(L, D),
         done: st === DONE,
         tried: st === TRIED,
+        abandoned: st === ABANDONED,
         current: !pushups.finished && pushups.levelIndex === L && pushups.dayIndex === D,
       }
     }),
@@ -46,16 +49,17 @@ export default function Progress({ onBack }) {
       </header>
 
       <div className="progress__stats">
-        <div className="stat stat--card"><span className="stat__num">{pushups.sessions.length}</span><span className="stat__lbl">séances</span></div>
+        <div className="stat stat--card"><span className="stat__num">{countPushupDone(pushups.sessions)}</span><span className="stat__lbl">séances faites</span></div>
         <div className="stat stat--card"><span className="stat__num">{bestMax}</span><span className="stat__lbl">meilleur max</span></div>
         <div className="stat stat--card"><span className="stat__num">{totalPompes}</span><span className="stat__lbl">pompes totales</span></div>
       </div>
 
       <h3 className="progress__h">Les 3 niveaux</h3>
       <PlanGrid groups={groups} />
-      <PlanLegend tried />
+      <PlanLegend tried abandoned={nAbandons > 0} />
       <p className="progress__sub">
         {countPushupDone(pushups.sessions)} / {TOTAL_DAYS} séances validées · rythme conseillé 3×/semaine
+        {nAbandons > 0 && ` · ${nAbandons} abandon${nAbandons > 1 ? 's' : ''}`}
       </p>
 
       {pushups.maxHistory.length > 0 && (
@@ -79,7 +83,10 @@ export default function Progress({ onBack }) {
           <ul className="list">
             {[...pushups.sessions].reverse().slice(0, 30).map((s, i) => (
               <li key={i} className="list__row">
-                <span>N{levels[s.levelIndex]?.id} · {s.isTest ? 'Test' : `J${s.dayIndex + 1}`}</span>
+                <span>
+                  N{levels[s.levelIndex]?.id} · {s.isTest ? 'Test' : `J${s.dayIndex + 1}`}
+                  {s.abandoned && <em className="list__tag">abandon</em>}
+                </span>
                 <span className="list__date">{fmtDate(s.date)}</span>
                 <b>{s.total} pompes</b>
               </li>

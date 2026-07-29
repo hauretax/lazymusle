@@ -20,6 +20,7 @@ export default function PlanGrid({ groups, selected, onSelect }) {
                 'cell',
                 c.done && 'cell--done',
                 c.tried && 'cell--tried',
+                c.abandoned && 'cell--abandon',
                 c.isTest && 'cell--test',
                 c.current && 'cell--cur',
                 onSelect && 'cell--tap',
@@ -49,13 +50,14 @@ export default function PlanGrid({ groups, selected, onSelect }) {
   )
 }
 
-export function PlanLegend({ tried }) {
+export function PlanLegend({ tried, abandoned }) {
   return (
     <ul className="legend">
       <li className="legend__item"><span className="cell cell--done">✓</span> validée</li>
       <li className="legend__item"><span className="cell">·</span> pas faite</li>
       <li className="legend__item"><span className="cell cell--cur">·</span> proposée</li>
       {tried && <li className="legend__item"><span className="cell cell--test cell--tried">★</span> test tenté</li>}
+      {abandoned && <li className="legend__item"><span className="cell cell--abandon">·</span> abandonnée</li>}
     </ul>
   )
 }

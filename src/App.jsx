@@ -14,6 +14,7 @@ import HandstandSession from './screens/HandstandSession'
 import LsitSession from './screens/LsitSession'
 import RunSession from './screens/RunSession'
 import Progress from './screens/Progress'
+import Journal from './screens/Journal'
 import PushupPlan from './screens/PushupPlan'
 import RunPlan from './screens/RunPlan'
 import Stretch from './screens/Stretch'
@@ -71,6 +72,10 @@ export default function App() {
 
   if (view === 'progress') {
     return <Progress onBack={() => setView('home')} />
+  }
+
+  if (view === 'journal') {
+    return <Journal onBack={() => setView('home')} />
   }
 
   // Choisir sa séance : le curseur se déplace, puis on enchaîne direct dessus.
@@ -229,6 +234,7 @@ export default function App() {
       onOpenPushupPlan={() => setView('pushup-plan')}
       onOpenRunPlan={() => setView('run-plan')}
       onOpenProgress={() => setView('progress')}
+      onOpenJournal={() => setView('journal')}
       onEditGoals={() => setView('goals')}
     />
   )

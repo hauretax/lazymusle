@@ -17,6 +17,7 @@ import {
   sessionStatus, DONE, TRIED, ABANDONED,
 } from '../src/lib/progress.js'
 import { abandonMessage, shouldStretch, STRETCH_THRESHOLD } from '../src/lib/encouragement.js'
+import { dayKey, journalByDay, monthGrid, shiftMonth, monthSummary } from '../src/lib/journal.js'
 import * as hs from '../src/data/handstandProgram.js'
 import * as ls from '../src/data/lsitProgram.js'
 import * as run from '../src/data/runProgram.js'
@@ -584,6 +585,105 @@ section('Étirements proposés à partir de la moitié de la séance')
   eq('juste en dessous : non', shouldStretch(0.49), false)
   eq('séance vide : non', shouldStretch(0), false)
   eq('ratio absurde : non', shouldStretch(NaN), false)
+}
+
+// ---------- Calendrier / journal (T9) ----------
+
+// Dates construites en heure LOCALE : une séance du soir doit tomber sur le jour
+// qu'affiche le téléphone, pas sur celui d'UTC.
+const local = (y, m, d, h = 18) => new Date(y, m - 1, d, h, 0, 0).toISOString()
+
+section('Le jour d’une séance, en heure locale')
+{
+  eq('un soir de juillet', dayKey(local(2026, 7, 29, 23)), '2026-07-29')
+  eq('le petit matin', dayKey(local(2026, 7, 30, 1)), '2026-07-30')
+  eq('un objet Date passe aussi', dayKey(new Date(2026, 0, 5)), '2026-01-05')
+  eq('date illisible : pas de clé', dayKey('pas une date'), null)
+  eq('date absente : pas de clé', dayKey(undefined), null)
+}
+
+const JOURNAL_STATE = {
+  goals: ['pushups', 'handstand', 'core', 'running'],
+  programs: {
+    pushups: {
+      sessions: [
+        { levelIndex: 0, dayIndex: 0, isTest: false, total: 20, date: local(2026, 7, 20, 9) },
+        { levelIndex: 0, dayIndex: 1, isTest: false, total: 11, abandoned: true, date: local(2026, 7, 22, 9) },
+        { levelIndex: 0, dayIndex: 10, isTest: true, passed: false, total: 14, date: local(2026, 7, 24, 9) },
+      ],
+      maxHistory: [
+        { date: local(2026, 7, 1, 8), reps: 12, kind: 'initial' },
+        { date: local(2026, 7, 24, 9), reps: 14, kind: 'test', level: 1 },
+      ],
+    },
+    handstand: {
+      sessions: [{ levelIndex: 0, mode: 'hold', volume: 48, date: local(2026, 7, 20, 18) }],
+      maxHistory: [{ date: local(2026, 7, 2, 8), sec: 22, levelIndex: 0 }],
+    },
+    core: { sessions: [{ mode: 'hold', volume: 40, best: 12, date: local(2026, 7, 20, 19) }] },
+    running: { sessions: [{ index: 3, weekNumber: 2, runSec: 540, date: local(2026, 6, 30, 7) }] },
+  },
+}
+
+section('Journal : chaque jour dit ce qui a été fait')
+{
+  const j = journalByDay(JOURNAL_STATE)
+  eq('trois exos le même jour', j.get('2026-07-20').length, 3)
+  eq('rangés dans l’ordre où ils ont été faits',
+    j.get('2026-07-20').map((e) => e.goalId), ['pushups', 'handstand', 'core'])
+  eq('l’abandon garde son statut', j.get('2026-07-22')[0].status, ABANDONED)
+  eq('le test raté aussi', j.get('2026-07-24')[0].status, TRIED)
+  eq('un test de niveau n’est pas compté deux fois', j.get('2026-07-24').length, 1)
+  eq('le test initial est au journal', j.get('2026-07-01').map((e) => e.title), ['Test initial'])
+  eq('le test de tenue max aussi', j.get('2026-07-02')[0].detail, '22 s')
+  eq('la course est nommée par sa place au plan', j.get('2026-06-30')[0].title, 'Semaine 2 · Séance 1')
+  eq('un jour sans rien n’existe pas', j.has('2026-07-21'), false)
+  eq('détail d’une séance de pompes', j.get('2026-07-20')[0].detail, '20 pompes')
+}
+
+section('Journal : état vide ou abîmé')
+{
+  eq('état vide', journalByDay({}).size, 0)
+  eq('état absent', journalByDay(undefined).size, 0)
+  eq('séance sans date : ignorée', journalByDay({
+    programs: { pushups: { sessions: [{ levelIndex: 0, dayIndex: 0 }] } },
+  }).size, 0)
+  eq('programme inconnu au bataillon : on ne plante pas', journalByDay({
+    programs: { pushups: { sessions: [{ levelIndex: 99, dayIndex: 3, date: local(2026, 7, 20) }] } },
+  }).get('2026-07-20')[0].title, 'Pompes · Jour 4')
+}
+
+section('Grille d’un mois : semaines qui commencent le lundi')
+{
+  const juillet = monthGrid(2026, 6)
+  eq('des semaines entières', juillet.length % 7, 0)
+  eq('les 31 jours de juillet', juillet.filter((c) => c.inMonth).length, 31)
+  eq('la 1re case est un lundi', new Date(juillet[0].key + 'T12:00:00').getDay(), 1)
+  eq('la grille commence avant le 1er', juillet[0].key <= '2026-07-01', true)
+  eq('les voisins bouchent les trous', juillet.some((c) => !c.inMonth), true)
+  eq('février bissextile', monthGrid(2028, 1).filter((c) => c.inMonth).length, 29)
+  eq('février normal', monthGrid(2026, 1).filter((c) => c.inMonth).length, 28)
+  eq('pas de doublon de jour', new Set(juillet.map((c) => c.key)).size, juillet.length)
+}
+
+section('Changer de mois sans se tromper d’année')
+{
+  eq('décembre → janvier suivant', shiftMonth({ year: 2026, month: 11 }, 1), { year: 2027, month: 0 })
+  eq('janvier → décembre précédent', shiftMonth({ year: 2026, month: 0 }, -1), { year: 2025, month: 11 })
+  eq('mois courant', shiftMonth({ year: 2026, month: 6 }, 1), { year: 2026, month: 7 })
+}
+
+section('Résumé du mois affiché')
+{
+  const j = journalByDay(JOURNAL_STATE)
+  eq('juillet : 5 jours, 7 séances', monthSummary(j, monthGrid(2026, 6)), { days: 5, entries: 7 })
+  eq('juin : la séance de course du 30', monthSummary(j, monthGrid(2026, 5)), { days: 1, entries: 1 })
+  eq('un mois vide ne compte rien', monthSummary(j, monthGrid(2026, 8)), { days: 0, entries: 0 })
+  // La grille de juillet affiche le 30 juin (lundi de la 1re semaine) : il est
+  // visible, avec ses points, mais il compte pour juin — pas pour juillet.
+  const bordure = monthGrid(2026, 6).filter((c) => !c.inMonth && j.has(c.key))
+  eq('le jour voisin est bien affiché', bordure.map((c) => c.key), ['2026-06-30'])
+  eq('mais il n’est pas compté dans le mois', monthSummary(j, bordure).days, 0)
 }
 
 console.log(fails === 0

@@ -257,7 +257,27 @@ pompes faites sont comptées dans le total, et la séance revient demain à l'id
 **Périmètre** : les pompes seulement. Course, handstand et L-sit gardent leur ✕ actuel ; le geste y
 a moins de sens (pas de compteur de reps à sauver) et ça se fera avec leur propre ticket.
 
-### T9 — Calendrier / journal in-app · à faire
+### T9 — Calendrier / journal in-app · fait
 
 Un calendrier dans l'app qui dit **ce qui a été fait chaque jour**, tous modules confondus, avec les
 séances validées, les tests, et les abandons.
+
+- [x] Écran **« Mon calendrier »** depuis l'accueil : un mois à la fois, semaines qui commencent le
+      lundi, navigation ‹ › bornée au mois courant (rien à voir dans le futur)
+- [x] Une case = un jour, **un point = un exo** : la couleur dit *quoi* (pompes / handstand / L-sit /
+      course), le remplissage dit *comment* — plein = fait, **creux = abandon ou test raté**
+- [x] Taper un jour ouvre son détail : exo, heure, ce qui a été fait (`20 pompes`, `48 s tenus`,
+      `9 min courues`), avec l'étiquette `abandon` / `test raté` quand il y a lieu
+- [x] Résumé du mois affiché : jours d'entraînement et nombre de séances
+- [x] **Aucune donnée nouvelle** : `lib/journal.js` ne fait que *lire* les historiques que chaque
+      programme enregistre déjà. Donc rétroactif, et rien à migrer — comme la grille des niveaux.
+- [x] Le jour d'une séance est calculé en **heure locale** : une séance de 23 h tombe le bon jour.
+
+**Vérifié** : 30 assertions de plus dans `npm run check` (regroupement par jour tous modules
+confondus, statuts qui suivent, test de niveau pas compté deux fois, historique abîmé, grille de
+février bissextile, passage décembre → janvier, résumé du mois). Et dans le navigateur sur un état
+à 4 modules et 13 séances : les points des bons jours, le détail qui suit la sélection, juin vide,
+la flèche « suivant » grisée sur le mois courant, et le détail qui suit quand on change de mois.
+
+**Choix assumé** : changer de mois **déplace la sélection** (au 1er du mois, ou à aujourd'hui si
+c'est le mois courant). Garder « 20 juillet » ouvert sous la grille de juin ne veut rien dire.

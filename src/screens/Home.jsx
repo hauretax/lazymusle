@@ -42,7 +42,7 @@ function ProgressRing({ done, total }) {
 export default function Home({
   onStart, onStartHandstand, onRetestHandstand, onReassessHandstand,
   onStartLsit, onReassessLsit, onStartRun, onRepeatRunWeek,
-  onOpenPushupPlan, onOpenRunPlan, onOpenProgress, onEditGoals,
+  onOpenPushupPlan, onOpenRunPlan, onOpenProgress, onOpenJournal, onEditGoals,
 }) {
   const { state } = useApp()
   const step = getNextStep(state)
@@ -472,6 +472,11 @@ export default function Home({
 
       {onPushups && !firstRun && (
         <button className="link" onClick={onOpenProgress}>Voir ma progression →</button>
+      )}
+
+      {/* Le calendrier vaut pour tous les modules, pas seulement les pompes. */}
+      {activeToday.length > 0 && (
+        <button className="link" onClick={onOpenJournal}>📆 Mon calendrier</button>
       )}
 
       <button className="link" onClick={onEditGoals}>🎯 Mes objectifs</button>

@@ -14,6 +14,7 @@ PWA React pour progresser jusqu'à **100 pompes d'affilée**, basée sur le syst
 - **Rappels jour J** : export du planning complet en calendrier `.ics` (rappel natif iPhone/Android même app fermée) + notifications Web quand l'app est ouverte.
 - **Abandonner sans rien perdre** : la croix demande confirmation, compte les pompes faites (la série en cours comprise), repousse la séance à **demain** et te dit un mot gentil. À partir de la moitié des pompes prévues, elle propose les étirements — les muscles ont bossé. Un abandon n'est pas une séance validée, mais ce n'est pas rien.
 - **Étirements** : routine de récupération (7 étirements illustrés) proposée à la fin de chaque séance, guidée et skippable. Données dans [`src/data/stretches.json`](src/data/stretches.json).
+- **Calendrier** : « 📆 Mon calendrier » montre le mois, un point par exo et par jour — la couleur dit lequel, le point creux dit abandon ou test raté. Taper un jour donne le détail. C'est une simple lecture des historiques ([`src/lib/journal.js`](src/lib/journal.js)), donc rétroactif.
 
 | Niveau | Jours | 1re séance | Test final |
 |--------|-------|------------|-----------|

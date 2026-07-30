@@ -281,3 +281,88 @@ la flèche « suivant » grisée sur le mois courant, et le détail qui suit qua
 
 **Choix assumé** : changer de mois **déplace la sélection** (au 1er du mois, ou à aujourd'hui si
 c'est le mois courant). Garder « 20 juillet » ouvert sous la grille de juin ne veut rien dire.
+
+---
+
+## Phase 3 — le journal de bord
+
+Jusqu'ici l'app ne sait que ce qu'**elle** a fait faire. T10 à T13 la font tenir un carnet : ce que
+j'ai fait de moi-même, où j'en suis sur une période, et à quoi ça ressemblait.
+
+### T10 — Activités libres · fait
+
+Noter à la main une marche, une course, n'importe quoi — avec sa date, pour **remplir l'agenda après
+coup**. C'est le socle : sans ça, T11 n'a presque rien à récapituler.
+
+- [x] **Le type se tape au clavier**, et l'app propose ce qui a déjà été enregistré (« mar » →
+      « Marche »). Pas de liste fermée : l'app ne peut pas deviner tout ce qu'on fait.
+- [x] **Mesures optionnelles** (`src/data/measures.json`) : durée, distance, dénivelé, répétitions,
+      séries, poids, calories. On remplit ce qui a du sens. « + Ajouter une mesure » pour les autres.
+- [x] L'app **retient les mesures déjà utilisées pour ce type** : retaper « Marche » repropose
+      km + durée, pas des séries.
+- [x] **La date est modifiable** (par défaut aujourd'hui) : c'est tout l'intérêt — remplir dimanche
+      ce qu'on a fait mercredi. Pas de date dans le futur.
+- [x] Note libre.
+- [x] Modifier et supprimer une activité (une faute de frappe ne doit pas rester à vie).
+- [x] Les activités apparaissent **dans le calendrier** (T9) comme le reste : `lib/journal.js` les lit.
+- [x] 111 assertions de plus dans `npm run check` (374 au total).
+
+**Vérifié dans le navigateur**, sur un état v4 (pompes N1 J4 + course) migré en v5 : migration
+`activities: []` sans toucher à la progression · « Marche » 45 min / 5,2 km notée aujourd'hui ·
+« Vélo » 25,75 km / 310 m **antidatée au 27 juillet**, qui se range sous « lundi 27 juillet » et
+cohabite avec la séance C25K du même jour dans le calendrier (07 h puis 12 h) · suggestions
+« Marche » / « Vélo » · mémoire des mesures dans les deux sens · date future → bouton désactivé et
+message · modification qui reclasse et redate · suppression avec confirmation · état vide. Zéro
+erreur console.
+
+**Bug trouvé en regardant, pas en testant** : en modification, la distance revenait **vide**. Elle
+était réinjectée dans le champ formatée à la française (`22,4`), et `<input type="number">` refuse
+la virgule — donc champ vide, et enregistrer aurait effacé la mesure. La virgule est de
+l'**affichage** (`formatMeasure`), jamais de la saisie. La frappe, elle, accepte les deux.
+
+**Choix assumé — une marche libre ne fait pas avancer le Couch-to-5K.** Le module course sert un
+plan (T5) ; ceci est un carnet. Mélanger les deux ferait mentir la grille des 27 séances.
+Une séance C25K reste enregistrée par son module ; elle apparaît dans le récap comme le reste.
+
+**Choix assumé — une activité antidatée est datée de midi.** On ne sait pas à quelle heure c'était,
+et midi ne bascule pas de jour au changement d'heure ni sous un fuseau négatif — minuit, si.
+
+**Choix assumé — les activités comptent dans le résumé du mois** du calendrier (« 6 jours
+d'entraînement · 7 séances »). C'est « ce qui a été fait », pas « ce que l'app a fait faire ».
+
+**Décidé en passant** : `dayKey` a déménagé de `lib/journal` vers **`lib/dates`**. Le journal lit
+les activités, les activités ont besoin des jours : le laisser dans journal faisait un cycle
+d'imports. `lib/journal` le réexporte, donc rien d'autre n'a bougé. `lib/dates` porte aussi
+`daysBetween`, écrit d'avance pour T11.
+
+### T11 — Récap entre deux dates · à faire
+
+« J'ai fait tout ça, voilà où j'en suis. » Un écran avec deux dates, et le bilan de la période.
+
+- [ ] Choix de la période : deux dates, plus des raccourcis (7 jours, 30 jours, ce mois, tout).
+- [ ] **Totaux par type d'activité** : nombre de fois, km cumulés, temps cumulé.
+- [ ] Ce que les **modules** ont produit sur la période (séances de pompes, tenues, séances de course).
+- [ ] Jours actifs sur la période, et la plus longue série de jours consécutifs.
+- [ ] Lecture seule, calculée depuis `lib/journal.js` — aucune donnée nouvelle, comme T9.
+
+### T12 — Photos · à faire
+
+Une photo par jour, ou quand on en a envie.
+
+- [ ] **Photo du jour** (indépendante de toute séance) *et* photo **rattachable à une activité**.
+- [ ] **Stockage IndexedDB, pas localStorage** : le quota du localStorage est de ~5 Mo, une seule
+      photo de téléphone le remplit et casserait toute la progression.
+- [ ] **Redimensionnées à l'ajout** (~1600 px, JPEG) : sinon la sauvegarde de T13 pèse 200 Mo pour
+      30 photos. C'est un choix de l'app, à assumer — on garde un souvenir, pas un original.
+- [ ] Visibles dans le calendrier (T9) et dans le récap (T11).
+- [ ] Supprimer une photo.
+
+### T13 — Sauvegarde complète : export et réimport · à faire
+
+- [ ] **Exporter** tout l'état en un `.json` téléchargeable : programmes, séances, activités, photos.
+- [ ] **Réimporter** ce fichier — sur un autre téléphone, ou après avoir vidé le navigateur.
+- [ ] L'import **passe par `lib/migrate.js`** : un fichier exporté d'une version antérieure doit
+      se relire, exactement comme le localStorage.
+- [ ] Refuser proprement un fichier qui n'est pas une sauvegarde, et **confirmer avant d'écraser**
+      une progression en cours.
+- [ ] Écrit en dernier, pour n'être écrit qu'une fois — contre la forme définitive des données.

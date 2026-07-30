@@ -43,6 +43,7 @@ export default function Home({
   onStart, onStartHandstand, onRetestHandstand, onReassessHandstand,
   onStartLsit, onReassessLsit, onStartRun, onRepeatRunWeek,
   onOpenPushupPlan, onOpenRunPlan, onOpenProgress, onOpenJournal, onEditGoals,
+  onOpenActivities, onAddActivity,
 }) {
   const { state } = useApp()
   const step = getNextStep(state)
@@ -54,6 +55,7 @@ export default function Home({
   const lsitProg = lsitOf(state)
   const runProg = runOf(state)
   const bestMax = pushups.maxHistory.reduce((m, x) => Math.max(m, x.reps), 0)
+  const nActivities = (state.activities ?? []).length
   const onPushups = state.goals.includes(PUSHUPS_GOAL)
   const onHandstand = state.goals.includes(HANDSTAND_GOAL)
   const onLsit = state.goals.includes(LSIT_GOAL)
@@ -474,8 +476,17 @@ export default function Home({
         <button className="link" onClick={onOpenProgress}>Voir ma progression →</button>
       )}
 
+      {/* Noter ce qu'on a fait de soi-même (TICKETS.md T10). Toujours accessible :
+          c'est un carnet, il ne dépend d'aucun objectif choisi. */}
+      <div className="quickadd">
+        <button className="btn btn--ghost" onClick={onAddActivity}>➕ Noter une activité</button>
+        <button className="link" onClick={onOpenActivities}>
+          📝 Mes activités{nActivities > 0 && <> ({nActivities})</>}
+        </button>
+      </div>
+
       {/* Le calendrier vaut pour tous les modules, pas seulement les pompes. */}
-      {activeToday.length > 0 && (
+      {(activeToday.length > 0 || nActivities > 0) && (
         <button className="link" onClick={onOpenJournal}>📆 Mon calendrier</button>
       )}
 

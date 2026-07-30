@@ -15,6 +15,8 @@ import LsitSession from './screens/LsitSession'
 import RunSession from './screens/RunSession'
 import Progress from './screens/Progress'
 import Journal from './screens/Journal'
+import Activities from './screens/Activities'
+import ActivityForm from './screens/ActivityForm'
 import PushupPlan from './screens/PushupPlan'
 import RunPlan from './screens/RunPlan'
 import Stretch from './screens/Stretch'
@@ -28,6 +30,8 @@ export default function App() {
     goToPushupDay, goToRunWorkout,
   } = useApp()
   const [view, setView] = useState('home')
+  // Quelle activité on est en train de corriger (null = on en note une nouvelle).
+  const [editingActivity, setEditingActivity] = useState(null)
   const step = getNextStep(state)
   const hsStep = getHandstandStep(state)
   const lsitStep = getLsitStep(state)
@@ -76,6 +80,42 @@ export default function App() {
 
   if (view === 'journal') {
     return <Journal onBack={() => setView('home')} />
+  }
+
+  if (view === 'activities') {
+    return (
+      <Activities
+        onBack={() => setView('home')}
+        onAdd={() => {
+          setEditingActivity(null)
+          setView('activity-form')
+        }}
+        onEdit={(id) => {
+          setEditingActivity(id)
+          setView('activity-form')
+        }}
+      />
+    )
+  }
+
+  if (view === 'activity-form') {
+    // On relit l'activité dans l'état plutôt que de la figer dans le `useState` :
+    // c'est la liste qui fait foi, y compris après une correction.
+    const editing = (state.activities ?? []).find((a) => a.id === editingActivity) ?? null
+    return (
+      <ActivityForm
+        key={editingActivity ?? 'new'}
+        activity={editing}
+        onDone={() => {
+          setEditingActivity(null)
+          setView('activities')
+        }}
+        onCancel={() => {
+          setEditingActivity(null)
+          setView('activities')
+        }}
+      />
+    )
   }
 
   // Choisir sa séance : le curseur se déplace, puis on enchaîne direct dessus.
@@ -235,6 +275,11 @@ export default function App() {
       onOpenRunPlan={() => setView('run-plan')}
       onOpenProgress={() => setView('progress')}
       onOpenJournal={() => setView('journal')}
+      onOpenActivities={() => setView('activities')}
+      onAddActivity={() => {
+        setEditingActivity(null)
+        setView('activity-form')
+      }}
       onEditGoals={() => setView('goals')}
     />
   )

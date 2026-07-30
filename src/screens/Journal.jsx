@@ -3,6 +3,7 @@ import { useApp } from '../store'
 import { journalByDay, monthGrid, monthSummary, shiftMonth, dayKey } from '../lib/journal'
 import { getGoal, hasProgram } from '../data/goals'
 import { DONE } from '../lib/progress'
+import { ACTIVITY_ID } from '../lib/activities'
 
 // Le calendrier : ce qui a été fait chaque jour, tous modules confondus
 // (TICKETS.md T9). Une case = un jour, un point = un exo. Point plein = fait,
@@ -40,6 +41,7 @@ export default function Journal({ onBack }) {
   const canForward = cursor.year < today.getFullYear()
     || (cursor.year === today.getFullYear() && cursor.month < today.getMonth())
   const legendGoals = (state.goals ?? []).filter(hasProgram).map(getGoal).filter(Boolean)
+  const hasActivities = (state.activities ?? []).length > 0
 
   // Changer de mois emmène le détail avec soi : garder « 20 juillet » ouvert sous
   // la grille de juin ne veut rien dire.
@@ -113,6 +115,9 @@ export default function Journal({ onBack }) {
         {legendGoals.map((g) => (
           <li key={g.id} className="legend__item"><i className={`cal__dot cal__dot--${g.id}`} /> {g.short}</li>
         ))}
+        {hasActivities && (
+          <li className="legend__item"><i className={`cal__dot cal__dot--${ACTIVITY_ID}`} /> Activités</li>
+        )}
         <li className="legend__item"><i className="cal__dot cal__dot--partial" /> abandon / test raté</li>
       </ul>
 
@@ -132,11 +137,12 @@ export default function Journal({ onBack }) {
           {dayList.map((e, i) => (
             <li key={i} className="list__row">
               <span>
-                <span className="list__emoji">{getGoal(e.goalId)?.emoji}</span> {e.title}
+                <span className="list__emoji">{e.emoji ?? getGoal(e.goalId)?.emoji}</span> {e.title}
                 {STATUS_LABEL[e.status] && <em className="list__tag">{STATUS_LABEL[e.status]}</em>}
               </span>
               <span className="list__date">{fmtTime(e.date)}</span>
               <b>{e.detail}</b>
+              {e.note && <em className="list__note">{e.note}</em>}
             </li>
           ))}
         </ul>

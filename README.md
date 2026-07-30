@@ -15,6 +15,7 @@ PWA React pour progresser jusqu'à **100 pompes d'affilée**, basée sur le syst
 - **Abandonner sans rien perdre** : la croix demande confirmation, compte les pompes faites (la série en cours comprise), repousse la séance à **demain** et te dit un mot gentil. À partir de la moitié des pompes prévues, elle propose les étirements — les muscles ont bossé. Un abandon n'est pas une séance validée, mais ce n'est pas rien.
 - **Étirements** : routine de récupération (7 étirements illustrés) proposée à la fin de chaque séance, guidée et skippable. Données dans [`src/data/stretches.json`](src/data/stretches.json).
 - **Calendrier** : « 📆 Mon calendrier » montre le mois, un point par exo et par jour — la couleur dit lequel, le point creux dit abandon ou test raté. Taper un jour donne le détail. C'est une simple lecture des historiques ([`src/lib/journal.js`](src/lib/journal.js)), donc rétroactif.
+- **Activités libres** : « ➕ Noter une activité » enregistre à la main ce qu'on fait en dehors des programmes — une marche, une sortie vélo, n'importe quoi. Le nom se **tape au clavier** (l'app propose ensuite ce qu'on a déjà noté), les mesures sont **optionnelles** (durée, distance, dénivelé, répétitions, séries, poids, calories, dans [`src/data/measures.json`](src/data/measures.json)), et l'app retient celles qu'on remplit d'habitude pour ce nom-là. La **date se choisit** : on peut remplir dimanche ce qu'on a fait mercredi. Ça atterrit dans le calendrier comme le reste. Logique dans [`src/lib/activities.js`](src/lib/activities.js).
 
 | Niveau | Jours | 1re séance | Test final |
 |--------|-------|------------|-----------|
@@ -44,8 +45,9 @@ npm run preview  # sert le build
 `npm run check` est un simple script Node, sans framework de test. Il ne couvre que ce qui n'est
 **pas** visible à l'écran : le moteur de planning ([`src/lib/schedule.js`](src/lib/schedule.js), dont
 les règles ne se déclenchent pas encore — voir [`TICKETS.md`](TICKETS.md)), les formules du
-programme pompes, et ce qui compte comme séance validée
-([`src/lib/progress.js`](src/lib/progress.js)). Le reste (écrans, parcours) se vérifie dans le navigateur.
+programme pompes, ce qui compte comme séance validée
+([`src/lib/progress.js`](src/lib/progress.js)), et les activités notées à la main
+([`src/lib/activities.js`](src/lib/activities.js)). Le reste (écrans, parcours) se vérifie dans le navigateur.
 
 Installable comme app (PWA) : "Ajouter à l'écran d'accueil" sur mobile.
 

@@ -5,6 +5,7 @@ import * as lsit from './data/lsitProgram'
 import * as run from './data/runProgram'
 import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL } from './data/goals'
 import { freshState, hydrate } from './lib/migrate'
+import * as activities from './lib/activities'
 
 const KEY = 'reps.pushups.v2'
 
@@ -284,6 +285,21 @@ export function AppProvider({ children }) {
     })
   }, [updateProgram])
 
+  // Activités libres (TICKETS.md T10). Elles ne passent pas par `updateProgram` :
+  // ce n'est pas un programme. Toute la logique est dans `lib/activities` — ici
+  // on ne fait que poser le résultat dans l'état.
+  const addActivity = useCallback((draft) => {
+    setState((s) => ({ ...s, activities: activities.addActivity(s.activities ?? [], draft) }))
+  }, [])
+
+  const updateActivity = useCallback((id, draft) => {
+    setState((s) => ({ ...s, activities: activities.updateActivity(s.activities ?? [], id, draft) }))
+  }, [])
+
+  const removeActivity = useCallback((id) => {
+    setState((s) => ({ ...s, activities: activities.removeActivity(s.activities ?? [], id) }))
+  }, [])
+
   const resetAll = useCallback(() => setState(freshState()), [])
 
   const value = useMemo(
@@ -293,12 +309,14 @@ export function AppProvider({ children }) {
       recordLsitAxes, completeLsitSession,
       completeRunSession, repeatRunWeek,
       goToPushupDay, goToRunWorkout, resetAll,
+      addActivity, updateActivity, removeActivity,
     }),
     [state, recordInitialTest, setGoals, completeSession, abandonSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
       recordLsitAxes, completeLsitSession,
       completeRunSession, repeatRunWeek,
-      goToPushupDay, goToRunWorkout, resetAll],
+      goToPushupDay, goToRunWorkout, resetAll,
+      addActivity, updateActivity, removeActivity],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

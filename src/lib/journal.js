@@ -11,20 +11,17 @@ import * as hs from '../data/handstandProgram.js'
 import * as run from '../data/runProgram.js'
 import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL } from '../data/goals.js'
 import { sessionStatus, DONE } from './progress.js'
+import { activitySummary, ACTIVITY_ID, ACTIVITY_EMOJI } from './activities.js'
+import { dayKey } from './dates.js'
 
-// Clé d'un jour, en heure LOCALE : une séance du soir doit tomber sur le jour
-// qu'affiche le téléphone, pas sur celui d'UTC.
-export function dayKey(date) {
-  const d = date instanceof Date ? date : new Date(date)
-  if (Number.isNaN(d.getTime())) return null
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const j = String(d.getDate()).padStart(2, '0')
-  return `${d.getFullYear()}-${m}-${j}`
-}
+// `dayKey` a déménagé dans lib/dates : les activités libres en ont besoin, et
+// elles sont lues ici — l'importer de journal ferait un cycle. Réexporté pour
+// que les écrans et `npm run check` continuent de le prendre ici.
+export { dayKey }
 
-function entry(goalId, date, title, detail, status = DONE) {
+function entry(goalId, date, title, detail, status = DONE, extra = null) {
   const day = dayKey(date)
-  return day ? { day, date, goalId, title, detail, status } : null
+  return day ? { day, date, goalId, title, detail, status, ...extra } : null
 }
 
 function pushupEntries(p = {}) {
@@ -82,6 +79,19 @@ function runEntries(r = {}) {
   }).filter(Boolean)
 }
 
+// Les activités notées à la main (TICKETS.md T10). Elles ne sortent d'aucun
+// programme : elles portent leur propre identité dans le calendrier, d'où
+// l'emoji sur l'entrée — `getGoal('activity')` ne renverrait rien.
+function activityEntries(list = []) {
+  return (Array.isArray(list) ? list : []).map((a) => entry(
+    ACTIVITY_ID, a?.date,
+    a?.type || 'Activité',
+    activitySummary(a) || null,
+    DONE,
+    { emoji: ACTIVITY_EMOJI, activityId: a?.id, note: a?.note || null },
+  )).filter(Boolean)
+}
+
 export function journalEntries(state) {
   const p = state?.programs ?? {}
   return [
@@ -89,6 +99,7 @@ export function journalEntries(state) {
     ...handstandEntries(p.handstand),
     ...lsitEntries(p.core),
     ...runEntries(p.running),
+    ...activityEntries(state?.activities),
   ]
 }
 

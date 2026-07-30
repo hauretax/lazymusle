@@ -1,0 +1,68 @@
+{
+  "_note": "Mesures qu'une activité libre peut porter (TICKETS.md T10). Toutes optionnelles : on remplit ce qui a du sens pour ce qu'on a fait. Le type d'activité, lui, se tape au clavier — l'app ne peut pas deviner tout ce qu'on fait, donc il n'y a pas de liste fermée ici.",
+  "defaults": ["duration", "distance"],
+  "measures": [
+    {
+      "id": "duration",
+      "label": "Durée",
+      "kind": "duration",
+      "unit": "min",
+      "max": 1440,
+      "sums": true
+    },
+    {
+      "id": "distance",
+      "label": "Distance",
+      "unit": "km",
+      "step": 0.1,
+      "decimals": 2,
+      "max": 1000,
+      "sums": true
+    },
+    {
+      "id": "elevation",
+      "label": "Dénivelé",
+      "unit": "m",
+      "step": 10,
+      "decimals": 0,
+      "max": 10000,
+      "sums": true
+    },
+    {
+      "id": "reps",
+      "label": "Répétitions",
+      "unit": "",
+      "step": 1,
+      "decimals": 0,
+      "max": 100000,
+      "sums": true
+    },
+    {
+      "id": "sets",
+      "label": "Séries",
+      "unit": "",
+      "step": 1,
+      "decimals": 0,
+      "max": 1000,
+      "sums": true
+    },
+    {
+      "id": "weight",
+      "label": "Poids",
+      "unit": "kg",
+      "step": 0.5,
+      "decimals": 1,
+      "max": 1000,
+      "sums": false
+    },
+    {
+      "id": "calories",
+      "label": "Calories",
+      "unit": "kcal",
+      "step": 10,
+      "decimals": 0,
+      "max": 20000,
+      "sums": true
+    }
+  ]
+}

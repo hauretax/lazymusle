@@ -3,7 +3,7 @@
 // et testé (`npm run check`).
 import { PUSHUPS_GOAL } from '../data/goals.js'
 
-export const STATE_VERSION = 4
+export const STATE_VERSION = 5
 
 // État commun à tout programme. Chaque exo garde le sien sous `programs`,
 // pour que l'ajout d'un module ne touche pas aux autres (voir TICKETS.md T2).
@@ -53,6 +53,9 @@ export function freshState() {
     version: STATE_VERSION,
     createdAt: new Date().toISOString(),
     goals: [], // objectifs choisis à l'onboarding ; vide = onboarding à faire
+    // Activités notées à la main (TICKETS.md T10). Hors `programs` exprès : ce
+    // n'est pas un programme, il n'y a ni plan, ni curseur, ni niveau à finir.
+    activities: [],
     programs: {
       pushups: freshPushups(),
       handstand: freshHandstand(),
@@ -95,6 +98,10 @@ export function withDefaults(s) {
     ...base,
     ...s,
     version: STATE_VERSION,
+    // v4 -> v5 : les activités libres. Purement additif — un état d'avant n'a
+    // simplement rien noté. Le garde-fou est là pour un fichier abîmé, pas pour
+    // une vraie migration (voir aussi l'import de sauvegarde, T13).
+    activities: Array.isArray(s?.activities) ? s.activities : [],
     programs: {
       ...base.programs,
       ...s.programs,

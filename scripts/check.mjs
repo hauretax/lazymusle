@@ -18,6 +18,13 @@ import {
 } from '../src/lib/progress.js'
 import { abandonMessage, shouldStretch, STRETCH_THRESHOLD } from '../src/lib/encouragement.js'
 import { dayKey, journalByDay, monthGrid, shiftMonth, monthSummary } from '../src/lib/journal.js'
+import { parseDayKey, daysBetween } from '../src/lib/dates.js'
+import {
+  normalizeType, typeKey, cleanMeasures, dayToISO, isFutureDay, activityError,
+  addActivity, updateActivity, removeActivity, knownTypes, suggestTypes, measuresForType,
+  formatDuration, formatMeasure, activitySummary,
+} from '../src/lib/activities.js'
+import { DEFAULT_MEASURES } from '../src/data/measures.js'
 import * as hs from '../src/data/handstandProgram.js'
 import * as ls from '../src/data/lsitProgram.js'
 import * as run from '../src/data/runProgram.js'
@@ -684,6 +691,232 @@ section('Résumé du mois affiché')
   const bordure = monthGrid(2026, 6).filter((c) => !c.inMonth && j.has(c.key))
   eq('le jour voisin est bien affiché', bordure.map((c) => c.key), ['2026-06-30'])
   eq('mais il n’est pas compté dans le mois', monthSummary(j, bordure).days, 0)
+}
+
+// ---------- Activités libres (T10) ----------
+
+const NOW = local(2026, 7, 30, 15) // « aujourd'hui » de référence : 30 juillet 2026, 15 h
+
+section('Le nom d’une activité : espaces normalisés, casse et accents gardés')
+{
+  eq('espaces en trop', normalizeType('  Marche   nordique '), 'Marche nordique')
+  eq('la casse est celle qu’on a tapée', normalizeType('MARCHE'), 'MARCHE')
+  eq('rien tapé', normalizeType('   '), '')
+  eq('pas de nom du tout', normalizeType(undefined), '')
+  eq('borné en longueur', normalizeType('a'.repeat(80)).length, 40)
+}
+
+section('Deux façons d’écrire la même activité sont la même activité')
+{
+  eq('la casse ne compte pas', typeKey('Marche'), typeKey('MARCHE'))
+  eq('les accents non plus', typeKey('Vélo'), typeKey('velo'))
+  eq('marche ≠ course', typeKey('Marche') === typeKey('Course'), false)
+}
+
+section('Mesures : une case vide n’est pas un zéro')
+{
+  eq('0 disparaît', cleanMeasures({ distance: 0, duration: 45 }), { duration: 45 })
+  eq('négatif refusé', cleanMeasures({ distance: -3 }), {})
+  eq('texte refusé', cleanMeasures({ distance: 'beaucoup' }), {})
+  eq('virgule française acceptée', cleanMeasures({ distance: '5,2' }), { distance: 5.2 })
+  eq('mesure inconnue ignorée', cleanMeasures({ bidon: 12, distance: 3 }), { distance: 3 })
+  eq('durée arrondie à la minute', cleanMeasures({ duration: 45.6 }), { duration: 46 })
+  eq('distance arrondie au centième', cleanMeasures({ distance: 5.2349 }), { distance: 5.23 })
+  eq('plafonnée à son max', cleanMeasures({ distance: 999999 }), { distance: 1000 })
+  eq('rien du tout', cleanMeasures(null), {})
+}
+
+section('La date : on remplit l’agenda après coup, jamais à l’avance')
+{
+  eq('aujourd’hui garde l’heure qu’il est', dayKey(dayToISO('2026-07-30', NOW)), '2026-07-30')
+  eq('l’heure réelle est conservée', dayToISO('2026-07-30', NOW), new Date(NOW).toISOString())
+  eq('un jour passé tombe le bon jour', dayKey(dayToISO('2026-07-22', NOW)), '2026-07-22')
+  eq('daté de midi, pas de minuit', new Date(dayToISO('2026-07-22', NOW)).getHours(), 12)
+  eq('date inexistante', dayToISO('2026-02-31', NOW), null)
+  eq('date illisible', dayToISO('hier', NOW), null)
+  eq('demain est dans le futur', isFutureDay('2026-07-31', NOW), true)
+  eq('aujourd’hui ne l’est pas', isFutureDay('2026-07-30', NOW), false)
+  eq('avant-hier non plus', isFutureDay('2026-07-28', NOW), false)
+}
+
+section('Ce qui empêche d’enregistrer, dit en français')
+{
+  const ok = { type: 'Marche', day: '2026-07-30' }
+  eq('une activité valable passe', activityError(ok, NOW), null)
+  eq('sans nom, non', Boolean(activityError({ ...ok, type: ' ' }, NOW)), true)
+  eq('dans le futur, non', Boolean(activityError({ ...ok, day: '2026-08-01' }, NOW)), true)
+  eq('date inexistante, non', Boolean(activityError({ ...ok, day: '2026-02-31' }, NOW)), true)
+}
+
+section('Noter, corriger, supprimer')
+{
+  const l0 = []
+  const l1 = addActivity(l0, { type: ' Marche ', day: '2026-07-28', measures: { distance: '5,2', duration: 45 }, note: '  Sous la pluie ' }, NOW)
+  eq('la liste de départ n’est pas modifiée', l0.length, 0)
+  eq('une activité de plus', l1.length, 1)
+  eq('nom normalisé', l1[0].type, 'Marche')
+  eq('note taillée', l1[0].note, 'Sous la pluie')
+  eq('mesures nettoyées', l1[0].measures, { duration: 45, distance: 5.2 })
+  eq('datée du bon jour', dayKey(l1[0].date), '2026-07-28')
+
+  const refus = addActivity(l1, { type: '', day: '2026-07-28' }, NOW)
+  eq('une activité invalide n’entre pas', refus.length, 1)
+
+  const l2 = addActivity(l1, { type: 'Course', day: '2026-07-30', measures: { distance: 3 } }, NOW)
+  eq('deux entrées', l2.length, 2)
+  eq('la plus récente d’abord', l2.map((a) => a.type), ['Course', 'Marche'])
+  eq('des identifiants distincts', new Set(l2.map((a) => a.id)).size, 2)
+
+  const id = l2[1].id
+  const l3 = updateActivity(l2, id, { type: 'Marche rapide', day: '2026-07-28', measures: { distance: 6 }, note: '' }, NOW)
+  eq('le nom est corrigé', l3.find((a) => a.id === id).type, 'Marche rapide')
+  eq('la mesure aussi', l3.find((a) => a.id === id).measures, { distance: 6 })
+  eq('l’identifiant ne bouge pas', l3.length, 2)
+  eq('le jour inchangé garde l’instant d’origine',
+    l3.find((a) => a.id === id).date, l2.find((a) => a.id === id).date)
+
+  const l4 = updateActivity(l3, id, { type: 'Marche', day: '2026-07-25' }, NOW)
+  eq('changer de jour redate l’entrée', dayKey(l4.find((a) => a.id === id).date), '2026-07-25')
+  eq('et la reclasse', l4.map((a) => a.type), ['Course', 'Marche'])
+
+  eq('corriger une entrée qui n’existe pas ne casse rien', updateActivity(l4, 'fantôme', { type: 'X', day: '2026-07-30' }, NOW).length, 2)
+  eq('une correction invalide est refusée', updateActivity(l4, id, { type: '', day: '2026-07-30' }, NOW).find((a) => a.id === id).type, 'Marche')
+
+  eq('supprimer enlève une entrée', removeActivity(l4, id).length, 1)
+  eq('supprimer un fantôme n’enlève rien', removeActivity(l4, 'fantôme').length, 2)
+}
+
+// Un carnet déjà bien rempli : c'est lui qui nourrit suggestions et mémoire des mesures.
+const CARNET = [
+  { id: 'a1', type: 'Marche', date: local(2026, 7, 10, 12), measures: { distance: 4, duration: 50 } },
+  { id: 'a2', type: 'Marche', date: local(2026, 7, 15, 12), measures: { distance: 5, duration: 60 } },
+  { id: 'a3', type: 'marche rapide', date: local(2026, 7, 18, 12), measures: { duration: 30 } },
+  { id: 'a4', type: 'Vélo', date: local(2026, 7, 20, 12), measures: { distance: 22, elevation: 300 } },
+  { id: 'a5', type: 'Muscu', date: local(2026, 7, 25, 12), measures: { sets: 4, reps: 40, weight: 20 } },
+  { id: 'a6', type: 'Marche', date: local(2026, 7, 28, 12), measures: { distance: 6, duration: 70 } },
+]
+
+section('L’app apprend les activités de la personne')
+{
+  const t = knownTypes(CARNET)
+  eq('la plus notée en tête', t[0].type, 'Marche')
+  eq('comptée trois fois', t[0].count, 3)
+  eq('quatre types distincts', t.length, 4)
+  eq('« marche rapide » n’est pas « Marche »', t.map((x) => x.type).includes('marche rapide'), true)
+}
+
+section('Les suggestions : ce qu’on a déjà noté et qui pourrait correspondre')
+{
+  eq('« mar » propose les deux marches', suggestTypes(CARNET, 'mar'), ['Marche', 'marche rapide'])
+  eq('« vel » retrouve « Vélo » malgré l’accent', suggestTypes(CARNET, 'vel'), ['Vélo'])
+  eq('« RAPIDE » cherche aussi au milieu', suggestTypes(CARNET, 'RAPIDE'), ['marche rapide'])
+  eq('déjà tapé en entier : rien à proposer de plus', suggestTypes(CARNET, 'Vélo'), [])
+  eq('champ vide : les plus fréquentes', suggestTypes(CARNET, '').slice(0, 2), ['Marche', 'Muscu'])
+  eq('rien ne correspond', suggestTypes(CARNET, 'natation'), [])
+  eq('carnet vide', suggestTypes([], 'mar'), [])
+  eq('nombre borné', suggestTypes(CARNET, '', 2).length, 2)
+}
+
+section('Retaper « Marche » repropose des km, pas des séries')
+{
+  eq('marche : distance + durée', measuresForType(CARNET, 'Marche'), ['duration', 'distance'])
+  eq('vélo : distance + dénivelé', measuresForType(CARNET, 'Vélo'), ['distance', 'elevation'])
+  eq('muscu : séries, reps, poids', measuresForType(CARNET, 'Muscu'), ['reps', 'sets', 'weight'])
+  eq('la casse ne change rien', measuresForType(CARNET, 'MARCHE'), ['duration', 'distance'])
+  eq('type inconnu : les mesures par défaut', measuresForType(CARNET, 'Natation'), DEFAULT_MEASURES)
+  eq('type vide : idem', measuresForType(CARNET, ''), DEFAULT_MEASURES)
+  eq('carnet vide : idem', measuresForType([], 'Marche'), DEFAULT_MEASURES)
+  // On ne se souvient que des dernières fois : une mesure remplie une seule fois,
+  // il y a longtemps, ne doit pas revenir à vie.
+  const vieux = [
+    { id: 'v0', type: 'Marche', date: local(2026, 1, 1, 12), measures: { calories: 200 } },
+    ...Array.from({ length: 5 }, (_, i) => (
+      { id: `v${i + 1}`, type: 'Marche', date: local(2026, 7, 10 + i, 12), measures: { distance: 3 } }
+    )),
+  ]
+  eq('la vieille mesure est oubliée', measuresForType(vieux, 'Marche'), ['distance'])
+}
+
+section('Comment ça s’écrit à l’écran')
+{
+  eq('moins d’une heure', formatDuration(45), '45 min')
+  eq('pile une heure', formatDuration(60), '1 h')
+  eq('une heure et demie', formatDuration(90), '1 h 30')
+  eq('les minutes sur deux chiffres', formatDuration(65), '1 h 05')
+  eq('zéro', formatDuration(0), '0 min')
+  eq('la virgule est française', formatMeasure('distance', 5.2), '5,2 km')
+  eq('pas de décimale inutile', formatMeasure('distance', 5), '5 km')
+  eq('le dénivelé est entier', formatMeasure('elevation', 300), '300 m')
+  eq('une mesure sans unité se nomme', formatMeasure('reps', 40), '40 répétitions')
+  eq('mesure inconnue', formatMeasure('bidon', 3), null)
+  eq('résumé dans l’ordre des données',
+    activitySummary({ measures: { distance: 5.2, duration: 45 } }), '45 min · 5,2 km')
+  eq('sans mesure, rien', activitySummary({ measures: {} }), '')
+  eq('activité abîmée', activitySummary(null), '')
+}
+
+section('Les jours d’une période (récap T11)')
+{
+  eq('trois jours', daysBetween('2026-07-28', '2026-07-30'), ['2026-07-28', '2026-07-29', '2026-07-30'])
+  eq('un seul jour', daysBetween('2026-07-30', '2026-07-30'), ['2026-07-30'])
+  eq('à cheval sur deux mois', daysBetween('2026-06-29', '2026-07-02').length, 4)
+  eq('février bissextile', daysBetween('2028-02-27', '2028-03-01'), ['2028-02-27', '2028-02-28', '2028-02-29', '2028-03-01'])
+  eq('à l’envers : rien', daysBetween('2026-07-30', '2026-07-28'), [])
+  eq('dates illisibles : rien', daysBetween('hier', 'demain'), [])
+}
+
+section('Une date qui n’existe pas n’est pas décalée en silence')
+{
+  eq('le 31 février est refusé', parseDayKey('2026-02-31'), null)
+  eq('le 29 février d’une année non bissextile aussi', parseDayKey('2026-02-29'), null)
+  eq('mais il existe en 2028', dayKey(parseDayKey('2028-02-29')), '2028-02-29')
+  eq('format libre refusé', parseDayKey('2026-7-3'), null)
+}
+
+section('Les activités apparaissent dans le calendrier, comme le reste')
+{
+  const avec = { ...JOURNAL_STATE, activities: [
+    { id: 'x1', type: 'Marche', date: local(2026, 7, 20, 12), measures: { distance: 5.2, duration: 45 }, note: 'Au bord de l’eau' },
+    { id: 'x2', type: 'Vélo', date: local(2026, 7, 26, 12), measures: { distance: 22 } },
+  ] }
+  const j = journalByDay(avec)
+  eq('quatre entrées le 20 juillet', j.get('2026-07-20').length, 4)
+  eq('un jour qui n’avait rien en a maintenant', j.get('2026-07-26').map((e) => e.title), ['Vélo'])
+  const marche = j.get('2026-07-20').find((e) => e.goalId === 'activity')
+  eq('le résumé est là', marche.detail, '45 min · 5,2 km')
+  eq('la note aussi', marche.note, 'Au bord de l’eau')
+  eq('validée, comme une séance faite', marche.status, DONE)
+  eq('le mois les compte', monthSummary(j, monthGrid(2026, 6)), { days: 6, entries: 9 })
+  eq('sans activités, rien ne change',
+    monthSummary(journalByDay(JOURNAL_STATE), monthGrid(2026, 6)), { days: 5, entries: 7 })
+}
+
+section('Journal : des activités abîmées ne cassent pas le calendrier')
+{
+  const cassé = { ...JOURNAL_STATE, activities: [
+    { id: 'k1', type: 'Marche', date: 'pas une date' },
+    { id: 'k2', date: local(2026, 7, 21, 12) }, // sans nom
+    null,
+    { id: 'k4', type: 'Vélo', date: local(2026, 7, 21, 12), measures: 'n’importe quoi' },
+  ] }
+  const j = journalByDay(cassé)
+  eq('la date illisible est écartée', [...j.values()].flat().some((e) => e.date === 'pas une date'), false)
+  eq('sans nom, une activité reste lisible', j.get('2026-07-21').map((e) => e.title), ['Activité', 'Vélo'])
+  eq('des mesures illisibles ne plantent pas', j.get('2026-07-21')[1].detail, null)
+  eq('activities absent : comme avant', journalByDay({ ...JOURNAL_STATE, activities: undefined }).size, 6)
+  eq('activities pas un tableau : idem', journalByDay({ ...JOURNAL_STATE, activities: 'oups' }).size, 6)
+}
+
+section('Migration v4 -> v5 : les activités arrivent sans rien casser')
+{
+  const m = hydrate({ version: 4, goals: ['pushups'], programs: { pushups: { levelIndex: 1, dayIndex: 3 } } })
+  eq('version à jour', m.version, STATE_VERSION)
+  eq('carnet vide au départ', m.activities, [])
+  eq('la progression est intacte', m.programs.pushups.dayIndex, 3)
+  const gardées = hydrate({ version: 5, activities: [{ id: 'a1', type: 'Marche', date: '2026-07-28T12:00:00.000Z' }] })
+  eq('un carnet existant est gardé', gardées.activities.length, 1)
+  eq('un carnet abîmé repart à vide', hydrate({ version: 5, activities: 'oups' }).activities, [])
+  eq('état neuf : carnet vide', freshState().activities, [])
 }
 
 console.log(fails === 0

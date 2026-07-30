@@ -432,12 +432,45 @@ même fichier deux fois de suite ne déclenche aucun `change` et l'ajout semble 
 (canvas, IndexedDB). Toute la logique qui peut l'être est dans `lib/photos` ; le reste s'est
 vérifié à l'écran, avec les fichiers réels ci-dessus.
 
-### T13 — Sauvegarde complète : export et réimport · à faire
+### T13 — Sauvegarde complète : export et réimport · fait
 
-- [ ] **Exporter** tout l'état en un `.json` téléchargeable : programmes, séances, activités, photos.
-- [ ] **Réimporter** ce fichier — sur un autre téléphone, ou après avoir vidé le navigateur.
-- [ ] L'import **passe par `lib/migrate.js`** : un fichier exporté d'une version antérieure doit
+- [x] **Exporter** tout l'état en un `.json` téléchargeable : programmes, séances, activités, photos.
+- [x] **Réimporter** ce fichier — sur un autre téléphone, ou après avoir vidé le navigateur.
+- [x] L'import **passe par `lib/migrate.js`** : un fichier exporté d'une version antérieure doit
       se relire, exactement comme le localStorage.
-- [ ] Refuser proprement un fichier qui n'est pas une sauvegarde, et **confirmer avant d'écraser**
+- [x] Refuser proprement un fichier qui n'est pas une sauvegarde, et **confirmer avant d'écraser**
       une progression en cours.
-- [ ] Écrit en dernier, pour n'être écrit qu'une fois — contre la forme définitive des données.
+- [x] Écrit en dernier, pour n'être écrit qu'une fois — contre la forme définitive des données.
+- [x] 53 assertions de plus dans `npm run check` (560 au total).
+
+**Manque trouvé en testant, pas en écrivant** : après avoir vidé le navigateur, on retombe sur
+l'onboarding — et **la sauvegarde y était inaccessible**. Il aurait fallu inventer un objectif au
+hasard pour pouvoir récupérer les siens, exactement dans le cas pour lequel ce ticket existe. D'où
+« 💾 J'ai déjà une sauvegarde » sur l'écran d'onboarding.
+
+**Vérifié dans le navigateur**, aller-retour complet et réel : export d'un état à 4 modules, 5
+activités et 1 photo → fichier de **515 ko** dans les téléchargements, signé `reps.backup`, avec
+l'image en base64 (décodée : 394 221 octets, en-tête `ffd8ff`, un vrai JPEG). Puis **localStorage
+vidé ET IndexedDB supprimée** → l'app repart à l'onboarding → « J'ai déjà une sauvegarde » →
+fichier relu → confirmation qui annonce les **deux côtés** (« 11 choses faites · 5 activités ·
+1 photo » contre « rien du tout ») → « Remplacer » → **tout est revenu à l'identique**, y compris
+l'image qui s'affiche. Et un `.jpg` proposé comme sauvegarde est refusé (« Ce fichier n'est pas
+lisible — il n'est pas au format JSON »). Zéro erreur console.
+
+**L'ordre des écritures, encore** : les images de la sauvegarde sont posées **avant** de remplacer
+l'état, et les anciennes ne sont **pas** effacées d'abord — elles deviennent orphelines et sont
+balayées au démarrage suivant. Les effacer d'entrée rendrait un import interrompu bien pire que le
+désordre qu'il évite.
+
+**Choix assumé — pas de fiche sans image après un import.** Si une image n'a pas pu être remise
+(place manquante, données abîmées), sa fiche est écartée et l'app le dit (« 2 photos n'ont pas pu
+être remises »). Une vignette barrée à vie serait pire qu'une photo de moins.
+
+**Choix assumé — le fichier est signé.** `format: "reps.backup"` : sans ça, impossible de
+distinguer notre `.json` de n'importe quel autre, et on écraserait une progression sur un fichier
+au hasard. Une sauvegarde d'un `formatVersion` **plus récent** est refusée avec le bon conseil
+(« mets l'app à jour d'abord ») plutôt que lue de travers.
+
+**Ce qui verrouille vraiment l'aller-retour** : une assertion compare le **récap** et le
+**calendrier** avant export et après relecture. Comparer les champs un par un laisserait passer un
+oubli ; comparer ce que l'app en dit, non.

@@ -18,6 +18,7 @@ import Journal from './screens/Journal'
 import Activities from './screens/Activities'
 import ActivityForm from './screens/ActivityForm'
 import Recap from './screens/Recap'
+import Backup from './screens/Backup'
 import PushupPlan from './screens/PushupPlan'
 import RunPlan from './screens/RunPlan'
 import Stretch from './screens/Stretch'
@@ -52,8 +53,14 @@ export default function App() {
   // Aucun objectif choisi (1er lancement, ou après une réinitialisation) : on demande avant tout.
   // Retour à l'accueil ensuite : après une réinitialisation, `view` pointe encore sur l'écran quitté.
   if (step.type === 'onboarding') {
+    // On peut arriver ici avec une sauvegarde en poche : nouveau téléphone,
+    // navigateur vidé. La restauration doit donc être accessible AVANT d'avoir
+    // choisi quoi que ce soit — sinon il faudrait inventer un objectif pour
+    // pouvoir récupérer les siens.
+    if (view === 'backup') return <Backup onBack={() => setView('home')} />
     return (
       <Onboarding
+        onRestore={() => setView('backup')}
         onValidate={(ids) => {
           setGoals(ids)
           setView('home')
@@ -81,6 +88,10 @@ export default function App() {
 
   if (view === 'journal') {
     return <Journal onBack={() => setView('home')} />
+  }
+
+  if (view === 'backup') {
+    return <Backup onBack={() => setView('home')} />
   }
 
   if (view === 'recap') {
@@ -282,6 +293,7 @@ export default function App() {
       onOpenJournal={() => setView('journal')}
       onOpenActivities={() => setView('activities')}
       onOpenRecap={() => setView('recap')}
+      onOpenBackup={() => setView('backup')}
       onAddActivity={() => {
         setEditingActivity(null)
         setView('activity-form')

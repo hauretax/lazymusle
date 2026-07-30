@@ -384,13 +384,19 @@ export function AppProvider({ children }) {
     photoStore.clearPhotos().catch(() => {})
   }, [])
 
+  // Restaurer une sauvegarde (TICKETS.md T13). Remplace TOUT — c'est le geste
+  // demandé, et l'écran le fait confirmer avant d'arriver ici.
+  const replaceAll = useCallback((next) => {
+    setState(hydrate(next))
+  }, [])
+
   const value = useMemo(
     () => ({
       state, recordInitialTest, setGoals, completeSession, abandonSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
       recordLsitAxes, completeLsitSession,
       completeRunSession, repeatRunWeek,
-      goToPushupDay, goToRunWorkout, resetAll,
+      goToPushupDay, goToRunWorkout, resetAll, replaceAll,
       addActivity, updateActivity, removeActivity,
       addPhoto, removePhoto,
     }),
@@ -398,7 +404,7 @@ export function AppProvider({ children }) {
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
       recordLsitAxes, completeLsitSession,
       completeRunSession, repeatRunWeek,
-      goToPushupDay, goToRunWorkout, resetAll,
+      goToPushupDay, goToRunWorkout, resetAll, replaceAll,
       addActivity, updateActivity, removeActivity,
       addPhoto, removePhoto],
   )

@@ -742,3 +742,11 @@ body {
   min-height: 0;
 }
 .viewer__frame img { max-width: 100%; max-height: 70vh; border-radius: 14px; display: block; }
+
+/* ---------- Sauvegarde (T13) ---------- */
+.backup__ok {
+  color: var(--success);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}

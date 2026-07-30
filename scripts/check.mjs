@@ -34,6 +34,10 @@ import {
   photosOfDay, photosOfActivity, photosBetween, photoCountByDay, totalBytes, formatBytes,
   MAX_EDGE,
 } from '../src/lib/photos.js'
+import {
+  backupEnvelope, backupFilename, describeState, readBackup, keepRestorablePhotos,
+  BACKUP_FORMAT, BACKUP_FORMAT_VERSION,
+} from '../src/lib/backup.js'
 import * as hs from '../src/data/handstandProgram.js'
 import * as ls from '../src/data/lsitProgram.js'
 import * as run from '../src/data/runProgram.js'
@@ -1210,6 +1214,136 @@ section('Migration v5 -> v6 : les photos arrivent sans rien casser')
   eq('une pellicule existante est gardée', hydrate({ version: 6, photos: PELLICULE }).photos.length, 4)
   eq('une pellicule abîmée repart à vide', hydrate({ version: 6, photos: 'oups' }).photos, [])
   eq('état neuf', freshState().photos, [])
+}
+
+// ---------- Sauvegarde : export et réimport (T13) ----------
+// L'encodage des images et le téléchargement sont dans `lib/backupFile` : ils
+// demandent un navigateur. Ici, l'enveloppe et la relecture.
+
+const SAUVEGARDE_ETAT = { ...RECAP_STATE, version: 6, photos: PELLICULE }
+
+section('L’enveloppe d’une sauvegarde')
+{
+  const e = backupEnvelope(SAUVEGARDE_ETAT, new Date(NOW))
+  eq('elle se signe', e.format, BACKUP_FORMAT)
+  eq('avec sa version de format', e.formatVersion, BACKUP_FORMAT_VERSION)
+  eq('et la version de l’état', e.stateVersion, STATE_VERSION)
+  eq('datée', e.exportedAt, new Date(NOW).toISOString())
+  eq('la progression est dedans', e.state.activities.length, 5)
+  eq('les images se remplissent ailleurs', e.photos, [])
+  eq('un état vide passe aussi', backupEnvelope(null, new Date(NOW)).state, {})
+}
+
+section('Le nom du fichier')
+{
+  eq('daté du jour', backupFilename(new Date(NOW)), 'reps-sauvegarde-2026-07-30.json')
+  eq('mois et jour sur deux chiffres',
+    backupFilename(new Date(2026, 0, 5, 12)), 'reps-sauvegarde-2026-01-05.json')
+}
+
+section('Ce qu’on annonce avant de remplacer')
+{
+  const d = describeState(SAUVEGARDE_ETAT)
+  eq('les activités', d.activities, 5)
+  eq('les photos', d.photos, 4)
+  eq('tout ce qui a été fait', d.sessions, 13)
+  eq('du premier au dernier jour', [d.from, d.to], ['2026-06-30', '2026-08-03'])
+  eq('le poids des photos', d.photoBytes, 620_000)
+  const vierge = describeState(freshState())
+  eq('un état neuf n’annonce rien', [vierge.activities, vierge.photos, vierge.sessions], [0, 0, 0])
+  eq('et n’a pas de dates', [vierge.from, vierge.to], [null, null])
+}
+
+section('Relire une sauvegarde')
+{
+  const fichier = JSON.stringify({
+    ...backupEnvelope(SAUVEGARDE_ETAT, new Date(NOW)),
+    photos: [{ id: 'f1', type: 'image/jpeg', data: 'AAAA' }],
+  })
+  const r = readBackup(fichier)
+  eq('elle est acceptée', r.ok, true)
+  eq('la progression revient', r.state.activities.length, 5)
+  eq('les images aussi', r.photos.map((p) => p.id), ['f1'])
+  eq('l’état passe par migrate', r.state.version, STATE_VERSION)
+  eq('le résumé est là', r.summary.activities, 5)
+}
+
+section('Un fichier qui n’est pas une sauvegarde est refusé, proprement')
+{
+  eq('pas du JSON', readBackup('bonjour').ok, false)
+  eq('et on dit pourquoi', readBackup('bonjour').error.includes('JSON'), true)
+  eq('du JSON, mais pas à nous', readBackup('{"hello":1}').ok, false)
+  eq('un tableau', readBackup('[1,2,3]').ok, false)
+  eq('null', readBackup('null').ok, false)
+  eq('la bonne signature mais rien dedans',
+    readBackup(JSON.stringify({ format: BACKUP_FORMAT, formatVersion: 1 })).ok, false)
+  eq('une progression qui n’en est pas une',
+    readBackup(JSON.stringify({ format: BACKUP_FORMAT, formatVersion: 1, state: 'oups' })).ok, false)
+  eq('un état vide reste une sauvegarde valable',
+    readBackup(JSON.stringify({ format: BACKUP_FORMAT, formatVersion: 1, state: {} })).ok, true)
+  // Une sauvegarde d'une version plus RÉCENTE : on ne devine pas, on le dit.
+  const futur = readBackup(JSON.stringify({ format: BACKUP_FORMAT, formatVersion: 99, state: {} }))
+  eq('une sauvegarde venue du futur', futur.ok, false)
+  eq('avec le bon conseil', futur.error.includes('à jour'), true)
+  eq('sans section photos : pas grave',
+    readBackup(JSON.stringify({ format: BACKUP_FORMAT, formatVersion: 1, state: {} })).photos, [])
+  eq('des photos sans données sont écartées',
+    readBackup(JSON.stringify({
+      format: BACKUP_FORMAT, formatVersion: 1, state: {},
+      photos: [{ id: 'a' }, { data: 'x' }, { id: 'b', data: 'y' }],
+    })).photos.map((p) => p.id), ['b'])
+}
+
+section('Une sauvegarde d’une version antérieure se relit')
+{
+  // Un fichier exporté quand les activités et les photos n'existaient pas encore.
+  const vieux = JSON.stringify({
+    format: BACKUP_FORMAT,
+    formatVersion: 1,
+    stateVersion: 4,
+    state: { version: 4, goals: ['pushups'], programs: { pushups: { levelIndex: 1, dayIndex: 3, sessions: [], maxHistory: [] } } },
+  })
+  const r = readBackup(vieux)
+  eq('acceptée', r.ok, true)
+  eq('montée de version', r.state.version, STATE_VERSION)
+  eq('la progression est intacte', r.state.programs.pushups.dayIndex, 3)
+  eq('le carnet arrive vide', r.state.activities, [])
+  eq('la pellicule aussi', r.state.photos, [])
+
+  // Et un fichier d'AVANT `programs` (l'état des pompes encore à plat, v3).
+  const tresVieux = readBackup(JSON.stringify({
+    format: BACKUP_FORMAT, formatVersion: 1,
+    state: { version: 3, levelIndex: 2, dayIndex: 5, sessions: [], maxHistory: [] },
+  }))
+  eq('un v3 se relit aussi', tresVieux.ok, true)
+  eq('les pompes sont descendues sous programs', tresVieux.state.programs.pushups.dayIndex, 5)
+  eq('et l’objectif est deviné', tresVieux.state.goals, ['pushups'])
+}
+
+section('Après restauration : pas de fiche sans image')
+{
+  const etat = { ...SAUVEGARDE_ETAT, photos: PELLICULE }
+  eq('toutes remises', keepRestorablePhotos(etat, ['f1', 'f2', 'f3', 'f4']).photos.length, 4)
+  eq('une seule remise', keepRestorablePhotos(etat, ['f2']).photos.map((p) => p.id), ['f2'])
+  eq('aucune remise', keepRestorablePhotos(etat, []).photos, [])
+  eq('le reste de l’état ne bouge pas', keepRestorablePhotos(etat, []).activities.length, 5)
+  eq('un état sans photos', keepRestorablePhotos({ activities: [] }, ['f1']).photos, [])
+}
+
+section('Aller-retour complet : exporter puis relire ne perd rien')
+{
+  const fichier = JSON.stringify(backupEnvelope(SAUVEGARDE_ETAT, new Date(NOW)))
+  const r = readBackup(fichier)
+  eq('les activités', r.state.activities, SAUVEGARDE_ETAT.activities)
+  eq('les objectifs', r.state.goals, SAUVEGARDE_ETAT.goals)
+  eq('les séances de pompes', r.state.programs.pushups.sessions, SAUVEGARDE_ETAT.programs.pushups.sessions)
+  eq('la course', r.state.programs.running.sessions, SAUVEGARDE_ETAT.programs.running.sessions)
+  eq('les fiches des photos', r.state.photos, SAUVEGARDE_ETAT.photos)
+  // Ce qui compte vraiment : le même bilan des deux côtés.
+  eq('le même récap qu’avant',
+    recap(r.state, '2026-07-01', '2026-07-31'),
+    recap(SAUVEGARDE_ETAT, '2026-07-01', '2026-07-31'))
+  eq('le même calendrier', journalByDay(r.state).size, journalByDay(SAUVEGARDE_ETAT).size)
 }
 
 console.log(fails === 0

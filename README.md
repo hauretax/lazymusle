@@ -16,10 +16,9 @@ PWA React pour progresser jusqu'à **100 pompes d'affilée**, basée sur le syst
 - **Étirements** : routine de récupération (7 étirements illustrés) proposée à la fin de chaque séance, guidée et skippable. Données dans [`src/data/stretches.json`](src/data/stretches.json).
 - **Calendrier** : « 📆 Mon calendrier » montre le mois, un point par exo et par jour — la couleur dit lequel, le point creux dit abandon ou test raté. Taper un jour donne le détail. C'est une simple lecture des historiques ([`src/lib/journal.js`](src/lib/journal.js)), donc rétroactif.
 - **Activités libres** : « ➕ Noter une activité » enregistre à la main ce qu'on fait en dehors des programmes — une marche, une sortie vélo, n'importe quoi. Le nom se **tape au clavier** (l'app propose ensuite ce qu'on a déjà noté), les mesures sont **optionnelles** (durée, distance, dénivelé, répétitions, séries, poids, calories, dans [`src/data/measures.json`](src/data/measures.json)), et l'app retient celles qu'on remplit d'habitude pour ce nom-là. La **date se choisit** : on peut remplir dimanche ce qu'on a fait mercredi. Ça atterrit dans le calendrier comme le reste. Logique dans [`src/lib/activities.js`](src/lib/activities.js).
-
 - **Où j'en suis** : « 📊 Où j'en suis » fait le bilan entre **deux dates** (ou en un tap : 7 jours, 30 jours, ce mois, tout) — jours actifs, plus longue série de jours d'affilée, totaux par type d'activité (km et temps cumulés), et ce que chaque programme a produit. Lecture seule ([`src/lib/recap.js`](src/lib/recap.js)).
-
 - **Photos** : une ou plusieurs par jour depuis le calendrier, et/ou rattachées à une activité. Elles sont **redimensionnées à l'ajout** (1600 px max, JPEG) — une photo de téléphone de 2,3 Mo tombe à ~390 ko. Les **images** vivent dans **IndexedDB** ([`src/lib/photoStore.js`](src/lib/photoStore.js)), seules leurs **fiches** (id, jour, dimensions) sont dans le `localStorage` ([`src/lib/photos.js`](src/lib/photos.js)) : le quota du `localStorage` est de ~5 Mo, une seule photo le remplirait et ferait perdre toute la progression. Supprimer une activité **ne supprime pas** ses photos — elles redeviennent des photos du jour.
+- **Sauvegarde** : « 💾 Sauvegarde » exporte **tout** (programmes, séances, activités, photos comprises) en un `.json` téléchargeable, et sait le relire — sur un autre téléphone, ou après avoir vidé son navigateur. L'import passe par [`src/lib/migrate.js`](src/lib/migrate.js), donc une sauvegarde d'une version antérieure se relit. Le lien est aussi sur l'écran d'accueil du tout premier lancement (« J'ai déjà une sauvegarde ») : c'est là qu'on en a besoin. **C'est la seule copie** — l'app n'a pas de serveur.
 
 | Niveau | Jours | 1re séance | Test final |
 |--------|-------|------------|-----------|
@@ -50,8 +49,12 @@ npm run preview  # sert le build
 **pas** visible à l'écran : le moteur de planning ([`src/lib/schedule.js`](src/lib/schedule.js), dont
 les règles ne se déclenchent pas encore — voir [`TICKETS.md`](TICKETS.md)), les formules du
 programme pompes, ce qui compte comme séance validée
-([`src/lib/progress.js`](src/lib/progress.js)), et les activités notées à la main
-([`src/lib/activities.js`](src/lib/activities.js)). Le reste (écrans, parcours) se vérifie dans le navigateur.
+([`src/lib/progress.js`](src/lib/progress.js)), les activités notées à la main
+([`src/lib/activities.js`](src/lib/activities.js)), le récap d’une période ([`src/lib/recap.js`](src/lib/recap.js)),
+les fiches des photos ([`src/lib/photos.js`](src/lib/photos.js)) et la relecture d’une sauvegarde
+([`src/lib/backup.js`](src/lib/backup.js)). Le reste (écrans, parcours) se vérifie dans le navigateur —
+y compris ce qui a besoin d’un navigateur pour exister : le canvas et IndexedDB
+([`photoStore.js`](src/lib/photoStore.js), [`backupFile.js`](src/lib/backupFile.js)).
 
 Installable comme app (PWA) : "Ajouter à l'écran d'accueil" sur mobile.
 

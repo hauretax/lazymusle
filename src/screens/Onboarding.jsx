@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { goals, hasProgram } from '../data/goals'
 
-export default function Onboarding({ initial = [], onValidate, onCancel }) {
+export default function Onboarding({ initial = [], onValidate, onCancel, onRestore }) {
   const [picked, setPicked] = useState(initial)
   const toggle = (id) =>
     setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
@@ -63,6 +63,14 @@ export default function Onboarding({ initial = [], onValidate, onCancel }) {
       >
         {picked.length === 0 ? 'Choisis au moins un objectif' : 'C’est parti'}
       </button>
+
+      {/* Sans ça, quelqu'un qui vient de changer de téléphone ou de vider son
+          navigateur atterrit ici SANS accès à sa sauvegarde — et devrait
+          choisir un objectif au hasard avant de pouvoir la remettre. C'est
+          précisément le cas pour lequel T13 existe. */}
+      {onRestore && (
+        <button className="link" onClick={onRestore}>💾 J’ai déjà une sauvegarde</button>
+      )}
     </div>
   )
 }

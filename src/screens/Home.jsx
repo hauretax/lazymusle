@@ -43,7 +43,7 @@ export default function Home({
   onStart, onStartHandstand, onRetestHandstand, onReassessHandstand,
   onStartLsit, onReassessLsit, onStartRun, onRepeatRunWeek,
   onOpenPushupPlan, onOpenRunPlan, onOpenProgress, onOpenJournal, onEditGoals,
-  onOpenActivities, onAddActivity, onOpenRecap,
+  onOpenActivities, onAddActivity, onOpenRecap, onOpenBackup,
 }) {
   const { state } = useApp()
   const step = getNextStep(state)
@@ -494,6 +494,9 @@ export default function Home({
       )}
 
       <button className="link" onClick={onEditGoals}>🎯 Mes objectifs</button>
+
+      {/* La seule copie de tout : l'app n'a pas de serveur (TICKETS.md T13). */}
+      <button className="link" onClick={onOpenBackup}>💾 Sauvegarde</button>
 
       <InstallButton />
     </div>

@@ -25,6 +25,10 @@ import {
   formatDuration, formatMeasure, activitySummary,
 } from '../src/lib/activities.js'
 import { DEFAULT_MEASURES } from '../src/data/measures.js'
+import {
+  normalizeRange, entriesBetween, activeDays, longestStreak, activityTotals,
+  programTotals, firstActiveDay, presetRange, recap,
+} from '../src/lib/recap.js'
 import * as hs from '../src/data/handstandProgram.js'
 import * as ls from '../src/data/lsitProgram.js'
 import * as run from '../src/data/runProgram.js'
@@ -917,6 +921,144 @@ section('Migration v4 -> v5 : les activités arrivent sans rien casser')
   eq('un carnet existant est gardé', gardées.activities.length, 1)
   eq('un carnet abîmé repart à vide', hydrate({ version: 5, activities: 'oups' }).activities, [])
   eq('état neuf : carnet vide', freshState().activities, [])
+}
+
+// ---------- Récap d'une période (T11) ----------
+
+// Un état complet : 4 modules qui ont tourné, et un carnet d'activités.
+const RECAP_STATE = {
+  ...JOURNAL_STATE,
+  activities: [
+    { id: 'r1', type: 'Marche', date: local(2026, 7, 20, 12), measures: { distance: 5.2, duration: 45 } },
+    { id: 'r2', type: 'marche', date: local(2026, 7, 21, 12), measures: { distance: 3.8, duration: 40 } },
+    { id: 'r3', type: 'Vélo', date: local(2026, 7, 23, 12), measures: { distance: 22.4, elevation: 310 } },
+    { id: 'r4', type: 'Muscu', date: local(2026, 7, 25, 12), measures: { reps: 40, sets: 4, weight: 20 } },
+    { id: 'r5', type: 'Marche', date: local(2026, 8, 3, 12), measures: { distance: 2, duration: 25 } },
+  ],
+}
+
+section('Une période à l’envers reste une période')
+{
+  eq('dans l’ordre', normalizeRange('2026-07-01', '2026-07-31'), { from: '2026-07-01', to: '2026-07-31' })
+  eq('à l’envers : remise d’aplomb', normalizeRange('2026-07-31', '2026-07-01'), { from: '2026-07-01', to: '2026-07-31' })
+  eq('un seul jour', normalizeRange('2026-07-10', '2026-07-10'), { from: '2026-07-10', to: '2026-07-10' })
+  eq('date illisible', normalizeRange('hier', '2026-07-10'), null)
+  eq('date inexistante', normalizeRange('2026-02-31', '2026-07-10'), null)
+}
+
+section('Ce qu’il y a eu entre deux dates : les bornes sont incluses')
+{
+  const dedans = entriesBetween(RECAP_STATE, '2026-07-20', '2026-07-21').map((e) => e.day)
+  eq('du 20 au 21', dedans, ['2026-07-20', '2026-07-20', '2026-07-20', '2026-07-20', '2026-07-21'])
+  eq('le premier jour compte', entriesBetween(RECAP_STATE, '2026-07-24', '2026-07-24').length, 1)
+  eq('le dernier aussi', entriesBetween(RECAP_STATE, '2026-06-30', '2026-06-30').length, 1)
+  eq('une période vide', entriesBetween(RECAP_STATE, '2026-05-01', '2026-05-31'), [])
+  eq('rangé dans l’ordre du temps',
+    entriesBetween(RECAP_STATE, '2026-07-20', '2026-07-20').map((e) => e.goalId),
+    ['pushups', 'activity', 'handstand', 'core'])
+  eq('bornes illisibles', entriesBetween(RECAP_STATE, 'hier', 'demain'), [])
+}
+
+section('Les jours actifs, et la plus longue série')
+{
+  eq('sans doublon et triés',
+    activeDays(entriesBetween(RECAP_STATE, '2026-07-20', '2026-07-21')),
+    ['2026-07-20', '2026-07-21'])
+  eq('aucun jour', longestStreak([]), 0)
+  eq('un seul jour', longestStreak(['2026-07-20']), 1)
+  eq('deux jours de suite', longestStreak(['2026-07-20', '2026-07-21']), 2)
+  eq('un trou casse la série', longestStreak(['2026-07-20', '2026-07-21', '2026-07-24']), 2)
+  eq('c’est la PLUS longue qui compte',
+    longestStreak(['2026-07-01', '2026-07-05', '2026-07-06', '2026-07-07', '2026-07-20']), 3)
+  eq('à cheval sur deux mois', longestStreak(['2026-06-30', '2026-07-01', '2026-07-02']), 3)
+  eq('le désordre ne trompe pas', longestStreak(['2026-07-22', '2026-07-20', '2026-07-21']), 3)
+  eq('des doublons ne gonflent pas la série', longestStreak(['2026-07-20', '2026-07-20', '2026-07-21']), 2)
+  // Le passage à l'heure d'hiver 2026 (dimanche 25 octobre) : ce jour-là fait
+  // 25 h. Compter en millisecondes casserait la série ici.
+  eq('un changement d’heure ne casse rien', longestStreak(['2026-10-24', '2026-10-25', '2026-10-26']), 3)
+  eq('le passage à l’heure d’été non plus', longestStreak(['2026-03-28', '2026-03-29', '2026-03-30']), 3)
+  eq('29 février d’une année bissextile', longestStreak(['2028-02-28', '2028-02-29', '2028-03-01']), 3)
+}
+
+section('Totaux par activité : les km et le temps se cumulent, pas les kilos')
+{
+  const t = activityTotals(RECAP_STATE.activities, '2026-07-01', '2026-07-31')
+  eq('trois types en juillet', t.map((x) => x.type), ['marche', 'Muscu', 'Vélo'])
+  // « marche » et pas « Marche » : c'est la dernière façon dont on l'a écrit DANS
+  // la période, comme dans les suggestions. Le carnet suit la personne.
+  eq('« marche » et « Marche » sont le même type', t[0].count, 2)
+  eq('les km s’additionnent', t[0].measures.distance, 9)
+  eq('le temps aussi', t[0].measures.duration, 85)
+  eq('le vélo garde son dénivelé', t[2].measures, { distance: 22.4, elevation: 310 })
+  eq('reps et séries se cumulent', [t[1].measures.reps, t[1].measures.sets], [40, 4])
+  eq('le poids ne se cumule PAS', t[1].measures.weight, undefined)
+  eq('la marche d’août est hors période', t.map((x) => x.count).reduce((a, b) => a + b, 0), 4)
+
+  const bornes = activityTotals(RECAP_STATE.activities, '2026-07-21', '2026-07-23')
+  eq('la période resserre', bornes.map((x) => x.type), ['Vélo', 'marche'])
+  eq('et les totaux avec', bornes.find((x) => x.key === 'marche').measures.distance, 3.8)
+
+  eq('carnet vide', activityTotals([], '2026-07-01', '2026-07-31'), [])
+  eq('carnet abîmé', activityTotals('oups', '2026-07-01', '2026-07-31'), [])
+  eq('période illisible', activityTotals(RECAP_STATE.activities, 'hier', 'demain'), [])
+  eq('une activité sans date est écartée',
+    activityTotals([{ id: 'z', type: 'Marche' }], '2026-07-01', '2026-07-31'), [])
+  eq('des mesures illisibles ne plantent pas',
+    activityTotals([{ id: 'z', type: 'X', date: local(2026, 7, 10, 12), measures: 'oups' }], '2026-07-01', '2026-07-31')[0].measures, {})
+}
+
+section('Ce que les programmes ont produit')
+{
+  const p = programTotals(RECAP_STATE, '2026-07-01', '2026-07-31')
+  const par = Object.fromEntries(p.map((x) => [x.goalId, x]))
+  eq('la course de juin n’est pas dans juillet', p.map((x) => x.goalId), ['pushups', 'handstand', 'core'])
+  eq('une séance validée, un abandon, un test raté',
+    [par.pushups.done, par.pushups.abandoned, par.pushups.tried], [1, 1, 1])
+  eq('les pompes se cumulent, abandon compris', par.pushups.reps, 45)
+  eq('les secondes tenues', par.handstand.seconds, 48)
+  eq('un module qui n’a rien fait n’apparaît pas', par.running, undefined)
+  eq('mais il apparaît sur juin',
+    programTotals(RECAP_STATE, '2026-06-01', '2026-06-30').map((x) => x.goalId), ['running'])
+  eq('9 min courues en juin', programTotals(RECAP_STATE, '2026-06-01', '2026-06-30')[0].seconds, 540)
+  eq('période vide : aucun module', programTotals(RECAP_STATE, '2026-05-01', '2026-05-31'), [])
+  eq('état vide', programTotals({}, '2026-07-01', '2026-07-31'), [])
+  eq('période illisible', programTotals(RECAP_STATE, 'hier', 'demain'), [])
+}
+
+section('Le bilan complet d’une période')
+{
+  const b = recap(RECAP_STATE, '2026-07-20', '2026-07-26')
+  eq('sept jours dans la période', b.spanDays, 7)
+  eq('six jours actifs', b.activeDays, 6)
+  eq('six jours d’affilée', b.streak, 6)
+  eq('tout ce qui a été fait', b.entries, 9)
+  eq('trois types d’activité', b.activities.length, 3)
+  eq('trois modules', b.programs.length, 3)
+  eq('les bornes sont reprises', [b.from, b.to], ['2026-07-20', '2026-07-26'])
+
+  const vide = recap(RECAP_STATE, '2026-05-01', '2026-05-31')
+  eq('période sans rien : pas d’erreur', [vide.entries, vide.activeDays, vide.streak], [0, 0, 0])
+  eq('mais la période existe', vide.spanDays, 31)
+  eq('deux dates illisibles', recap(RECAP_STATE, 'hier', 'demain'), null)
+  eq('un jour tout seul', recap(RECAP_STATE, '2026-07-20', '2026-07-20').entries, 4)
+  eq('à l’envers : même bilan',
+    recap(RECAP_STATE, '2026-07-26', '2026-07-20').entries, recap(RECAP_STATE, '2026-07-20', '2026-07-26').entries)
+}
+
+section('Les raccourcis de période')
+{
+  eq('7 jours : aujourd’hui compris', presetRange('7', RECAP_STATE, new Date(NOW)), { from: '2026-07-24', to: '2026-07-30' })
+  eq('30 jours', presetRange('30', RECAP_STATE, new Date(NOW)), { from: '2026-07-01', to: '2026-07-30' })
+  eq('ce mois part du 1er', presetRange('month', RECAP_STATE, new Date(NOW)), { from: '2026-07-01', to: '2026-07-30' })
+  eq('« tout » remonte au premier jour enregistré',
+    presetRange('all', RECAP_STATE, new Date(NOW)), { from: '2026-06-30', to: '2026-07-30' })
+  eq('« tout » sur un état vierge : aujourd’hui',
+    presetRange('all', freshState(), new Date(NOW)), { from: '2026-07-30', to: '2026-07-30' })
+  eq('raccourci inconnu : 7 jours', presetRange('bidon', RECAP_STATE, new Date(NOW)), { from: '2026-07-24', to: '2026-07-30' })
+  eq('premier jour enregistré', firstActiveDay(RECAP_STATE), '2026-06-30')
+  eq('rien d’enregistré', firstActiveDay(freshState()), null)
+  // Un mois de 31 jours puis un de 30 : « 30 jours » ne doit pas déborder.
+  eq('à cheval sur deux mois', presetRange('30', RECAP_STATE, new Date(local(2026, 3, 5, 12))), { from: '2026-02-04', to: '2026-03-05' })
 }
 
 console.log(fails === 0

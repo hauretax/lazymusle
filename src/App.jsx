@@ -17,6 +17,7 @@ import Progress from './screens/Progress'
 import Journal from './screens/Journal'
 import Activities from './screens/Activities'
 import ActivityForm from './screens/ActivityForm'
+import Recap from './screens/Recap'
 import PushupPlan from './screens/PushupPlan'
 import RunPlan from './screens/RunPlan'
 import Stretch from './screens/Stretch'
@@ -80,6 +81,10 @@ export default function App() {
 
   if (view === 'journal') {
     return <Journal onBack={() => setView('home')} />
+  }
+
+  if (view === 'recap') {
+    return <Recap onBack={() => setView('home')} />
   }
 
   if (view === 'activities') {
@@ -276,6 +281,7 @@ export default function App() {
       onOpenProgress={() => setView('progress')}
       onOpenJournal={() => setView('journal')}
       onOpenActivities={() => setView('activities')}
+      onOpenRecap={() => setView('recap')}
       onAddActivity={() => {
         setEditingActivity(null)
         setView('activity-form')

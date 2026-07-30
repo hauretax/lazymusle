@@ -335,15 +335,43 @@ les activités, les activités ont besoin des jours : le laisser dans journal fa
 d'imports. `lib/journal` le réexporte, donc rien d'autre n'a bougé. `lib/dates` porte aussi
 `daysBetween`, écrit d'avance pour T11.
 
-### T11 — Récap entre deux dates · à faire
+### T11 — Récap entre deux dates · fait
 
 « J'ai fait tout ça, voilà où j'en suis. » Un écran avec deux dates, et le bilan de la période.
 
-- [ ] Choix de la période : deux dates, plus des raccourcis (7 jours, 30 jours, ce mois, tout).
-- [ ] **Totaux par type d'activité** : nombre de fois, km cumulés, temps cumulé.
-- [ ] Ce que les **modules** ont produit sur la période (séances de pompes, tenues, séances de course).
-- [ ] Jours actifs sur la période, et la plus longue série de jours consécutifs.
-- [ ] Lecture seule, calculée depuis `lib/journal.js` — aucune donnée nouvelle, comme T9.
+- [x] Choix de la période : deux dates, plus des raccourcis (7 jours, 30 jours, ce mois, tout).
+- [x] **Totaux par type d'activité** : nombre de fois, km cumulés, temps cumulé.
+- [x] Ce que les **modules** ont produit sur la période (séances de pompes, tenues, séances de course).
+- [x] Jours actifs sur la période, et la plus longue série de jours consécutifs.
+- [x] Lecture seule (`lib/recap.js`) — aucune donnée nouvelle, comme T9.
+- [x] 69 assertions de plus dans `npm run check` (443 au total).
+
+**Vérifié dans le navigateur** sur un état à 4 modules et 5 activités : « 30 jours » → 10 jours
+actifs sur 30, 11 choses faites, 7 jours d'affilée · Marche `3 fois · 2 h 35 · 15 km` (45+40+70 min,
+5,2+3,8+6 km) · Muscu `40 répétitions · 4 séries` **sans le poids** · Pompes `3 séances · 48 pompes`
+(14+16+18) · Course `8 min courues` · « 7 jours » resserre à 6/7 et fait tomber le vélo du 23 ·
+« Tout » remonte au test initial du 1er juillet · une période vide affiche son écran · bouger une
+date à la main décoche le raccourci. Zéro erreur console.
+
+**Deux sources, exprès.** Les jours actifs et les séries se lisent dans `journalEntries` (déjà
+testé). Les **totaux se lisent dans l'état brut**, jamais dans les entrées du journal : celles-ci
+portent du texte tout prêt (« 45 min · 5,2 km »), et additionner du texte c'est le reparser, donc se
+tromper un jour.
+
+**Choix assumé — un poids ne se cumule pas.** 4 séances à 20 kg ne font pas 80 kg, ça ne veut rien
+dire. Seules les mesures marquées `sums` dans `measures.json` s'additionnent : durée, distance,
+dénivelé, répétitions, séries, calories.
+
+**Choix assumé — la série se compte en jours, pas en millisecondes.** On avance d'un jour avec
+`setDate`. Un jour de changement d'heure fait 23 ou 25 h : comparer à 86 400 000 ms casserait la
+série deux fois par an, sans raison. Verrouillé par des assertions sur mars et octobre 2026.
+
+**Choix assumé — deux dates à l'envers restent une période.** Les champs gardent ce qui a été tapé
+(on ne corrige pas quelqu'un en pleine saisie), et la ligne « Du … au … » dit ce qui est vraiment
+calculé.
+
+**Choix assumé — un module qui n'a rien fait n'apparaît pas.** Un bilan qui aligne des zéros ne dit
+rien de plus qu'une absence.
 
 ### T12 — Photos · à faire
 

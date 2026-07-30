@@ -43,7 +43,7 @@ export default function Home({
   onStart, onStartHandstand, onRetestHandstand, onReassessHandstand,
   onStartLsit, onReassessLsit, onStartRun, onRepeatRunWeek,
   onOpenPushupPlan, onOpenRunPlan, onOpenProgress, onOpenJournal, onEditGoals,
-  onOpenActivities, onAddActivity,
+  onOpenActivities, onAddActivity, onOpenRecap,
 }) {
   const { state } = useApp()
   const step = getNextStep(state)
@@ -487,7 +487,10 @@ export default function Home({
 
       {/* Le calendrier vaut pour tous les modules, pas seulement les pompes. */}
       {(activeToday.length > 0 || nActivities > 0) && (
-        <button className="link" onClick={onOpenJournal}>📆 Mon calendrier</button>
+        <>
+          <button className="link" onClick={onOpenJournal}>📆 Mon calendrier</button>
+          <button className="link" onClick={onOpenRecap}>📊 Où j’en suis</button>
+        </>
       )}
 
       <button className="link" onClick={onEditGoals}>🎯 Mes objectifs</button>

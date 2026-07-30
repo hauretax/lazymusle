@@ -17,6 +17,8 @@ PWA React pour progresser jusqu'à **100 pompes d'affilée**, basée sur le syst
 - **Calendrier** : « 📆 Mon calendrier » montre le mois, un point par exo et par jour — la couleur dit lequel, le point creux dit abandon ou test raté. Taper un jour donne le détail. C'est une simple lecture des historiques ([`src/lib/journal.js`](src/lib/journal.js)), donc rétroactif.
 - **Activités libres** : « ➕ Noter une activité » enregistre à la main ce qu'on fait en dehors des programmes — une marche, une sortie vélo, n'importe quoi. Le nom se **tape au clavier** (l'app propose ensuite ce qu'on a déjà noté), les mesures sont **optionnelles** (durée, distance, dénivelé, répétitions, séries, poids, calories, dans [`src/data/measures.json`](src/data/measures.json)), et l'app retient celles qu'on remplit d'habitude pour ce nom-là. La **date se choisit** : on peut remplir dimanche ce qu'on a fait mercredi. Ça atterrit dans le calendrier comme le reste. Logique dans [`src/lib/activities.js`](src/lib/activities.js).
 
+- **Où j'en suis** : « 📊 Où j'en suis » fait le bilan entre **deux dates** (ou en un tap : 7 jours, 30 jours, ce mois, tout) — jours actifs, plus longue série de jours d'affilée, totaux par type d'activité (km et temps cumulés), et ce que chaque programme a produit. Lecture seule ([`src/lib/recap.js`](src/lib/recap.js)).
+
 | Niveau | Jours | 1re séance | Test final |
 |--------|-------|------------|-----------|
 | 1      | 10    | `2-3-4-3-2`      | 20  |

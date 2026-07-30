@@ -5,6 +5,8 @@ import { formatDuration, formatMeasure, ACTIVITY_EMOJI } from '../lib/activities
 import { measures as MEASURES } from '../data/measures'
 import { getGoal, PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL } from '../data/goals'
 import { dayKey } from '../lib/dates'
+import { photosBetween } from '../lib/photos'
+import PhotoStrip from '../components/PhotoStrip'
 
 // Le bilan d'une période (TICKETS.md T11) : deux dates, et ce qu'il y a eu
 // entre les deux. Lecture seule — tout vient de `lib/recap`.
@@ -59,12 +61,18 @@ function programAside(p) {
 }
 
 export default function Recap({ onBack }) {
-  const { state } = useApp()
+  const { state, removePhoto } = useApp()
   const today = useMemo(() => dayKey(new Date()), [])
   const [range, setRange] = useState(() => presetRange('30', state))
   const [preset, setPreset] = useState('30')
 
   const bilan = useMemo(() => recap(state, range.from, range.to), [state, range])
+  // Les photos de la période. Pas de bouton d'ajout ici : un récap se lit, il
+  // ne se remplit pas — on ajoute depuis le calendrier ou depuis l'activité.
+  const pellicule = useMemo(
+    () => photosBetween(state.photos, range.from, range.to),
+    [state.photos, range],
+  )
 
   const applyPreset = (id) => {
     setPreset(id)
@@ -131,7 +139,14 @@ export default function Recap({ onBack }) {
             Du {fmtDay(bilan.from)} au {fmtDay(bilan.to)}
           </p>
 
-          {bilan.entries === 0 ? (
+          {pellicule.length > 0 && (
+            <>
+              <h3 className="progress__h">📷 {pellicule.length > 1 ? `${pellicule.length} photos` : '1 photo'}</h3>
+              <PhotoStrip photos={pellicule} onRemove={removePhoto} />
+            </>
+          )}
+
+          {bilan.entries === 0 && pellicule.length === 0 ? (
             <div className="card card--intro">
               <div className="intro__emoji">🗓️</div>
               <h2>Rien sur cette période</h2>

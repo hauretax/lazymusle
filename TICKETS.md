@@ -373,17 +373,64 @@ calculé.
 **Choix assumé — un module qui n'a rien fait n'apparaît pas.** Un bilan qui aligne des zéros ne dit
 rien de plus qu'une absence.
 
-### T12 — Photos · à faire
+### T12 — Photos · fait
 
 Une photo par jour, ou quand on en a envie.
 
-- [ ] **Photo du jour** (indépendante de toute séance) *et* photo **rattachable à une activité**.
-- [ ] **Stockage IndexedDB, pas localStorage** : le quota du localStorage est de ~5 Mo, une seule
+- [x] **Photo du jour** (indépendante de toute séance) *et* photo **rattachable à une activité**.
+- [x] **Stockage IndexedDB, pas localStorage** : le quota du localStorage est de ~5 Mo, une seule
       photo de téléphone le remplit et casserait toute la progression.
-- [ ] **Redimensionnées à l'ajout** (~1600 px, JPEG) : sinon la sauvegarde de T13 pèse 200 Mo pour
+- [x] **Redimensionnées à l'ajout** (~1600 px, JPEG) : sinon la sauvegarde de T13 pèse 200 Mo pour
       30 photos. C'est un choix de l'app, à assumer — on garde un souvenir, pas un original.
-- [ ] Visibles dans le calendrier (T9) et dans le récap (T11).
-- [ ] Supprimer une photo.
+- [x] Visibles dans le calendrier (T9) et dans le récap (T11).
+- [x] Supprimer une photo.
+- [x] 64 assertions de plus dans `npm run check` (507 au total).
+
+**Deux stockages, et c'est tout le ticket.** La **fiche** (id, jour, dimensions, poids) vit dans
+l'état à côté du reste : ~100 octets, donc mille photos tiennent dans le localStorage. C'est elle
+qui permet au calendrier et au récap de rester **synchrones et purs**. L'**image** vit dans
+IndexedDB (`lib/photoStore`). Tout le reste découle de là.
+
+**L'ordre des écritures est délibéré, dans les deux sens** :
+
+- **Ajout** : l'image part dans IndexedDB *d'abord*. Si ça échoue, aucune fiche n'a été posée —
+  l'inverse laisserait une case grise dans le calendrier, visible et jamais réparable.
+- **Suppression** : la fiche part *d'abord*. S'il reste une image, elle est **invisible** et
+  balayée au démarrage suivant (`deleteOrphans`). Une fiche sans image, elle, se voit.
+
+**Vérifié dans le navigateur**, avec une vraie photo de téléphone (4032 × 3024, **2,26 Mo**) :
+redimensionnée en **1600 × 1200 / 394 ko** (÷ 5,7), et l'état complet du localStorage ne pèse que
+**1944 octets** — la démonstration que l'image n'y est pas. Plus : une petite image (600 × 400)
+**n'est pas agrandie** · un PDF renommé est refusé (« Ce fichier n'est pas une image ») · la
+visionneuse plein écran avec `1600 × 1200 · 385 ko` · suppression qui enlève **la fiche ET l'image**
+· une image orpheline injectée à la main est balayée au rechargement · une fiche dont l'image a
+disparu affiche 🚫 au lieu de casser l'écran · le 📷 sur la case du calendrier · les photos de la
+période dans le récap, **sans bouton d'ajout** (un récap se lit). Zéro erreur console.
+
+**Choix assumé — supprimer une activité ne supprime PAS ses photos**, elles redeviennent des photos
+du jour (`detachActivity`). Perdre un souvenir en corrigeant une faute de frappe serait le pire des
+échanges. Vérifié en vrai : activité effacée, photo toujours là, détachée, au même jour.
+
+**Choix assumé — on peut choisir des photos avant que l'activité existe.** Elles attendent en
+mémoire, avec un aperçu, et se rattachent à l'enregistrement — sinon il faudrait noter, ressortir,
+rouvrir. Elles prennent **le jour de l'activité**, pas celui du téléphone : une sortie d'hier notée
+aujourd'hui garde ses photos à hier. Vérifié.
+
+**Piège évité — les URL d'objet se révoquent.** Chaque affichage crée une `URL.createObjectURL` ;
+sans révocation au démontage, vingt allers-retours sur le calendrier fuient des dizaines de Mo.
+Invisible en dev, fatal sur un téléphone. C'est fait dans `usePhotoUrl` et dans l'aperçu des photos
+en attente.
+
+**Piège évité — l'orientation EXIF.** `createImageBitmap(file, { imageOrientation: 'from-image' })`,
+sinon une photo prise en portrait sur iPhone ressort couchée. Avec deux replis pour les navigateurs
+qui refusent l'option.
+
+**Piège évité — rechoisir le même fichier.** On vide `input.value` après chaque choix : sans ça, le
+même fichier deux fois de suite ne déclenche aucun `change` et l'ajout semble ignoré.
+
+**Non testé par `npm run check`, et c'est assumé** : `lib/photoStore` a besoin d'un navigateur
+(canvas, IndexedDB). Toute la logique qui peut l'être est dans `lib/photos` ; le reste s'est
+vérifié à l'écran, avec les fichiers réels ci-dessus.
 
 ### T13 — Sauvegarde complète : export et réimport · à faire
 

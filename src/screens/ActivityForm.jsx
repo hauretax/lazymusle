@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../store'
 import { measures as MEASURES, getMeasure } from '../data/measures'
+import { photosOfActivity, photoError } from '../lib/photos'
+import PhotoStrip from '../components/PhotoStrip'
 import {
   suggestTypes, measuresForType, activityError, normalizeType, MAX_NOTE_LENGTH, MAX_TYPE_LENGTH,
 } from '../lib/activities'
@@ -15,6 +17,67 @@ import { dayKey } from '../lib/dates'
 // - les mesures sont toutes optionnelles, et celles qu'on voit sont celles
 //   qu'on remplit d'habitude pour ce type-là.
 
+// Les photos choisies AVANT que l'activité existe : elles n'ont encore ni
+// identifiant ni place en base, on les garde en mémoire et on les range à
+// l'enregistrement. L'aperçu vient d'une URL d'objet, révoquée au démontage —
+// sinon chaque photo écartée laisserait ses octets derrière elle.
+function PendingStrip({ files, onPick, onDrop, error }) {
+  const input = useRef(null)
+  const [urls, setUrls] = useState([])
+
+  useEffect(() => {
+    const made = files.map((f) => URL.createObjectURL(f))
+    setUrls(made)
+    return () => made.forEach((u) => URL.revokeObjectURL(u))
+  }, [files])
+
+  return (
+    <>
+      <div className="strip">
+        {files.map((f, i) => (
+          <button
+            key={`${f.name}-${i}`}
+            type="button"
+            className="photo__btn"
+            onClick={() => onDrop(i)}
+            aria-label={`Retirer ${f.name}`}
+          >
+            <span className="photo photo--pending">
+              {urls[i] && <img src={urls[i]} alt="" />}
+              <em>✕</em>
+            </span>
+          </button>
+        ))}
+        <button
+          type="button"
+          className="strip__add"
+          onClick={() => input.current?.click()}
+          aria-label="Ajouter une photo"
+        >
+          📷
+        </button>
+      </div>
+      <input
+        ref={input}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          onPick([...(e.target.files ?? [])])
+          e.target.value = ''
+        }}
+      />
+      {error && <p className="act__err">{error}</p>}
+      {files.length > 0 && (
+        <p className="progress__sub">
+          {files.length > 1 ? `${files.length} photos seront ajoutées` : '1 photo sera ajoutée'} en enregistrant.
+        </p>
+      )}
+    </>
+  )
+}
+
 function splitDuration(min) {
   if (!min) return { h: '', m: '' }
   const total = Math.round(min)
@@ -28,7 +91,7 @@ function orderedUnion(...lists) {
 }
 
 export default function ActivityForm({ activity, onDone, onCancel }) {
-  const { state, addActivity, updateActivity, removeActivity } = useApp()
+  const { state, addActivity, updateActivity, removeActivity, addPhoto, removePhoto } = useApp()
   const list = state.activities ?? []
   const editing = Boolean(activity)
   const todayKey = useMemo(() => dayKey(new Date()), [])
@@ -54,6 +117,11 @@ export default function ActivityForm({ activity, onDone, onCancel }) {
       : orderedUnion(measuresForType(list, ''))
   ))
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [pending, setPending] = useState([])
+  const [photoErr, setPhotoErr] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  const attached = photosOfActivity(state.photos, activity?.id)
 
   const suggestions = suggestTypes(list, type)
   const spare = MEASURES.filter((m) => !active.includes(m.id))
@@ -91,10 +159,26 @@ export default function ActivityForm({ activity, onDone, onCancel }) {
   // formulaire vide, pas une erreur.
   const showError = error && normalizeType(type) !== ''
 
-  const save = () => {
-    if (error) return
-    if (editing) updateActivity(activity.id, draft)
-    else addActivity(draft)
+  const pickPending = (files) => {
+    const refus = files.map(photoError).find(Boolean)
+    setPhotoErr(refus ?? null)
+    setPending((prev) => [...prev, ...files.filter((f) => !photoError(f))])
+  }
+
+  const save = async () => {
+    if (error || saving) return
+    setSaving(true)
+    if (editing) {
+      updateActivity(activity.id, draft)
+    } else {
+      const id = addActivity(draft)
+      // Les photos choisies avant l'enregistrement se rattachent maintenant :
+      // l'activité a enfin un identifiant. Elles prennent SON jour, pas celui
+      // du téléphone — une sortie d'hier notée aujourd'hui reste d'hier.
+      for (const file of pending) {
+        await addPhoto(file, { day: draft.day, activityId: id })
+      }
+    }
     onDone()
   }
 
@@ -254,10 +338,27 @@ export default function ActivityForm({ activity, onDone, onCancel }) {
         />
       </label>
 
+      <h3 className="act__h">Photos</h3>
+      {editing ? (
+        <PhotoStrip
+          photos={attached}
+          onAdd={(file) => addPhoto(file, { day, activityId: activity.id })}
+          onRemove={removePhoto}
+          addLabel="Ajouter une photo à cette activité"
+        />
+      ) : (
+        <PendingStrip
+          files={pending}
+          onPick={pickPending}
+          onDrop={(i) => setPending((prev) => prev.filter((_, k) => k !== i))}
+          error={photoErr}
+        />
+      )}
+
       {showError && <p className="act__err">{error}</p>}
 
-      <button className="btn btn--primary btn--big" disabled={Boolean(error)} onClick={save}>
-        {editing ? 'Enregistrer' : 'Noter'}
+      <button className="btn btn--primary btn--big" disabled={Boolean(error) || saving} onClick={save}>
+        {saving ? 'Un instant…' : editing ? 'Enregistrer' : 'Noter'}
       </button>
 
       {editing && (confirmDelete ? (

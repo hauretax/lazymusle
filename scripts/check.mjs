@@ -29,6 +29,11 @@ import {
   normalizeRange, entriesBetween, activeDays, longestStreak, activityTotals,
   programTotals, firstActiveDay, presetRange, recap,
 } from '../src/lib/recap.js'
+import {
+  fitWithin, photoError, makePhoto, nextPhotoId, addPhoto, removePhoto, detachActivity,
+  photosOfDay, photosOfActivity, photosBetween, photoCountByDay, totalBytes, formatBytes,
+  MAX_EDGE,
+} from '../src/lib/photos.js'
 import * as hs from '../src/data/handstandProgram.js'
 import * as ls from '../src/data/lsitProgram.js'
 import * as run from '../src/data/runProgram.js'
@@ -1059,6 +1064,152 @@ section('Les raccourcis de période')
   eq('rien d’enregistré', firstActiveDay(freshState()), null)
   // Un mois de 31 jours puis un de 30 : « 30 jours » ne doit pas déborder.
   eq('à cheval sur deux mois', presetRange('30', RECAP_STATE, new Date(local(2026, 3, 5, 12))), { from: '2026-02-04', to: '2026-03-05' })
+}
+
+// ---------- Photos (T12) ----------
+// Seule la partie sans navigateur est ici : les fiches. Le canvas et IndexedDB
+// (`lib/photoStore`) se vérifient dans le navigateur.
+
+section('Redimensionner : on réduit, on ne grossit jamais')
+{
+  eq('paysage réduit', fitWithin(4032, 3024, 1600), { width: 1600, height: 1200 })
+  eq('portrait réduit', fitWithin(3024, 4032, 1600), { width: 1200, height: 1600 })
+  eq('carré', fitWithin(2000, 2000, 1600), { width: 1600, height: 1600 })
+  eq('déjà petite : intacte', fitWithin(800, 600, 1600), { width: 800, height: 600 })
+  eq('pile à la limite : intacte', fitWithin(1600, 1200, 1600), { width: 1600, height: 1200 })
+  eq('très allongée garde au moins 1 px', fitWithin(10000, 3, 1600).height, 1)
+  eq('sans dimensions', fitWithin(0, 100, 1600), null)
+  eq('dimensions absurdes', fitWithin(-4, -4, 1600), null)
+  {
+    // Le grand côté ne dépasse jamais la limite, et le rapport est conservé.
+    const mauvais = []
+    for (let w = 1; w <= 5000; w += 37) {
+      for (const h of [w, Math.round(w / 3), w * 2]) {
+        const r = fitWithin(w, h, MAX_EDGE)
+        if (!r) continue
+        if (Math.max(r.width, r.height) > MAX_EDGE) mauvais.push(`${w}x${h}`)
+        const avant = w / h
+        const apres = r.width / r.height
+        if (Math.abs(avant - apres) / avant > 0.02) mauvais.push(`ratio ${w}x${h}`)
+      }
+    }
+    eq('jamais au-dessus de la limite, rapport gardé', mauvais, [])
+  }
+}
+
+section('Ce qu’on refuse d’ajouter')
+{
+  eq('une vraie image passe', photoError({ type: 'image/jpeg', size: 2_000_000 }), null)
+  eq('un PNG aussi', photoError({ type: 'image/png', size: 500 }), null)
+  eq('un PDF, non', Boolean(photoError({ type: 'application/pdf', size: 500 })), true)
+  eq('une vidéo, non', Boolean(photoError({ type: 'video/mp4', size: 500 })), true)
+  eq('trop lourd, non', Boolean(photoError({ type: 'image/jpeg', size: 80 * 1024 * 1024 })), true)
+  eq('rien du tout, non', Boolean(photoError(null)), true)
+  eq('sans type, non', Boolean(photoError({ size: 10 })), true)
+}
+
+section('La fiche d’une photo')
+{
+  const p = makePhoto({ day: '2026-07-22', width: 1600, height: 1200, bytes: 240_000 }, 'p1', new Date(NOW))
+  eq('rangée au bon jour', p.day, '2026-07-22')
+  eq('un jour passé est daté de midi', new Date(p.date).getHours(), 12)
+  eq('les dimensions sont gardées', [p.width, p.height], [1600, 1200])
+  eq('pas rattachée par défaut', p.activityId, null)
+
+  const aujourdhui = makePhoto({ day: '2026-07-30' }, 'p2', new Date(NOW))
+  eq('aujourd’hui garde l’heure qu’il est', aujourdhui.date, new Date(NOW).toISOString())
+
+  eq('un jour illisible retombe sur aujourd’hui',
+    makePhoto({ day: 'hier' }, 'p3', new Date(NOW)).day, '2026-07-30')
+  eq('sans jour non plus on ne perd pas la photo',
+    makePhoto({}, 'p4', new Date(NOW)).day, '2026-07-30')
+  eq('sans identifiant : pas de fiche', makePhoto({ day: '2026-07-22' }, null, new Date(NOW)), null)
+  eq('des tailles illisibles valent zéro',
+    makePhoto({ day: '2026-07-22', width: 'grand', bytes: null }, 'p5', new Date(NOW)).width, 0)
+}
+
+section('Des identifiants qui ne se marchent pas dessus')
+{
+  eq('liste vide', nextPhotoId([], new Date(NOW)), `p${new Date(NOW).getTime()}`)
+  const pris = [{ id: `p${new Date(NOW).getTime()}` }]
+  eq('même milliseconde : on suffixe', nextPhotoId(pris, new Date(NOW)), `p${new Date(NOW).getTime()}-1`)
+  eq('deux fois de suite',
+    nextPhotoId([...pris, { id: `p${new Date(NOW).getTime()}-1` }], new Date(NOW)),
+    `p${new Date(NOW).getTime()}-2`)
+  {
+    // Dix ajouts dans la même milliseconde restent dix photos distinctes.
+    let l = []
+    for (let i = 0; i < 10; i++) l = addPhoto(l, { day: '2026-07-22' }, new Date(NOW)).list
+    eq('dix identifiants distincts', new Set(l.map((p) => p.id)).size, 10)
+  }
+}
+
+// Une pellicule de test.
+const PELLICULE = [
+  { id: 'f1', day: '2026-07-20', date: local(2026, 7, 20, 12), activityId: 'a1', width: 1600, height: 1200, bytes: 200_000 },
+  { id: 'f2', day: '2026-07-20', date: local(2026, 7, 20, 18), activityId: null, width: 1200, height: 1600, bytes: 180_000 },
+  { id: 'f3', day: '2026-07-23', date: local(2026, 7, 23, 12), activityId: 'a2', width: 1600, height: 900, bytes: 150_000 },
+  { id: 'f4', day: '2026-07-29', date: local(2026, 7, 29, 12), activityId: null, width: 800, height: 600, bytes: 90_000 },
+]
+
+section('Retrouver les photos d’un jour, d’une activité, d’une période')
+{
+  eq('deux le 20, la plus récente d’abord',
+    photosOfDay(PELLICULE, '2026-07-20').map((p) => p.id), ['f2', 'f1'])
+  eq('aucune ce jour-là', photosOfDay(PELLICULE, '2026-07-21'), [])
+  eq('celles d’une activité', photosOfActivity(PELLICULE, 'a1').map((p) => p.id), ['f1'])
+  eq('activité sans photo', photosOfActivity(PELLICULE, 'a9'), [])
+  eq('sans activité : rien, pas tout', photosOfActivity(PELLICULE, null), [])
+  eq('une période', photosBetween(PELLICULE, '2026-07-20', '2026-07-23').map((p) => p.id), ['f3', 'f2', 'f1'])
+  eq('bornes incluses', photosBetween(PELLICULE, '2026-07-23', '2026-07-23').map((p) => p.id), ['f3'])
+  eq('période à l’envers : même résultat',
+    photosBetween(PELLICULE, '2026-07-23', '2026-07-20').length, 3)
+  eq('période illisible', photosBetween(PELLICULE, 'hier', 'demain'), [])
+  eq('pellicule abîmée', photosOfDay('oups', '2026-07-20'), [])
+  eq('compte par jour', [...photoCountByDay(PELLICULE).entries()],
+    [['2026-07-20', 2], ['2026-07-23', 1], ['2026-07-29', 1]])
+  eq('des fiches sans jour ne comptent pas', photoCountByDay([{ id: 'x' }]).size, 0)
+}
+
+section('Supprimer une activité ne supprime pas ses photos')
+{
+  const apres = detachActivity(PELLICULE, 'a1')
+  eq('la photo est toujours là', apres.length, 4)
+  eq('mais détachée', apres.find((p) => p.id === 'f1').activityId, null)
+  eq('elle reste au même jour', apres.find((p) => p.id === 'f1').day, '2026-07-20')
+  eq('elle devient une photo du jour', photosOfDay(apres, '2026-07-20').length, 2)
+  eq('les autres ne bougent pas', apres.find((p) => p.id === 'f3').activityId, 'a2')
+  eq('sans identifiant : rien ne bouge', detachActivity(PELLICULE, null), PELLICULE)
+}
+
+section('Supprimer une photo')
+{
+  eq('une de moins', removePhoto(PELLICULE, 'f1').length, 3)
+  eq('c’est la bonne', removePhoto(PELLICULE, 'f1').some((p) => p.id === 'f1'), false)
+  eq('supprimer un fantôme n’enlève rien', removePhoto(PELLICULE, 'fantôme').length, 4)
+}
+
+section('Le poids, dit en français')
+{
+  eq('total de la pellicule', totalBytes(PELLICULE), 620_000)
+  eq('pellicule vide', totalBytes([]), 0)
+  eq('des poids illisibles ne comptent pas', totalBytes([{ bytes: 'lourd' }, { bytes: 100 }]), 100)
+  eq('octets', formatBytes(512), '512 o')
+  eq('kilo-octets', formatBytes(200_000), '195 ko')
+  eq('méga-octets avec une décimale', formatBytes(2_600_000), '2,5 Mo')
+  eq('au-delà de 10 Mo, plus de décimale', formatBytes(52_000_000), '50 Mo')
+  eq('zéro', formatBytes(0), '0 o')
+}
+
+section('Migration v5 -> v6 : les photos arrivent sans rien casser')
+{
+  const m = hydrate({ version: 5, goals: ['pushups'], activities: [{ id: 'a1', type: 'Marche', date: '2026-07-28T12:00:00.000Z' }] })
+  eq('version à jour', m.version, STATE_VERSION)
+  eq('pellicule vide au départ', m.photos, [])
+  eq('les activités sont intactes', m.activities.length, 1)
+  eq('une pellicule existante est gardée', hydrate({ version: 6, photos: PELLICULE }).photos.length, 4)
+  eq('une pellicule abîmée repart à vide', hydrate({ version: 6, photos: 'oups' }).photos, [])
+  eq('état neuf', freshState().photos, [])
 }
 
 console.log(fails === 0

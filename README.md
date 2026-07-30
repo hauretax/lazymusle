@@ -19,6 +19,8 @@ PWA React pour progresser jusqu'à **100 pompes d'affilée**, basée sur le syst
 
 - **Où j'en suis** : « 📊 Où j'en suis » fait le bilan entre **deux dates** (ou en un tap : 7 jours, 30 jours, ce mois, tout) — jours actifs, plus longue série de jours d'affilée, totaux par type d'activité (km et temps cumulés), et ce que chaque programme a produit. Lecture seule ([`src/lib/recap.js`](src/lib/recap.js)).
 
+- **Photos** : une ou plusieurs par jour depuis le calendrier, et/ou rattachées à une activité. Elles sont **redimensionnées à l'ajout** (1600 px max, JPEG) — une photo de téléphone de 2,3 Mo tombe à ~390 ko. Les **images** vivent dans **IndexedDB** ([`src/lib/photoStore.js`](src/lib/photoStore.js)), seules leurs **fiches** (id, jour, dimensions) sont dans le `localStorage` ([`src/lib/photos.js`](src/lib/photos.js)) : le quota du `localStorage` est de ~5 Mo, une seule photo le remplirait et ferait perdre toute la progression. Supprimer une activité **ne supprime pas** ses photos — elles redeviennent des photos du jour.
+
 | Niveau | Jours | 1re séance | Test final |
 |--------|-------|------------|-----------|
 | 1      | 10    | `2-3-4-3-2`      | 20  |

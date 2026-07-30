@@ -4,6 +4,8 @@ import { journalByDay, monthGrid, monthSummary, shiftMonth, dayKey } from '../li
 import { getGoal, hasProgram } from '../data/goals'
 import { DONE } from '../lib/progress'
 import { ACTIVITY_ID } from '../lib/activities'
+import { photosOfDay, photoCountByDay } from '../lib/photos'
+import PhotoStrip from '../components/PhotoStrip'
 
 // Le calendrier : ce qui a été fait chaque jour, tous modules confondus
 // (TICKETS.md T9). Une case = un jour, un point = un exo. Point plein = fait,
@@ -27,8 +29,9 @@ function fmtTime(iso) {
 }
 
 export default function Journal({ onBack }) {
-  const { state } = useApp()
+  const { state, addPhoto, removePhoto } = useApp()
   const byDay = useMemo(() => journalByDay(state), [state])
+  const photosByDay = useMemo(() => photoCountByDay(state.photos), [state.photos])
   const today = useMemo(() => new Date(), [])
   const todayKey = dayKey(today)
   const [cursor, setCursor] = useState(() => ({ year: today.getFullYear(), month: today.getMonth() }))
@@ -37,6 +40,7 @@ export default function Journal({ onBack }) {
   const cells = useMemo(() => monthGrid(cursor.year, cursor.month), [cursor])
   const summary = monthSummary(byDay, cells)
   const dayList = byDay.get(selected) ?? []
+  const dayPhotos = useMemo(() => photosOfDay(state.photos, selected), [state.photos, selected])
   // Rien à voir dans le futur : le mois suivant s'arrête à celui du jour.
   const canForward = cursor.year < today.getFullYear()
     || (cursor.year === today.getFullYear() && cursor.month < today.getMonth())
@@ -93,10 +97,11 @@ export default function Journal({ onBack }) {
                 type="button"
                 className={cls}
                 aria-pressed={c.key === selected}
-                aria-label={`${fmtDay(c.key)} — ${list.length ? list.map((e) => e.title).join(', ') : 'rien'}`}
+                aria-label={`${fmtDay(c.key)} — ${list.length ? list.map((e) => e.title).join(', ') : 'rien'}${photosByDay.has(c.key) ? `, ${photosByDay.get(c.key)} photo(s)` : ''}`}
                 onClick={() => setSelected(c.key)}
               >
                 <span className="cal__num">{c.number}</span>
+                {photosByDay.has(c.key) && <i className="cal__pic" aria-hidden="true">📷</i>}
                 <span className="cal__dots">
                   {list.slice(0, 4).map((e, i) => (
                     <i
@@ -128,6 +133,16 @@ export default function Journal({ onBack }) {
       </p>
 
       <h3 className="progress__h">{fmtDay(selected)}</h3>
+
+      {/* La pellicule du jour sélectionné : on photographie le jour qu'on
+          regarde, pas forcément aujourd'hui. */}
+      <PhotoStrip
+        photos={dayPhotos}
+        onAdd={(file) => addPhoto(file, { day: selected })}
+        onRemove={removePhoto}
+        addLabel={`Ajouter une photo au ${fmtDay(selected)}`}
+      />
+
       {dayList.length === 0 ? (
         <p className="cal__empty">
           {selected === todayKey ? 'Rien aujourd’hui — pour l’instant 😉' : 'Rien ce jour-là.'}

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { levels, pickLevelIndex, gapAfterSession } from './data/pushupProgram'
 import * as handstand from './data/handstandProgram'
 import * as lsit from './data/lsitProgram'
@@ -6,6 +6,8 @@ import * as run from './data/runProgram'
 import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL } from './data/goals'
 import { freshState, hydrate } from './lib/migrate'
 import * as activities from './lib/activities'
+import * as photos from './lib/photos'
+import * as photoStore from './lib/photoStore'
 
 const KEY = 'reps.pushups.v2'
 
@@ -103,6 +105,19 @@ export function AppProvider({ children }) {
       /* quota / mode privé : on ignore */
     }
   }, [state])
+
+  // L'état courant, lisible depuis du code asynchrone sans fermeture périmée :
+  // l'ajout de photo écrit dans IndexedDB entre deux rendus (voir plus bas).
+  const stateRef = useRef(state)
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
+
+  // Au démarrage : les images dont plus aucune fiche ne parle. Ça arrive si une
+  // suppression a été coupée entre les deux stockages, ou après un réimport (T13).
+  useEffect(() => {
+    photoStore.deleteOrphans((stateRef.current.photos ?? []).map((p) => p.id))
+  }, [])
 
   // Remplace l'état d'un programme, sans toucher aux autres.
   const updateProgram = useCallback((id, fn) => {
@@ -288,19 +303,86 @@ export function AppProvider({ children }) {
   // Activités libres (TICKETS.md T10). Elles ne passent pas par `updateProgram` :
   // ce n'est pas un programme. Toute la logique est dans `lib/activities` — ici
   // on ne fait que poser le résultat dans l'état.
+  // Renvoie l'identifiant créé (ou null si le brouillon est refusé) : le
+  // formulaire en a besoin pour rattacher à l'activité les photos choisies
+  // AVANT qu'elle existe. On lit `stateRef` plutôt que la forme fonctionnelle
+  // parce qu'il faut ressortir l'id ; il n'y a qu'un écran de saisie à la fois,
+  // donc pas de course possible.
   const addActivity = useCallback((draft) => {
-    setState((s) => ({ ...s, activities: activities.addActivity(s.activities ?? [], draft) }))
+    const before = stateRef.current.activities ?? []
+    const after = activities.addActivity(before, draft)
+    if (after === before) return null
+    setState((s) => ({ ...s, activities: after }))
+    const connus = new Set(before.map((a) => a?.id))
+    return after.find((a) => !connus.has(a?.id))?.id ?? null
   }, [])
 
   const updateActivity = useCallback((id, draft) => {
     setState((s) => ({ ...s, activities: activities.updateActivity(s.activities ?? [], id, draft) }))
   }, [])
 
+  // Supprimer une activité DÉTACHE ses photos au lieu de les emporter : elles
+  // redeviennent des photos du jour. Perdre un souvenir en corrigeant une faute
+  // de frappe serait le pire des échanges (voir TICKETS.md T12).
   const removeActivity = useCallback((id) => {
-    setState((s) => ({ ...s, activities: activities.removeActivity(s.activities ?? [], id) }))
+    setState((s) => ({
+      ...s,
+      activities: activities.removeActivity(s.activities ?? [], id),
+      photos: photos.detachActivity(s.photos ?? [], id),
+    }))
   }, [])
 
-  const resetAll = useCallback(() => setState(freshState()), [])
+  // Ajouter une photo touche DEUX stockages. L'image part d'abord dans
+  // IndexedDB : si ça échoue, on n'a pas écrit de fiche qui pointe dans le vide.
+  // L'ordre inverse laisserait une case grise dans le calendrier.
+  const addPhoto = useCallback(async (file, meta = {}) => {
+    const refus = photos.photoError(file)
+    if (refus) return { ok: false, error: refus }
+    if (!photoStore.canStorePhotos()) {
+      return { ok: false, error: 'Ce navigateur ne sait pas garder de photos.' }
+    }
+    let shrunk
+    try {
+      shrunk = await photoStore.shrink(file)
+    } catch {
+      return { ok: false, error: 'Impossible de lire cette image.' }
+    }
+    const now = new Date()
+    // L'identifiant se calcule hors du setState : il faut le connaître pour
+    // nommer le blob avant que la fiche existe.
+    const photo = photos.makePhoto(
+      { ...meta, width: shrunk.width, height: shrunk.height, bytes: shrunk.bytes },
+      photos.nextPhotoId(stateRef.current.photos ?? [], now),
+      now,
+    )
+    if (!photo) return { ok: false, error: 'Date de photo invalide.' }
+    try {
+      await photoStore.putPhoto(photo.id, shrunk.blob)
+    } catch {
+      return { ok: false, error: 'Plus de place pour garder cette photo.' }
+    }
+    setState((s) => ({ ...s, photos: photos.insertPhoto(s.photos ?? [], photo) }))
+    return { ok: true, id: photo.id }
+  }, [])
+
+  // Ici l'ordre est l'inverse : on enlève la fiche d'abord. Si l'effacement de
+  // l'image échoue, il reste une image orpheline — invisible, et balayée au
+  // prochain démarrage — plutôt qu'une fiche sans image, elle bien visible.
+  const removePhoto = useCallback(async (id) => {
+    setState((s) => ({ ...s, photos: photos.removePhoto(s.photos ?? [], id) }))
+    try {
+      await photoStore.deletePhoto(id)
+    } catch {
+      /* orpheline : `deleteOrphans` la ramassera */
+    }
+  }, [])
+
+  // Réinitialiser vide aussi les images : sans ça elles resteraient à occuper
+  // la place, invisibles, jusqu'au prochain balayage des orphelines.
+  const resetAll = useCallback(() => {
+    setState(freshState())
+    photoStore.clearPhotos().catch(() => {})
+  }, [])
 
   const value = useMemo(
     () => ({
@@ -310,13 +392,15 @@ export function AppProvider({ children }) {
       completeRunSession, repeatRunWeek,
       goToPushupDay, goToRunWorkout, resetAll,
       addActivity, updateActivity, removeActivity,
+      addPhoto, removePhoto,
     }),
     [state, recordInitialTest, setGoals, completeSession, abandonSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
       recordLsitAxes, completeLsitSession,
       completeRunSession, repeatRunWeek,
       goToPushupDay, goToRunWorkout, resetAll,
-      addActivity, updateActivity, removeActivity],
+      addActivity, updateActivity, removeActivity,
+      addPhoto, removePhoto],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

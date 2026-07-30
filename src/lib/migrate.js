@@ -3,7 +3,7 @@
 // et testé (`npm run check`).
 import { PUSHUPS_GOAL } from '../data/goals.js'
 
-export const STATE_VERSION = 5
+export const STATE_VERSION = 6
 
 // État commun à tout programme. Chaque exo garde le sien sous `programs`,
 // pour que l'ajout d'un module ne touche pas aux autres (voir TICKETS.md T2).
@@ -56,6 +56,10 @@ export function freshState() {
     // Activités notées à la main (TICKETS.md T10). Hors `programs` exprès : ce
     // n'est pas un programme, il n'y a ni plan, ni curseur, ni niveau à finir.
     activities: [],
+    // Les FICHES des photos seulement (id, jour, taille) — l'image est dans
+    // IndexedDB. Une fiche pèse ~100 octets, l'image des centaines de ko : les
+    // mettre ici ferait sauter le quota du localStorage (TICKETS.md T12).
+    photos: [],
     programs: {
       pushups: freshPushups(),
       handstand: freshHandstand(),
@@ -102,6 +106,8 @@ export function withDefaults(s) {
     // simplement rien noté. Le garde-fou est là pour un fichier abîmé, pas pour
     // une vraie migration (voir aussi l'import de sauvegarde, T13).
     activities: Array.isArray(s?.activities) ? s.activities : [],
+    // v5 -> v6 : les photos. Additif aussi — un état d'avant n'en a simplement pas.
+    photos: Array.isArray(s?.photos) ? s.photos : [],
     programs: {
       ...base.programs,
       ...s.programs,

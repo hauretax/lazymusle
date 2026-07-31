@@ -1,10 +1,10 @@
 import { Fragment, useEffect, useState } from 'react'
-import { useApp, getNextStep, getHandstandStep, getLsitStep, getRunStep, pushupsOf, handstandOf, lsitOf, runOf } from '../store'
+import { useApp, getAppStep, getPushupStep, getHandstandStep, getLsitStep, getRunStep, pushupsOf, handstandOf, lsitOf, runOf } from '../store'
 import { GOAL, TOTAL_DAYS, getDay, sessionMinTotal, computeRest, parseSet } from '../data/pushupProgram'
 import * as hs from '../data/handstandProgram'
 import * as lsit from '../data/lsitProgram'
 import * as run from '../data/runProgram'
-import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, getGoal, hasProgram } from '../data/goals'
+import { goals as ALL_GOALS, PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, getGoal, hasProgram } from '../data/goals'
 import { orderForDay, dayWarnings } from '../lib/schedule'
 import { countPushupDone } from '../lib/progress'
 import { canNotify, requestNotif, notify, exportSchedule } from '../lib/reminders'
@@ -46,7 +46,8 @@ export default function Home({
   onOpenActivities, onAddActivity, onOpenRecap, onOpenBackup, onOpenSettings,
 }) {
   const { state } = useApp()
-  const step = getNextStep(state)
+  const appStep = getAppStep(state)
+  const step = getPushupStep(state)
   const hsStep = getHandstandStep(state)
   const lsitStep = getLsitStep(state)
   const runStep = getRunStep(state)
@@ -66,6 +67,9 @@ export default function Home({
   const doneCount = countPushupDone(pushups.sessions)
   // Objectifs choisis dont le module n'existe pas encore (voir TICKETS.md).
   const soonGoals = state.goals.filter((id) => !hasProgram(id)).map(getGoal).filter(Boolean)
+  // Les modules réellement prêts, lus dans les données : la phrase reste vraie
+  // le jour où il y en a un de plus.
+  const readyLabels = ALL_GOALS.filter((g) => hasProgram(g.id)).map((g) => g.short).join(', ')
 
   // Plusieurs exos actifs : c'est le moteur qui décide de l'ordre (le skill se
   // travaille frais, avant la force) et signale les muscles qu'ils partagent.
@@ -427,13 +431,19 @@ export default function Home({
         {onPushups && !firstRun && <ProgressRing done={doneCount} total={TOTAL_DAYS} />}
       </header>
 
-      {step.type === 'no-program' && !onHandstand && (
+      {/* Seulement quand AUCUN objectif choisi n'a de module. Avant, cette carte
+          sortait dès que les pompes n'étaient pas cochées — donc au-dessus d'une
+          séance de course qui marchait très bien. Et la liste des modules prêts
+          vient des données : elle restera vraie quand un module s'ajoutera. */}
+      {appStep.type === 'no-program' && (
         <div className="card card--intro">
           <div className="intro__emoji">🚧</div>
           <h2>Ça arrive</h2>
           <p>
-            Les objectifs que tu as choisis ne sont pas encore développés — pour l’instant, seuls les
-            programmes <b>pompes</b> et <b>handstand</b> sont prêts.
+            {soonGoals.length === 1
+              ? <>« {soonGoals[0].label} » n’est pas encore développé.</>
+              : <>Les objectifs que tu as choisis ne sont pas encore développés.</>}
+            {' '}Ce qui est prêt : <b>{readyLabels}</b>.
           </p>
           <button className="btn btn--primary btn--big" onClick={onEditGoals}>Changer mes objectifs</button>
         </div>

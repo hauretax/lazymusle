@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useApp, getNextStep, getHandstandStep, getLsitStep, getRunStep, handstandOf, lsitOf } from './store'
+import { useApp, getAppStep, getPushupStep, getHandstandStep, getLsitStep, getRunStep, handstandOf, lsitOf } from './store'
 import { getDay } from './data/pushupProgram'
 import { getSession, AXES as HS_AXES } from './data/handstandProgram'
 import * as lsitProgram from './data/lsitProgram'
@@ -35,7 +35,8 @@ export default function App() {
   const [view, setView] = useState('home')
   // Quelle activité on est en train de corriger (null = on en note une nouvelle).
   const [editingActivity, setEditingActivity] = useState(null)
-  const step = getNextStep(state)
+  const appStep = getAppStep(state)
+  const step = getPushupStep(state)
   const hsStep = getHandstandStep(state)
   const lsitStep = getLsitStep(state)
   const runStep = getRunStep(state)
@@ -53,7 +54,7 @@ export default function App() {
 
   // Aucun objectif choisi (1er lancement, ou après une réinitialisation) : on demande avant tout.
   // Retour à l'accueil ensuite : après une réinitialisation, `view` pointe encore sur l'écran quitté.
-  if (step.type === 'onboarding') {
+  if (appStep.type === 'onboarding') {
     // On peut arriver ici avec une sauvegarde en poche : nouveau téléphone,
     // navigateur vidé. La restauration doit donc être accessible AVANT d'avoir
     // choisi quoi que ce soit — sinon il faudrait inventer un objectif pour

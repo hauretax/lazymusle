@@ -566,3 +566,32 @@ auto active. Vérifié en vrai : migration v6 → v7 sur un état à 5 activité
 **Non couvert par `npm run check`, et c'est assumé** : `lib/weatherApi` (réseau, géolocalisation).
 Tout ce qui pouvait être extrait l'est — URL, choix de l'heure, validation, lieux — et le reste
 s'est vérifié à l'écran.
+
+### T15 — Changer d'objectif sans se faire jeter · fait
+
+Signalé le 31/07/2026 (« on ne peut pas changer d'objectif »), puis retiré — le bouton
+« 🎯 Mes objectifs » existe bien. **Mais il y avait un vrai bug derrière**, trouvé en vérifiant.
+
+`getNextStep` répondait `no-program` **dès que les pompes n'étaient pas cochées**. Écrit en T1,
+quand les pompes étaient effectivement le seul module ; il y en a quatre depuis. Résultat, pour qui
+lâchait les pompes pour la course : une carte **« 🚧 Ça arrive — tes objectifs ne sont pas encore
+développés »** s'affichait **au-dessus de sa séance de course parfaitement fonctionnelle**. L'app
+disait à quelqu'un qu'il s'était trompé pendant qu'elle lui servait son programme. De quoi croire
+qu'on n'a pas le droit de changer.
+
+- [x] `getNextStep` séparée en deux : **`getPushupStep`** (où en sont les pompes, `off` quand
+      l'objectif n'est pas choisi — comme les trois autres modules) et **`getAppStep`** (ce que
+      l'app doit faire, tous modules confondus).
+- [x] La bonne question n'est plus « les pompes sont-elles cochées » mais « y a-t-il **au moins un**
+      objectif choisi dont le module existe ».
+- [x] La carte « Ça arrive » liste les modules prêts **d'après les données** au lieu des deux noms
+      codés en dur (« pompes et handstand », faux depuis T4 et T5).
+- [x] Le rustine `!onHandstand` qui masquait à moitié le symptôme disparaît.
+
+**Vérifié dans le navigateur** : course seule → la séance, sans fausse alerte · L-sit seul → idem ·
+pompes + course → les deux, dans l'ordre du moteur · un objectif sans module → la carte s'affiche
+et annonce « Ce qui est prêt : Pompes, Handstand, L-sit, Course ». Zéro erreur console.
+
+**Leçon à garder** : une fonction nommée « l'étape suivante » qui ne parlait en fait que d'**un**
+module a survécu à l'arrivée de trois autres. Les trois nouveaux ont bien été écrits avec leur
+propre `getXStep` renvoyant `off` — c'est l'ancien qui n'a pas suivi.

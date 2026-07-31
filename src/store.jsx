@@ -3,7 +3,7 @@ import { levels, pickLevelIndex, gapAfterSession } from './data/pushupProgram'
 import * as handstand from './data/handstandProgram'
 import * as lsit from './data/lsitProgram'
 import * as run from './data/runProgram'
-import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL } from './data/goals'
+import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, hasProgram } from './data/goals'
 import { freshState, hydrate } from './lib/migrate'
 import * as activities from './lib/activities'
 import * as photos from './lib/photos'
@@ -75,16 +75,32 @@ export function getLsitStep(state) {
   return { type: 'session', progress: { axes: l.axes, bests: l.bests } }
 }
 
-export function getNextStep(state) {
-  if (!state.goals?.length) return { type: 'onboarding' }
-  // Les pompes sont le seul module développé : sans elles, rien à s'entraîner (voir TICKETS.md).
-  if (!state.goals.includes(PUSHUPS_GOAL)) return { type: 'no-program' }
-
+// Où en sont les POMPES, et rien d'autre — comme `getRunStep` et les deux
+// autres. `off` quand l'objectif n'est pas choisi.
+export function getPushupStep(state) {
+  if (!state.goals?.includes(PUSHUPS_GOAL)) return { type: 'off' }
   const p = pushupsOf(state)
   if (p.levelIndex == null) return { type: 'test-initial' }
   if (p.finished) return { type: 'done' }
   const isTest = p.dayIndex >= levels[p.levelIndex].workouts.length
   return { type: 'session', levelIndex: p.levelIndex, dayIndex: p.dayIndex, isTest }
+}
+
+// Ce que doit faire l'APP, tous modules confondus.
+//
+// Avant, cette fonction répondait « rien à s'entraîner » dès que les pompes
+// n'étaient pas cochées. C'était vrai en T1, quand les pompes étaient le seul
+// module ; il y en a quatre depuis. Résultat : lâcher les pompes pour la course
+// affichait un écran « Ça arrive » AU-DESSUS d'une séance de course
+// parfaitement fonctionnelle — l'app disait à quelqu'un qu'il s'était trompé
+// pendant qu'elle lui servait son programme.
+//
+// La bonne question n'est pas « les pompes sont-elles cochées » mais « y a-t-il
+// AU MOINS UN objectif choisi dont le module existe ».
+export function getAppStep(state) {
+  if (!state.goals?.length) return { type: 'onboarding' }
+  if (!state.goals.some(hasProgram)) return { type: 'no-program' }
+  return { type: 'ready' }
 }
 
 function addDays(iso, days) {

@@ -95,6 +95,11 @@ export default function ActivityForm({ activity, onDone, onCancel }) {
   const list = state.activities ?? []
   const editing = Boolean(activity)
   const todayKey = useMemo(() => dayKey(new Date()), [])
+  const yesterdayKey = useMemo(() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 1)
+    return dayKey(d)
+  }, [])
 
   const [type, setType] = useState(activity?.type ?? '')
   const [day, setDay] = useState(activity ? dayKey(activity.date) : todayKey)
@@ -225,18 +230,24 @@ export default function ActivityForm({ activity, onDone, onCancel }) {
         />
       </label>
 
+      {/* Les deux raccourcis s'allument tous les deux. « Hier » ne le faisait
+          pas : il changeait bien la date, mais « Aujourd'hui » s'éteignait sans
+          que rien ne le remplace — et le seul témoin restant était un chiffre
+          dans le champ natif au-dessus. Ça se lisait comme un bouton mort. */}
       <div className="chips">
-        <button type="button" className={`chip${day === todayKey ? ' chip--on' : ''}`} onClick={() => setDay(todayKey)}>
+        <button
+          type="button"
+          className={`chip${day === todayKey ? ' chip--on' : ''}`}
+          aria-pressed={day === todayKey}
+          onClick={() => setDay(todayKey)}
+        >
           Aujourd’hui
         </button>
         <button
           type="button"
-          className="chip"
-          onClick={() => {
-            const d = new Date()
-            d.setDate(d.getDate() - 1)
-            setDay(dayKey(d))
-          }}
+          className={`chip${day === yesterdayKey ? ' chip--on' : ''}`}
+          aria-pressed={day === yesterdayKey}
+          onClick={() => setDay(yesterdayKey)}
         >
           Hier
         </button>

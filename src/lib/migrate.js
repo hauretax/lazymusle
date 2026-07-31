@@ -3,7 +3,13 @@
 // et testé (`npm run check`).
 import { PUSHUPS_GOAL } from '../data/goals.js'
 
-export const STATE_VERSION = 6
+export const STATE_VERSION = 7
+
+// Réglages par défaut (TICKETS.md T14). `autoWeather` commande le SEUL endroit
+// d'où l'app sort sur le réseau — il faut pouvoir le fermer.
+export const DEFAULT_SETTINGS = {
+  autoWeather: true,
+}
 
 // État commun à tout programme. Chaque exo garde le sien sous `programs`,
 // pour que l'ajout d'un module ne touche pas aux autres (voir TICKETS.md T2).
@@ -60,6 +66,7 @@ export function freshState() {
     // IndexedDB. Une fiche pèse ~100 octets, l'image des centaines de ko : les
     // mettre ici ferait sauter le quota du localStorage (TICKETS.md T12).
     photos: [],
+    settings: { ...DEFAULT_SETTINGS },
     programs: {
       pushups: freshPushups(),
       handstand: freshHandstand(),
@@ -108,6 +115,13 @@ export function withDefaults(s) {
     activities: Array.isArray(s?.activities) ? s.activities : [],
     // v5 -> v6 : les photos. Additif aussi — un état d'avant n'en a simplement pas.
     photos: Array.isArray(s?.photos) ? s.photos : [],
+    // v6 -> v7 : les réglages. Additif : un état d'avant n'en a pas, il hérite
+    // donc des valeurs par défaut. Un réglage ajouté plus tard arrivera pareil,
+    // sans écraser ceux que l'utilisateur a déjà changés.
+    settings: {
+      ...DEFAULT_SETTINGS,
+      ...(s?.settings && typeof s.settings === 'object' && !Array.isArray(s.settings) ? s.settings : {}),
+    },
     programs: {
       ...base.programs,
       ...s.programs,

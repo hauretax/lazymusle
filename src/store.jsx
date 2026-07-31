@@ -390,6 +390,10 @@ export function AppProvider({ children }) {
     setState(hydrate(next))
   }, [])
 
+  const setSetting = useCallback((key, value) => {
+    setState((s) => ({ ...s, settings: { ...s.settings, [key]: value } }))
+  }, [])
+
   const value = useMemo(
     () => ({
       state, recordInitialTest, setGoals, completeSession, abandonSession,
@@ -398,7 +402,7 @@ export function AppProvider({ children }) {
       completeRunSession, repeatRunWeek,
       goToPushupDay, goToRunWorkout, resetAll, replaceAll,
       addActivity, updateActivity, removeActivity,
-      addPhoto, removePhoto,
+      addPhoto, removePhoto, setSetting,
     }),
     [state, recordInitialTest, setGoals, completeSession, abandonSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
@@ -406,7 +410,7 @@ export function AppProvider({ children }) {
       completeRunSession, repeatRunWeek,
       goToPushupDay, goToRunWorkout, resetAll, replaceAll,
       addActivity, updateActivity, removeActivity,
-      addPhoto, removePhoto],
+      addPhoto, removePhoto, setSetting],
   )
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

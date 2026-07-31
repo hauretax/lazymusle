@@ -19,6 +19,7 @@ import Activities from './screens/Activities'
 import ActivityForm from './screens/ActivityForm'
 import Recap from './screens/Recap'
 import Backup from './screens/Backup'
+import Settings from './screens/Settings'
 import PushupPlan from './screens/PushupPlan'
 import RunPlan from './screens/RunPlan'
 import Stretch from './screens/Stretch'
@@ -92,6 +93,10 @@ export default function App() {
 
   if (view === 'backup') {
     return <Backup onBack={() => setView('home')} />
+  }
+
+  if (view === 'settings') {
+    return <Settings onBack={() => setView('home')} />
   }
 
   if (view === 'recap') {
@@ -294,6 +299,7 @@ export default function App() {
       onOpenActivities={() => setView('activities')}
       onOpenRecap={() => setView('recap')}
       onOpenBackup={() => setView('backup')}
+      onOpenSettings={() => setView('settings')}
       onAddActivity={() => {
         setEditingActivity(null)
         setView('activity-form')

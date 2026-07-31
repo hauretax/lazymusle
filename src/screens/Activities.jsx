@@ -2,6 +2,9 @@ import { useMemo } from 'react'
 import { useApp } from '../store'
 import { activitySummary, sortActivities, knownTypes, ACTIVITY_EMOJI } from '../lib/activities'
 import { dayKey } from '../lib/dates'
+import { formatWeather } from '../lib/weather'
+
+const conditions = (a) => formatWeather(a?.weather) || null
 
 // Ce que j'ai noté à la main (TICKETS.md T10) : la liste, du plus récent au plus
 // ancien, groupée par jour. Taper une ligne la corrige.
@@ -82,6 +85,12 @@ export default function Activities({ onBack, onAdd, onEdit }) {
                         <span className="actrow__main">
                           <b>{a.type}</b>
                           {resume && <span className="actrow__meas">{resume}</span>}
+                          {(a.time || a.place?.name || conditions(a)) && (
+                            <span className="actrow__note">
+                              {[a.time, a.place?.name && `📍 ${a.place.name}`, conditions(a)]
+                                .filter(Boolean).join(' · ')}
+                            </span>
+                          )}
                           {a.note && <span className="actrow__note">{a.note}</span>}
                         </span>
                         <span className="actrow__go" aria-hidden="true">›</span>

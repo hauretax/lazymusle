@@ -11,7 +11,7 @@ import {
   computeRest, pickLevelIndex, gapAfterSession, parseSet, sessionMinTotal,
   getDay, remainingDays, daysInLevel, isTestDay, levels, GOAL, TOTAL_DAYS,
 } from '../src/data/pushupProgram.js'
-import { hydrate, freshState, STATE_VERSION } from '../src/lib/migrate.js'
+import { hydrate, freshState, STATE_VERSION, DEFAULT_SETTINGS } from '../src/lib/migrate.js'
 import {
   pushupKey, pushupStatuses, countPushupDone, runDone, countRunDone,
   sessionStatus, DONE, TRIED, ABANDONED,
@@ -22,7 +22,7 @@ import { parseDayKey, daysBetween } from '../src/lib/dates.js'
 import {
   normalizeType, typeKey, cleanMeasures, dayToISO, isFutureDay, activityError,
   addActivity, updateActivity, removeActivity, knownTypes, suggestTypes, measuresForType,
-  formatDuration, formatMeasure, activitySummary,
+  formatDuration, formatMeasure, activitySummary, dayTimeToISO,
 } from '../src/lib/activities.js'
 import { DEFAULT_MEASURES } from '../src/data/measures.js'
 import {
@@ -38,6 +38,14 @@ import {
   backupEnvelope, backupFilename, describeState, readBackup, keepRestorablePhotos,
   BACKUP_FORMAT, BACKUP_FORMAT_VERSION,
 } from '../src/lib/backup.js'
+import {
+  parseTime, normalizeTime, formatTime, hourSlot, needsArchive, weatherUrl, pickHour,
+  cleanWeather, formatWeather, weatherLabel, FORECAST_URL, ARCHIVE_URL,
+} from '../src/lib/weather.js'
+import {
+  normalizePlace, placeKey, cleanCoords, cleanPlace, placeNameFromGeocode,
+  knownPlaces, suggestPlaces, lastPlace,
+} from '../src/lib/places.js'
 import * as hs from '../src/data/handstandProgram.js'
 import * as ls from '../src/data/lsitProgram.js'
 import * as run from '../src/data/runProgram.js'
@@ -1344,6 +1352,277 @@ section('Aller-retour complet : exporter puis relire ne perd rien')
     recap(r.state, '2026-07-01', '2026-07-31'),
     recap(SAUVEGARDE_ETAT, '2026-07-01', '2026-07-31'))
   eq('le même calendrier', journalByDay(r.state).size, journalByDay(SAUVEGARDE_ETAT).size)
+}
+
+// ---------- Lieu, heure et conditions (T14) ----------
+// Les appels réseau sont dans `lib/weatherApi` : pas testables ici. Ce qui l'est :
+// construire l'URL, choisir la bonne heure dans la réponse, valider une saisie.
+
+section('L’heure : lue, normalisée, refusée quand elle n’en est pas une')
+{
+  eq('heure simple', parseTime('14:30'), 870)
+  eq('minuit', parseTime('00:00'), 0)
+  eq('dernière minute', parseTime('23:59'), 1439)
+  eq('un seul chiffre à l’heure', parseTime('9:05'), 545)
+  eq('25 h n’existe pas', parseTime('25:00'), null)
+  eq('60 minutes non plus', parseTime('12:60'), null)
+  eq('pas une heure', parseTime('midi'), null)
+  eq('rien', parseTime(null), null)
+  eq('normalisée sur deux chiffres', normalizeTime('9:5'), null)
+  eq('normalisée pour de vrai', normalizeTime('9:05'), '09:05')
+  eq('déjà normalisée', normalizeTime('14:30'), '14:30')
+  eq('invalide : null', normalizeTime('bonjour'), null)
+  eq('une date se relit en heure', formatTime(local(2026, 7, 30, 9)), '09:00')
+}
+
+section('Quelle heure ronde on demande à Open-Meteo')
+{
+  eq('14h30 se lit à 14h', hourSlot('2026-07-30', '14:30'), '2026-07-30T14:00')
+  // On n'arrondit PAS au plus proche : à 14h59 on est encore dans l'heure de 14h,
+  // et demander 15h donnerait un relevé qui n'a pas encore eu lieu.
+  eq('14h59 aussi', hourSlot('2026-07-30', '14:59'), '2026-07-30T14:00')
+  eq('minuit', hourSlot('2026-07-30', '00:10'), '2026-07-30T00:00')
+  eq('sans heure', hourSlot('2026-07-30', null), null)
+  eq('sans jour', hourSlot(null, '14:00'), null)
+  eq('jour inexistant', hourSlot('2026-02-31', '14:00'), null)
+}
+
+section('Prévision ou archive : Open-Meteo ne remonte pas indéfiniment')
+{
+  eq('aujourd’hui : prévision', needsArchive('2026-07-30', new Date(NOW)), false)
+  eq('il y a 10 jours : prévision', needsArchive('2026-07-20', new Date(NOW)), false)
+  eq('pile à la limite : prévision', needsArchive('2026-04-29', new Date(NOW)), false)
+  eq('un jour de trop : archive', needsArchive('2026-04-28', new Date(NOW)), true)
+  eq('l’an dernier : archive', needsArchive('2025-07-30', new Date(NOW)), true)
+  eq('jour illisible', needsArchive('hier', new Date(NOW)), false)
+}
+
+section('L’URL météo')
+{
+  const u = weatherUrl(48.8566, 2.3522, '2026-07-30', new Date(NOW))
+  eq('sur l’API de prévision', u.startsWith(FORECAST_URL), true)
+  eq('coordonnées arrondies', u.includes('latitude=48.8566'), true)
+  eq('le jour demandé', u.includes('start_date=2026-07-30') && u.includes('end_date=2026-07-30'), true)
+  eq('température ET hygrométrie', u.includes('temperature_2m') && u.includes('relative_humidity_2m'), true)
+  eq('fuseau automatique', u.includes('timezone=auto'), true)
+  eq('vieille date : sur l’archive',
+    weatherUrl(48.8566, 2.3522, '2025-07-30', new Date(NOW)).startsWith(ARCHIVE_URL), true)
+  eq('sans coordonnées', weatherUrl(null, null, '2026-07-30', new Date(NOW)), null)
+  eq('coordonnées illisibles', weatherUrl('ici', 'là', '2026-07-30', new Date(NOW)), null)
+  eq('jour illisible', weatherUrl(48.8, 2.3, 'hier', new Date(NOW)), null)
+}
+
+section('Lire la réponse d’Open-Meteo')
+{
+  const reponse = {
+    hourly: {
+      time: ['2026-07-30T13:00', '2026-07-30T14:00', '2026-07-30T15:00'],
+      temperature_2m: [25.4, 26.24, 27.1],
+      relative_humidity_2m: [56, 54.6, 51],
+      weather_code: [0, 3, 3],
+    },
+  }
+  const at = pickHour(reponse, '2026-07-30T14:00')
+  eq('la bonne heure', at.temperature, 26.2)
+  eq('hygrométrie arrondie', at.humidity, 55)
+  eq('le code météo', at.code, 3)
+  eq('marquée comme relevé', at.source, 'auto')
+  eq('heure absente de la réponse', pickHour(reponse, '2026-07-30T22:00'), null)
+  eq('réponse vide', pickHour(null, '2026-07-30T14:00'), null)
+  eq('réponse sans heures', pickHour({ hourly: {} }, '2026-07-30T14:00'), null)
+  // Une heure peut exister sans mesure (données pas encore consolidées) : sans
+  // température, il n'y a rien à montrer.
+  eq('heure présente mais sans température',
+    pickHour({ hourly: { time: ['2026-07-30T14:00'], temperature_2m: [null] } }, '2026-07-30T14:00'), null)
+  eq('sans hygrométrie, la température suffit',
+    pickHour({ hourly: { time: ['2026-07-30T14:00'], temperature_2m: [20] } }, '2026-07-30T14:00').humidity, null)
+}
+
+section('Les conditions saisies : bornées, et « en intérieur » compte')
+{
+  eq('relevé complet', cleanWeather({ temperature: 26.24, humidity: 54, code: 3, source: 'auto' }),
+    { temperature: 26.2, humidity: 54, code: 3, source: 'auto' })
+  eq('virgule française acceptée', cleanWeather({ temperature: '21,5' }).temperature, 21.5)
+  eq('froid extrême refusé', cleanWeather({ temperature: -120 }), null)
+  eq('chaleur absurde refusée', cleanWeather({ temperature: 250 }), null)
+  eq('-40 °C reste plausible', cleanWeather({ temperature: -40 }).temperature, -40)
+  eq('hygrométrie au-dessus de 100 refusée', cleanWeather({ temperature: 20, humidity: 150 }).humidity, undefined)
+  eq('hygrométrie négative refusée', cleanWeather({ temperature: 20, humidity: -5 }).humidity, undefined)
+  eq('0 % est une vraie valeur', cleanWeather({ temperature: 20, humidity: 0 }).humidity, 0)
+  eq('saisie à la main', cleanWeather({ temperature: 19 }).source, 'manual')
+  eq('« en intérieur » seul suffit à exister', cleanWeather({ indoor: true }), { indoor: true, source: 'manual' })
+  eq('rien de rien', cleanWeather({}), null)
+  eq('pas un objet', cleanWeather('chaud'), null)
+}
+
+section('Comment les conditions s’écrivent')
+{
+  eq('tout', formatWeather({ temperature: 26.2, humidity: 54, code: 3 }), '26,2 °C · 54 % · ☁️ Couvert')
+  eq('sans code', formatWeather({ temperature: 21, humidity: 60 }), '21 °C · 60 %')
+  eq('température seule', formatWeather({ temperature: 18 }), '18 °C')
+  // Dehors ne dit rien d'une salle : on n'affiche pas « Couvert » pour une séance
+  // en intérieur, même si le code a été relevé avant qu'on coche la case.
+  eq('en intérieur : pas de ciel', formatWeather({ temperature: 21, code: 3, indoor: true }), '21 °C · en intérieur')
+  eq('rien', formatWeather(null), '')
+  eq('code inconnu ignoré', formatWeather({ temperature: 20, code: 999 }), '20 °C')
+  eq('un code connu', weatherLabel(0), 'Ciel dégagé')
+  eq('un code inconnu', weatherLabel(1234), null)
+}
+
+section('Les lieux : nom, coordonnées, ou les deux')
+{
+  eq('nom nettoyé', normalizePlace('  Bois   de Vincennes '), 'Bois de Vincennes')
+  eq('même lieu malgré la casse et les accents', placeKey('Forêt'), placeKey('FORET'))
+  eq('coordonnées arrondies', cleanCoords(48.856614, 2.352222), { lat: 48.8566, lon: 2.3522 })
+  eq('latitude impossible', cleanCoords(120, 2), null)
+  eq('longitude impossible', cleanCoords(48, 200), null)
+  eq('texte', cleanCoords('ici', 'là'), null)
+  eq('le pôle Sud existe', cleanCoords(-90, 180), { lat: -90, lon: 180 })
+  eq('nom seul', cleanPlace({ name: 'Salle' }), { name: 'Salle' })
+  eq('coordonnées seules', cleanPlace({ lat: 48.8566, lon: 2.3522 }), { lat: 48.8566, lon: 2.3522 })
+  eq('les deux', cleanPlace({ name: 'Chez moi', lat: 1, lon: 2 }), { name: 'Chez moi', lat: 1, lon: 2 })
+  eq('ni l’un ni l’autre', cleanPlace({}), null)
+  eq('pas un objet', cleanPlace('dehors'), null)
+}
+
+section('Le nom devinÉ à partir des coordonnées')
+{
+  eq('quartier puis ville',
+    placeNameFromGeocode({ locality: 'Saint-Merri', city: 'Paris' }), 'Saint-Merri, Paris')
+  eq('pas deux fois la même chose',
+    placeNameFromGeocode({ locality: 'Paris', city: 'Paris' }), 'Paris')
+  eq('ville seule', placeNameFromGeocode({ city: 'Lyon' }), 'Lyon')
+  eq('à défaut, la région',
+    placeNameFromGeocode({ principalSubdivision: 'Occitanie' }), 'Occitanie')
+  eq('réponse vide', placeNameFromGeocode({}), '')
+  eq('pas de réponse', placeNameFromGeocode(null), '')
+}
+
+// Un carnet où l'on est déjà allé quelque part.
+const LIEUX = [
+  { id: 'p1', type: 'Marche', date: local(2026, 7, 10, 12), place: { name: 'Bois de Vincennes', lat: 48.83, lon: 2.43 } },
+  { id: 'p2', type: 'Marche', date: local(2026, 7, 15, 12), place: { name: 'bois de vincennes', lat: 48.831, lon: 2.431 } },
+  { id: 'p3', type: 'Muscu', date: local(2026, 7, 20, 12), place: { name: 'Salle' } },
+  { id: 'p4', type: 'Course', date: local(2026, 7, 25, 12), place: { name: 'Canal Saint-Martin', lat: 48.87, lon: 2.36 } },
+  { id: 'p5', type: 'Repos', date: local(2026, 7, 26, 12) },
+]
+
+section('L’app apprend les lieux où on est allé')
+{
+  const l = knownPlaces(LIEUX)
+  eq('le plus fréquent en tête', l[0].name, 'bois de vincennes')
+  eq('compté deux fois malgré la casse', l[0].count, 2)
+  eq('les coordonnées suivent le dernier relevé', [l[0].lat, l[0].lon], [48.831, 2.431])
+  eq('trois lieux distincts', l.length, 3)
+  eq('une activité sans lieu ne compte pas', l.some((x) => x.name === 'Repos'), false)
+  eq('un lieu sans coordonnées existe quand même',
+    l.find((x) => x.name === 'Salle').lat, undefined)
+}
+
+section('Les lieux proposés')
+{
+  eq('« boi » retrouve le bois', suggestPlaces(LIEUX, 'boi').map((p) => p.name), ['bois de vincennes'])
+  eq('« saint » cherche aussi au milieu', suggestPlaces(LIEUX, 'saint').map((p) => p.name), ['Canal Saint-Martin'])
+  eq('déjà tapé en entier : rien de plus', suggestPlaces(LIEUX, 'Salle'), [])
+  eq('champ vide : les plus fréquents', suggestPlaces(LIEUX, '').length, 3)
+  eq('rien ne correspond', suggestPlaces(LIEUX, 'montagne'), [])
+  eq('carnet vide', suggestPlaces([], 'boi'), [])
+  eq('le dernier lieu utilisé', lastPlace(LIEUX).name, 'Canal Saint-Martin')
+  eq('carnet sans aucun lieu', lastPlace([{ id: 'x', date: local(2026, 7, 1, 12) }]), null)
+}
+
+section('Une activité datée par son heure, plus par la convention « midi »')
+{
+  eq('l’heure déclarée date l’activité',
+    formatTime(dayTimeToISO('2026-07-22', '07:30', NOW)), '07:30')
+  eq('et le bon jour', dayKey(dayTimeToISO('2026-07-22', '07:30', NOW)), '2026-07-22')
+  // Sans heure, on retombe sur l'ancien comportement : un état d'avant T14 se
+  // lit donc exactement comme avant.
+  eq('sans heure : midi comme avant', new Date(dayTimeToISO('2026-07-22', null, NOW)).getHours(), 12)
+  eq('heure illisible : midi aussi', new Date(dayTimeToISO('2026-07-22', 'tôt', NOW)).getHours(), 12)
+  eq('aujourd’hui sans heure garde l’instant', dayTimeToISO('2026-07-30', null, NOW), new Date(NOW).toISOString())
+  eq('jour illisible', dayTimeToISO('hier', '10:00', NOW), null)
+}
+
+section('Noter une activité avec son heure, son lieu et ses conditions')
+{
+  const l = addActivity([], {
+    type: 'Marche', day: '2026-07-28', time: '07:30',
+    place: { name: '  Bois de Vincennes ', lat: 48.856614, lon: 2.352222 },
+    weather: { temperature: '18,4', humidity: 72, code: 3, source: 'auto' },
+    measures: { distance: 5 },
+  }, NOW)
+  const a = l[0]
+  eq('l’heure est rangée', a.time, '07:30')
+  eq('et elle date l’activité', formatTime(a.date), '07:30')
+  eq('le lieu est nettoyé', a.place, { name: 'Bois de Vincennes', lat: 48.8566, lon: 2.3522 })
+  eq('les conditions aussi', a.weather, { temperature: 18.4, humidity: 72, code: 3, source: 'auto' })
+
+  // Sans rien de tout ça, l'activité ne porte pas de clés vides : ça alourdirait
+  // chaque entrée de la sauvegarde pour rien.
+  const nu = addActivity([], { type: 'Marche', day: '2026-07-28' }, NOW)[0]
+  eq('pas de champ heure', 'time' in nu, false)
+  eq('pas de champ lieu', 'place' in nu, false)
+  eq('pas de champ conditions', 'weather' in nu, false)
+
+  // Corriger doit pouvoir EFFACER, pas seulement remplacer.
+  const efface = updateActivity(l, a.id, { type: 'Marche', day: '2026-07-28' }, NOW)[0]
+  eq('le lieu s’efface', 'place' in efface, false)
+  eq('les conditions aussi', 'weather' in efface, false)
+  eq('l’heure aussi', 'time' in efface, false)
+
+  // Une correction qui ne touche ni au jour ni à l'heure garde l'instant d'origine.
+  const memeQuand = updateActivity(l, a.id, {
+    type: 'Marche rapide', day: '2026-07-28', time: '07:30',
+  }, NOW)[0]
+  eq('l’instant ne bouge pas', memeQuand.date, a.date)
+  const autreHeure = updateActivity(l, a.id, { type: 'Marche', day: '2026-07-28', time: '18:00' }, NOW)[0]
+  eq('changer l’heure redate', formatTime(autreHeure.date), '18:00')
+}
+
+section('Le lieu et les conditions arrivent dans le calendrier')
+{
+  const avec = { ...JOURNAL_STATE, activities: [{
+    id: 'w1', type: 'Marche', date: local(2026, 7, 26, 8), time: '08:00',
+    place: { name: 'Bois de Vincennes', lat: 48.83, lon: 2.43 },
+    weather: { temperature: 18.4, humidity: 72, code: 3, source: 'auto' },
+  }] }
+  const e = journalByDay(avec).get('2026-07-26')[0]
+  eq('le lieu est lisible', e.place, 'Bois de Vincennes')
+  eq('les conditions aussi', e.weather, '18,4 °C · 72 % · ☁️ Couvert')
+}
+
+section('Migration v6 -> v7 : les réglages arrivent, la météo auto est active')
+{
+  const m = hydrate({ version: 6, goals: ['pushups'], activities: [{ id: 'a1', type: 'Marche', date: '2026-07-28T12:00:00.000Z' }] })
+  eq('version à jour', m.version, STATE_VERSION)
+  eq('météo auto par défaut', m.settings.autoWeather, true)
+  eq('les activités sont intactes', m.activities.length, 1)
+  eq('un réglage choisi est gardé', hydrate({ version: 7, settings: { autoWeather: false } }).settings.autoWeather, false)
+  eq('des réglages abîmés repartent aux valeurs par défaut',
+    hydrate({ version: 7, settings: 'oups' }).settings, DEFAULT_SETTINGS)
+  eq('état neuf', freshState().settings, DEFAULT_SETTINGS)
+  // Une activité d'avant T14 n'a ni heure ni lieu : elle doit rester lisible.
+  eq('une activité d’avant reste lisible',
+    journalByDay(hydrate({ version: 6, activities: [{ id: 'v', type: 'Marche', date: local(2026, 7, 20, 12) }] }))
+      .get('2026-07-20')[0].title, 'Marche')
+}
+
+section('La sauvegarde emporte l’heure, le lieu et les conditions')
+{
+  const etat = hydrate({
+    version: 7,
+    activities: [{
+      id: 'b1', type: 'Marche', date: local(2026, 7, 26, 8), time: '08:00',
+      place: { name: 'Bois de Vincennes', lat: 48.83, lon: 2.43 },
+      weather: { temperature: 18.4, humidity: 72, code: 3, source: 'auto' },
+    }],
+    settings: { autoWeather: false },
+  })
+  const relu = readBackup(JSON.stringify(backupEnvelope(etat, new Date(NOW))))
+  eq('acceptée', relu.ok, true)
+  eq('l’activité revient entière', relu.state.activities[0], etat.activities[0])
+  eq('le réglage aussi', relu.state.settings.autoWeather, false)
 }
 
 console.log(fails === 0

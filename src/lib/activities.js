@@ -11,6 +11,8 @@
 // (`npm run check`).
 import { MEASURE_IDS, DEFAULT_MEASURES, getMeasure } from '../data/measures.js'
 import { dayKey, parseDayKey } from './dates.js'
+import { normalizeTime, parseTime, cleanWeather } from './weather.js'
+import { cleanPlace } from './places.js'
 
 export const ACTIVITY_ID = 'activity' // pour le calendrier : couleur et emoji à part
 export const ACTIVITY_EMOJI = '📝'
@@ -65,6 +67,19 @@ export function dayToISO(day, now = new Date()) {
   return at.toISOString()
 }
 
+// Avec une heure déclarée (TICKETS.md T14), c'est ELLE qui date l'activité — la
+// convention « midi » ne servait qu'à faute de mieux. Sans heure, on retombe
+// dessus : un état d'avant T14 se lit donc exactement comme avant.
+export function dayTimeToISO(day, time, now = new Date()) {
+  const at = parseDayKey(day)
+  if (!at) return null
+  const minutes = parseTime(time)
+  if (minutes == null) return dayToISO(day, now)
+  const d = new Date(at)
+  d.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0)
+  return d.toISOString()
+}
+
 // Vrai si le jour est dans le futur. On note ce qu'on a fait, pas ce qu'on fera.
 export function isFutureDay(day, now = new Date()) {
   const at = parseDayKey(day)
@@ -102,12 +117,20 @@ export function addActivity(list = [], draft, now = new Date()) {
   if (activityError(draft, now)) return list
   const activity = {
     id: makeId(list, now),
-    date: dayToISO(draft.day, now),
+    date: dayTimeToISO(draft.day, draft.time, now),
     type: normalizeType(draft.type),
     measures: cleanMeasures(draft.measures),
     note: String(draft.note ?? '').trim().slice(0, MAX_NOTE_LENGTH),
     createdAt: new Date(now).toISOString(),
   }
+  // Ajoutés seulement s'ils existent : une activité sans lieu ne porte pas un
+  // `place: null` qui alourdirait chaque entrée de la sauvegarde pour rien.
+  const time = normalizeTime(draft.time)
+  if (time) activity.time = time
+  const place = cleanPlace(draft.place)
+  if (place) activity.place = place
+  const weather = cleanWeather(draft.weather)
+  if (weather) activity.weather = weather
   return sortActivities([...list, activity])
 }
 
@@ -116,13 +139,27 @@ export function addActivity(list = [], draft, now = new Date()) {
 export function updateActivity(list = [], id, draft, now = new Date()) {
   const at = list.find((a) => a?.id === id)
   if (!at || activityError(draft, now)) return list
+  const time = normalizeTime(draft.time)
+  // Ni le jour ni l'heure n'ont bougé : on garde l'instant d'origine, sinon une
+  // simple correction de faute de frappe redaterait l'activité à midi pile.
+  const memeQuand = draft.day === dayKey(at.date) && time === (at.time ?? null)
   const updated = {
     ...at,
-    date: draft.day === dayKey(at.date) ? at.date : dayToISO(draft.day, now),
+    date: memeQuand ? at.date : dayTimeToISO(draft.day, draft.time, now),
     type: normalizeType(draft.type),
     measures: cleanMeasures(draft.measures),
     note: String(draft.note ?? '').trim().slice(0, MAX_NOTE_LENGTH),
   }
+  // Effacer un lieu ou des conditions doit marcher : on retire la clé au lieu
+  // de la laisser traîner avec son ancienne valeur.
+  const place = cleanPlace(draft.place)
+  const weather = cleanWeather(draft.weather)
+  if (time) updated.time = time
+  else delete updated.time
+  if (place) updated.place = place
+  else delete updated.place
+  if (weather) updated.weather = weather
+  else delete updated.weather
   return sortActivities(list.map((a) => (a?.id === id ? updated : a)))
 }
 

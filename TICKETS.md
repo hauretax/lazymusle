@@ -474,3 +474,95 @@ au hasard. Une sauvegarde d'un `formatVersion` **plus récent** est refusée ave
 **Ce qui verrouille vraiment l'aller-retour** : une assertion compare le **récap** et le
 **calendrier** avant export et après relecture. Comparer les champs un par un laisserait passer un
 oubli ; comparer ce que l'app en dit, non.
+
+### T14 — Lieu, heure et conditions · fait
+
+Noter *où* et *dans quelles conditions*, en plus de *quoi*. Demandé le 31/07/2026.
+
+**Le principe qui gouverne tout le ticket : l'app PROPOSE, elle n'impose rien.** Le GPS propose une
+position, qui propose une adresse — modifiable. L'heure propose maintenant — modifiable. La météo
+propose une température et une hygrométrie — modifiables. Rien n'est en lecture seule, parce que
+l'app se trompera : sur le lieu d'une activité antidatée, et sur la température de quelqu'un qui
+s'entraîne à l'intérieur.
+
+- [x] **Heure approximative** sur chaque activité, proposée à *maintenant*, modifiable. C'est elle
+      qui date vraiment l'activité (au lieu de la convention « midi » des jours passés).
+- [x] **Lieu** : bouton « ma position » → coordonnées → adresse devinée, le tout modifiable. Sans
+      GPS (refusé, indisponible), on tape. L'app **propose les lieux déjà notés**, comme elle
+      propose déjà les types d'activité.
+- [x] **Conditions** : **température et hygrométrie**, récupérées pour ce lieu à cette heure-là.
+      Modifiables à la main, et saisissables sans lieu du tout.
+- [x] **« En intérieur »** : la météo dehors ne dit rien d'une séance en salle. On coche, on saisit
+      sa propre température, et l'app ne va rien chercher.
+- [x] **Réglage pour couper la récupération automatique** (écran « Réglages »).
+- [x] Affiché là où les activités se lisent : la liste, le détail du jour dans le calendrier.
+- [x] Dans la sauvegarde (T13), comme le reste — rien à faire de plus, mais à vérifier.
+- [x] Assertions : choix de l'heure dans la réponse, URL construite, lieux proposés, état abîmé.
+
+**Services extérieurs, et ce que ça coûte.** Jusqu'ici l'app était **100 % hors-ligne, sans compte
+ni serveur**. Ce ticket casse ça : pour connaître la météo d'un lieu, il faut envoyer ce lieu à
+quelqu'un. C'est le prix de la fonctionnalité, il est assumé — mais il est réel, et c'est pour ça
+que le réglage existe.
+
+- **Météo : [Open-Meteo](https://open-meteo.com)** — gratuit, **sans clé d'API**, CORS ouvert.
+  Deux points d'entrée : `api.open-meteo.com` (couvre les ~92 derniers jours, heure par heure) et
+  `archive-api.open-meteo.com` (au-delà). Vérifié le 31/07/2026 sur les deux.
+- **Adresse : [BigDataCloud](https://www.bigdatacloud.com)** `reverse-geocode-client` — gratuit,
+  sans clé, CORS ouvert, réponses en français. Vérifié.
+
+⚠️ **Nominatim / OpenStreetMap est inutilisable ici** : l'API répond 200 mais **sans en-tête
+`Access-Control-Allow-Origin`**, donc le navigateur bloque la réponse. Vérifié le 31/07/2026 — ne
+pas y revenir en croyant que ça marchera.
+
+**Tout échec est silencieux et rattrapable.** Pas de réseau, GPS refusé, API en panne (l'archive
+Open-Meteo a répondu 502 une fois pendant les essais) : on n'affiche pas d'erreur bloquante, on
+laisse les champs à remplir à la main. Une activité doit pouvoir se noter dans un tunnel.
+
+**Fait**, avec 125 assertions de plus (`npm run check` : 685 au total).
+
+**Vérifié dans le navigateur**, position simulée à Paris : « 📍 Ma position » → coordonnées
+`48.857, 2.352` → nom deviné **« Saint-Merri, Paris »** → météo relevée **26,4 °C · 49 % · ☁️
+Couvert**, le tout en un geste. Enregistré tel quel : `time: "14:22"`, `place` avec ses coordonnées,
+`weather` marqué `source: "auto"`. Puis :
+
+- **« En intérieur »** → le bouton météo disparaît, aucun appel ne part, saisie à la main
+  (`21 °C · 45 % · en intérieur`, `source: "manual"`, sans code météo).
+- **Réglage coupé** → un espion posé sur `fetch` confirme **zéro appel** vers Open-Meteo comme vers
+  BigDataCloud. Les coordonnées s'obtiennent quand même (c'est local), et le champ reste saisissable.
+- **Position refusée** → « Position refusée. Tu peux écrire le lieu à la main. » Rien n'est bloqué.
+- Les lieux déjà notés sont proposés, comme les types d'activité.
+
+Zéro erreur console.
+
+**Bug attrapé par une assertion, pas par l'œil** : `weatherUrl` construisait son URL avec
+`Number(lat)`. Or `Number(null)` vaut **0** — une activité sans coordonnées serait allée chercher la
+météo du **point (0,0)**, en plein golfe de Guinée, et l'aurait affichée comme un vrai relevé. Le
+fichier réutilise maintenant `cleanCoords`, qui refuse ce qui n'est pas un nombre.
+
+**Incohérence trouvée en vérifiant** : réglage coupé, l'écran des Réglages annonçait « Reps est
+entièrement hors-ligne »… et le bouton « 🌤️ Récupérer la météo » restait affiché, prêt à appeler.
+Tranché : **le réglage veut dire « pas de réseau »**, pas « pas d'automatisme ». Le bouton disparaît
+avec lui, et la phrase devient vraie.
+
+**Choix assumé — la position ne part jamais toute seule.** Il faut taper « 📍 Ma position ». C'est
+écrit noir sur blanc dans les Réglages.
+
+**Choix assumé — on n'arrondit pas l'heure au plus proche.** 14h59 se lit à 14h, pas à 15h : à 15h,
+le relevé n'a pas encore eu lieu. Verrouillé par une assertion.
+
+**Choix assumé — le nom deviné n'écrase jamais un nom déjà écrit.** Il ne remplit que le champ vide.
+
+**Choix assumé — corriger un chiffre à la main débranche l'automatique** (`source: "manual"`), et
+une nouvelle recherche ne réécrasera pas la correction tant qu'on ne la redemande pas.
+
+**Choix assumé — pas de clé vide.** Une activité sans lieu ne porte pas de `place: null` : ça
+alourdirait chaque entrée de la sauvegarde pour rien. Et corriger doit pouvoir **effacer** un lieu,
+pas seulement le remplacer — vérifié par assertion.
+
+**Rétrocompatibilité** : sans heure déclarée, une activité retombe sur la convention « midi » de
+T10. Un état d'avant T14 se lit donc exactement comme avant, et `settings` arrive avec la météo
+auto active. Vérifié en vrai : migration v6 → v7 sur un état à 5 activités, progression intacte.
+
+**Non couvert par `npm run check`, et c'est assumé** : `lib/weatherApi` (réseau, géolocalisation).
+Tout ce qui pouvait être extrait l'est — URL, choix de l'heure, validation, lieux — et le reste
+s'est vérifié à l'écran.

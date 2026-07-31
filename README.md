@@ -20,6 +20,8 @@ PWA React pour progresser jusqu'à **100 pompes d'affilée**, basée sur le syst
 - **Photos** : une ou plusieurs par jour depuis le calendrier, et/ou rattachées à une activité. Elles sont **redimensionnées à l'ajout** (1600 px max, JPEG) — une photo de téléphone de 2,3 Mo tombe à ~390 ko. Les **images** vivent dans **IndexedDB** ([`src/lib/photoStore.js`](src/lib/photoStore.js)), seules leurs **fiches** (id, jour, dimensions) sont dans le `localStorage` ([`src/lib/photos.js`](src/lib/photos.js)) : le quota du `localStorage` est de ~5 Mo, une seule photo le remplirait et ferait perdre toute la progression. Supprimer une activité **ne supprime pas** ses photos — elles redeviennent des photos du jour.
 - **Sauvegarde** : « 💾 Sauvegarde » exporte **tout** (programmes, séances, activités, photos comprises) en un `.json` téléchargeable, et sait le relire — sur un autre téléphone, ou après avoir vidé son navigateur. L'import passe par [`src/lib/migrate.js`](src/lib/migrate.js), donc une sauvegarde d'une version antérieure se relit. Le lien est aussi sur l'écran d'accueil du tout premier lancement (« J'ai déjà une sauvegarde ») : c'est là qu'on en a besoin. **C'est la seule copie** — l'app n'a pas de serveur.
 
+- **Lieu, heure et conditions** : chaque activité peut porter une **heure approximative** (proposée à maintenant), un **lieu** (« 📍 Ma position » → coordonnées → nom deviné, tout restant modifiable, et les lieux déjà notés sont proposés) et les **conditions** — température et hygrométrie relevées pour ce lieu à cette heure-là. Tout est modifiable : coche « 🏠 En intérieur » et tu saisis les tiennes. C'est le **seul** endroit d'où l'app sort sur le réseau ([Open-Meteo](https://open-meteo.com) pour la météo, [BigDataCloud](https://www.bigdatacloud.com) pour le nom du lieu, ni compte ni clé), et « ⚙️ Réglages » permet de le couper entièrement. Logique dans [`src/lib/weather.js`](src/lib/weather.js) et [`src/lib/places.js`](src/lib/places.js), appels dans [`src/lib/weatherApi.js`](src/lib/weatherApi.js).
+
 | Niveau | Jours | 1re séance | Test final |
 |--------|-------|------------|-----------|
 | 1      | 10    | `2-3-4-3-2`      | 20  |
@@ -33,7 +35,9 @@ Tout le programme (niveaux, séries, réglages de pause) est dans
 Les données ont été extraites de Push Up Pro Pro via `adb` (uiautomator) en juillet 2026.
 
 La progression de l'utilisateur (séances faites, max, dates) est stockée en JSON dans le
-`localStorage` du navigateur — l'app fonctionne **100 % hors-ligne**, sans compte ni serveur.
+`localStorage` du navigateur, les photos dans IndexedDB — **sans compte ni serveur**. L'app
+fonctionne hors-ligne, à **une exception près** : la météo automatique d'une activité (T14), qui
+interroge deux services publics et se coupe dans les réglages.
 
 ## Lancer
 
@@ -51,10 +55,12 @@ les règles ne se déclenchent pas encore — voir [`TICKETS.md`](TICKETS.md)), 
 programme pompes, ce qui compte comme séance validée
 ([`src/lib/progress.js`](src/lib/progress.js)), les activités notées à la main
 ([`src/lib/activities.js`](src/lib/activities.js)), le récap d’une période ([`src/lib/recap.js`](src/lib/recap.js)),
-les fiches des photos ([`src/lib/photos.js`](src/lib/photos.js)) et la relecture d’une sauvegarde
-([`src/lib/backup.js`](src/lib/backup.js)). Le reste (écrans, parcours) se vérifie dans le navigateur —
+les fiches des photos ([`src/lib/photos.js`](src/lib/photos.js)), la relecture d’une sauvegarde
+([`src/lib/backup.js`](src/lib/backup.js)) et tout ce qui entoure la météo sans l’appeler —
+URL, choix de l’heure, lieux ([`weather.js`](src/lib/weather.js), [`places.js`](src/lib/places.js)). Le reste (écrans, parcours) se vérifie dans le navigateur —
 y compris ce qui a besoin d’un navigateur pour exister : le canvas et IndexedDB
-([`photoStore.js`](src/lib/photoStore.js), [`backupFile.js`](src/lib/backupFile.js)).
+([`photoStore.js`](src/lib/photoStore.js), [`backupFile.js`](src/lib/backupFile.js)) et le réseau
+([`weatherApi.js`](src/lib/weatherApi.js)).
 
 Installable comme app (PWA) : "Ajouter à l'écran d'accueil" sur mobile.
 

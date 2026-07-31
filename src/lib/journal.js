@@ -12,6 +12,7 @@ import * as run from '../data/runProgram.js'
 import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL } from '../data/goals.js'
 import { sessionStatus, DONE } from './progress.js'
 import { activitySummary, ACTIVITY_ID, ACTIVITY_EMOJI } from './activities.js'
+import { formatWeather } from './weather.js'
 import { dayKey } from './dates.js'
 
 // `dayKey` a déménagé dans lib/dates : les activités libres en ont besoin, et
@@ -88,7 +89,13 @@ function activityEntries(list = []) {
     a?.type || 'Activité',
     activitySummary(a) || null,
     DONE,
-    { emoji: ACTIVITY_EMOJI, activityId: a?.id, note: a?.note || null },
+    {
+      emoji: ACTIVITY_EMOJI,
+      activityId: a?.id,
+      note: a?.note || null,
+      place: a?.place?.name || null,
+      weather: formatWeather(a?.weather) || null,
+    },
   )).filter(Boolean)
 }
 

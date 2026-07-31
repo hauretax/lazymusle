@@ -3,6 +3,9 @@ import { useApp } from '../store'
 import { measures as MEASURES, getMeasure } from '../data/measures'
 import { photosOfActivity, photoError } from '../lib/photos'
 import PhotoStrip from '../components/PhotoStrip'
+import { formatTime, isValidTime, weatherLabel, weatherEmoji, MIN_TEMPERATURE, MAX_TEMPERATURE } from '../lib/weather'
+import { suggestPlaces, formatCoords, MAX_PLACE_LENGTH } from '../lib/places'
+import { locate, describeCoords, fetchWeather, canLocate } from '../lib/weatherApi'
 import {
   suggestTypes, measuresForType, activityError, normalizeType, MAX_NOTE_LENGTH, MAX_TYPE_LENGTH,
 } from '../lib/activities'
@@ -126,6 +129,29 @@ export default function ActivityForm({ activity, onDone, onCancel }) {
   const [photoErr, setPhotoErr] = useState(null)
   const [saving, setSaving] = useState(false)
 
+  // --- Heure, lieu, conditions (TICKETS.md T14) ---
+  // L'heure est proposée à MAINTENANT, pas laissée vide : dans l'immense
+  // majorité des cas on note ce qu'on vient de faire.
+  const [time, setTime] = useState(activity?.time ?? formatTime(new Date()))
+  const [coords, setCoords] = useState(() => (
+    activity?.place?.lat != null ? { lat: activity.place.lat, lon: activity.place.lon } : null
+  ))
+  const [placeName, setPlaceName] = useState(activity?.place?.name ?? '')
+  const [temp, setTemp] = useState(activity?.weather?.temperature != null ? String(activity.weather.temperature) : '')
+  const [humidity, setHumidity] = useState(activity?.weather?.humidity != null ? String(activity.weather.humidity) : '')
+  const [weatherCode, setWeatherCode] = useState(activity?.weather?.code ?? null)
+  const [indoor, setIndoor] = useState(Boolean(activity?.weather?.indoor))
+  // Dès qu'on corrige un chiffre à la main, ce n'est plus un relevé automatique —
+  // et il ne faut plus l'écraser en allant en rechercher un.
+  const [weatherAuto, setWeatherAuto] = useState(activity?.weather?.source === 'auto')
+  const [geoBusy, setGeoBusy] = useState(false)
+  const [geoMsg, setGeoMsg] = useState(null)
+  const [weatherBusy, setWeatherBusy] = useState(false)
+  const [weatherMsg, setWeatherMsg] = useState(null)
+
+  const autoWeather = state.settings?.autoWeather !== false
+  const placeSuggestions = suggestPlaces(list, placeName)
+
   const attached = photosOfActivity(state.photos, activity?.id)
 
   const suggestions = suggestTypes(list, type)
@@ -155,7 +181,19 @@ export default function ActivityForm({ activity, onDone, onCancel }) {
         m[id] = values[id]
       }
     }
-    return { type, day, note, measures: m }
+    return {
+      type, day, note, measures: m,
+      time: isValidTime(time) ? time : null,
+      place: { name: placeName, lat: coords?.lat, lon: coords?.lon },
+      weather: {
+        temperature: temp,
+        humidity,
+        // Le code météo ne vaut que dehors, et que s'il vient du relevé.
+        code: indoor || !weatherAuto ? null : weatherCode,
+        indoor,
+        source: weatherAuto ? 'auto' : 'manual',
+      },
+    }
   }
 
   const draft = buildDraft()
@@ -163,6 +201,70 @@ export default function ActivityForm({ activity, onDone, onCancel }) {
   // Tant qu'on n'a rien tapé, on ne crie pas « il manque le nom » : c'est un
   // formulaire vide, pas une erreur.
   const showError = error && normalizeType(type) !== ''
+
+  // Va chercher la météo de ce point, ce jour-là, à cette heure-là. Un échec ne
+  // bloque rien : le message le dit, et les champs restent saisissables.
+  const majMeteo = async (point, quand) => {
+    const at = point ?? coords
+    if (!at || indoor) return
+    setWeatherBusy(true)
+    setWeatherMsg(null)
+    const res = await fetchWeather(at.lat, at.lon, quand?.day ?? day, quand?.time ?? time)
+    setWeatherBusy(false)
+    if (!res.ok) {
+      setWeatherMsg(res.error)
+      return
+    }
+    setTemp(String(res.weather.temperature))
+    setHumidity(res.weather.humidity != null ? String(res.weather.humidity) : '')
+    setWeatherCode(res.weather.code)
+    setWeatherAuto(true)
+  }
+
+  // « Ma position ». Elle ne part JAMAIS toute seule : il faut ce geste.
+  const prendrePosition = async () => {
+    setGeoBusy(true)
+    setGeoMsg(null)
+    const res = await locate()
+    setGeoBusy(false)
+    if (!res.ok) {
+      setGeoMsg(res.error)
+      return
+    }
+    const point = { lat: res.lat, lon: res.lon }
+    setCoords(point)
+    if (autoWeather) {
+      // Le nom deviné ne fait qu'une proposition : il reste modifiable, et il
+      // n'écrase pas un nom déjà écrit à la main.
+      if (!placeName.trim()) {
+        const nom = await describeCoords(point.lat, point.lon)
+        if (nom) setPlaceName(nom)
+      }
+      majMeteo(point)
+    }
+  }
+
+  const pickPlace = (p) => {
+    setPlaceName(p.name)
+    if (p.lat != null) {
+      setCoords({ lat: p.lat, lon: p.lon })
+      if (autoWeather && !indoor) majMeteo({ lat: p.lat, lon: p.lon })
+    }
+  }
+
+  const toggleIndoor = () => {
+    setIndoor((was) => {
+      const next = !was
+      // Dehors ne dit rien d'une salle : on jette le code météo et on rend la
+      // main sur les chiffres.
+      if (next) {
+        setWeatherCode(null)
+        setWeatherAuto(false)
+        setWeatherMsg(null)
+      }
+      return next
+    })
+  }
 
   const pickPending = (files) => {
     const refus = files.map(photoError).find(Boolean)
@@ -252,6 +354,132 @@ export default function ActivityForm({ activity, onDone, onCancel }) {
           Hier
         </button>
       </div>
+
+      <label className="field">
+        <span className="field__label">Vers quelle heure ?</span>
+        <input
+          className="field__input"
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+        />
+      </label>
+
+      <h3 className="act__h">Où ?</h3>
+      <div className="place">
+        <input
+          className="field__input"
+          type="text"
+          value={placeName}
+          maxLength={MAX_PLACE_LENGTH}
+          placeholder="Bois de Vincennes, salle…"
+          autoComplete="off"
+          aria-label="Lieu"
+          onChange={(e) => setPlaceName(e.target.value)}
+        />
+        {canLocate() && (
+          <button
+            type="button"
+            className="btn btn--ghost place__gps"
+            onClick={prendrePosition}
+            disabled={geoBusy}
+          >
+            {geoBusy ? '…' : '📍 Ma position'}
+          </button>
+        )}
+      </div>
+
+      {placeSuggestions.length > 0 && (
+        <div className="chips" role="list" aria-label="Lieux déjà notés">
+          {placeSuggestions.map((p) => (
+            <button key={p.key} type="button" className="chip" role="listitem" onClick={() => pickPlace(p)}>
+              {p.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {coords && <p className="progress__sub">📍 {formatCoords(coords)}</p>}
+      {geoMsg && <p className="act__err">{geoMsg}</p>}
+
+      <h3 className="act__h">Conditions</h3>
+      <div className="meas">
+        <div className="meas__row">
+          <span className="meas__label">Température</span>
+          <span className="meas__dur">
+            <input
+              className="field__input meas__input"
+              type="number"
+              inputMode="decimal"
+              step="0.1"
+              min={MIN_TEMPERATURE}
+              max={MAX_TEMPERATURE}
+              value={temp}
+              placeholder="—"
+              aria-label="Température"
+              onChange={(e) => {
+                setTemp(e.target.value)
+                setWeatherAuto(false) // corrigé à la main : ce n'est plus un relevé
+              }}
+            />
+            <em className="meas__unit">°C</em>
+          </span>
+          <span />
+        </div>
+        <div className="meas__row">
+          <span className="meas__label">Hygrométrie</span>
+          <span className="meas__dur">
+            <input
+              className="field__input meas__input"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              max="100"
+              value={humidity}
+              placeholder="—"
+              aria-label="Hygrométrie"
+              onChange={(e) => {
+                setHumidity(e.target.value)
+                setWeatherAuto(false)
+              }}
+            />
+            <em className="meas__unit">%</em>
+          </span>
+          <span />
+        </div>
+      </div>
+
+      <div className="chips">
+        <button
+          type="button"
+          className={`chip${indoor ? ' chip--on' : ''}`}
+          aria-pressed={indoor}
+          onClick={toggleIndoor}
+        >
+          🏠 En intérieur
+        </button>
+        {/* Le bouton disparaît quand le réglage est coupé : sinon l'écran des
+            réglages mentirait en annonçant « Reps est entièrement hors-ligne ».
+            Le réglage veut dire « pas de réseau », pas « pas d'automatisme ». */}
+        {autoWeather && !indoor && coords && (
+          <button type="button" className="chip" onClick={() => majMeteo()} disabled={weatherBusy}>
+            {weatherBusy ? '…' : '🌤️ Récupérer la météo'}
+          </button>
+        )}
+      </div>
+
+      {weatherAuto && weatherCode != null && !indoor && (
+        <p className="progress__sub">
+          {weatherEmoji(weatherCode)} {weatherLabel(weatherCode)} — relevé pour ce lieu à cette heure-là.
+        </p>
+      )}
+      {indoor && (
+        <p className="progress__sub">La météo dehors ne dit rien d’une séance en salle : à toi de saisir.</p>
+      )}
+      {!autoWeather && !indoor && (
+        <p className="progress__sub">Météo automatique coupée dans les réglages — saisis à la main.</p>
+      )}
+      {weatherMsg && <p className="act__err">{weatherMsg}</p>}
 
       <h3 className="act__h">Ce que tu veux noter</h3>
       <div className="meas">

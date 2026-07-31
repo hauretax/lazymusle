@@ -157,6 +157,13 @@ export default function Journal({ onBack }) {
               </span>
               <span className="list__date">{fmtTime(e.date)}</span>
               <b>{e.detail}</b>
+              {(e.place || e.weather) && (
+                <em className="list__note">
+                  {e.place && <>📍 {e.place}</>}
+                  {e.place && e.weather && ' · '}
+                  {e.weather}
+                </em>
+              )}
               {e.note && <em className="list__note">{e.note}</em>}
             </li>
           ))}

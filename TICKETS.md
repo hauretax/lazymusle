@@ -595,3 +595,38 @@ et annonce « Ce qui est prêt : Pompes, Handstand, L-sit, Course ». Zéro erre
 **Leçon à garder** : une fonction nommée « l'étape suivante » qui ne parlait en fait que d'**un**
 module a survécu à l'arrivée de trois autres. Les trois nouveaux ont bien été écrits avec leur
 propre `getXStep` renvoyant `off` — c'est l'ancien qui n'a pas suivi.
+
+### T16 — Étirements : se mettre en place · sac lesté · fait
+
+Demandé le 21/09/2026 : « 5 s entre chaque phase de l'étirement de fin de séance », et « ajouter
+des poids » — dire avec combien de kg dans le sac on a validé une journée, et le voir **en bas à
+droite** de la case.
+
+**Étirements**
+- [x] Chaque étape commence par **5 s de mise en place** (anneau gris, « Mets-toi en place »,
+      « puis 25 s » sous le chiffre), puis la tenue démarre avec le signal habituel. Ça vaut aussi
+      pour la première étape et pour chaque **changement de côté** : c'est là qu'on perdait les
+      premières secondes à se placer.
+- [x] « Je suis prêt → » saute la mise en place ; en tenue le bouton redevient « Suivant → ».
+- [x] La durée vit dans les données (`prepSeconds` de `stretches.json`), pas dans le code.
+
+**Sac lesté**
+- [x] L'écran « Séance bouclée » demande le **poids dans le sac** (± 1 kg), pré-rempli avec
+      celui de la dernière séance terminée — le sac reste chargé d'une fois sur l'autre.
+- [x] Enregistré en `bagKg` sur la séance, **absent sans sac** (même choix qu'en T14 : pas de
+      clé vide). Rien à migrer : un historique d'avant se lit comme « sans sac ».
+- [x] La case affiche les kg en bas à droite, dans le programme **et** dans « Ma progression ».
+      Le plus lourd des jours **validés** gagne : refaire plus lourd se voit, refaire plus léger
+      n'efface rien. Un test raté ou une séance abandonnée n'affichent pas de poids.
+- [x] Repris dans la légende (si au moins un jour lesté), dans la carte « Déjà validée avec
+      15 kg dans le sac », dans le libellé d'accessibilité, et dans le journal (« 27 pompes ·
+      🎒 15 kg »).
+- [x] `pushupBagKg` / `lastBagKg` dans `lib/progress`, testés par `npm run check`.
+
+**Vérifié dans le navigateur** (390 px) : historique à 5/8/12 kg → les trois cases le portent ;
+séance du jour 5 pré-remplie à 12, passée à 15 → enregistrée `bagKg: 15`, la case affiche 15 et la
+carte le dit ; étirements : 5 s de mise en place puis 15 s de tenue, idem au changement de côté,
+« Je suis prêt » saute bien. Zéro erreur console.
+
+**Non fait, volontairement** : pas de poids sur une séance abandonnée (l'écran d'abandon ne le
+demande pas) ni sur les autres modules.

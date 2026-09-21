@@ -203,6 +203,9 @@ body {
 /* ---------- Abandon (T8) ---------- */
 .quit__partial { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .quit__label { color: var(--muted); font-size: 14px; font-weight: 600; }
+.bag { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.bag__unit { font-size: 16px; font-weight: 700; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+.bag__hint { color: var(--muted); font-size: 12px; }
 .list__tag {
   font-style: normal;
   margin-left: 8px;
@@ -306,6 +309,10 @@ body {
 .cell--tap { border: 0; font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .cell--tap:active { transform: scale(0.92); }
 .cell--sel { outline: 2px solid var(--text); outline-offset: 1px; }
+.cell { position: relative; }
+/* Le poids du sac (T16), en bas à droite de la case : un repère, pas un deuxième chiffre à lire. */
+.cell__kg { position: absolute; right: 2px; bottom: 1px; font-size: 9px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; opacity: 0.75; pointer-events: none; }
+.legend .cell__kg { font-size: 6px; right: 1px; bottom: 0; }
 
 .plan__sub { color: var(--muted); font-size: 13px; }
 /* La carte reste sous les yeux pendant qu'on parcourt les 54 cases. */
@@ -338,8 +345,11 @@ body {
 .stretch__side { font-size: 13px; font-weight: 700; color: var(--accent2); background: var(--accent-soft); padding: 4px 11px; border-radius: 999px; }
 .stretch__target { color: var(--muted); font-size: 13px; }
 .stretch__how { color: var(--muted); font-size: 14.5px; max-width: 340px; margin: 0 auto; line-height: 1.5; }
-.stretch__timer { display: flex; justify-content: center; }
+.stretch__timer { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .ring.ring--sm { width: min(46vw, 190px); }
+/* Mise en place : l'anneau passe au neutre, pour qu'on voie d'un coup d'œil qu'on ne tient pas encore. */
+.ring--prep .ring__progress { stroke: var(--muted); }
+.ring--prep .ring__unit { font-size: 13px; }
 
 /* ---------- Rappels ---------- */
 .reminder { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }

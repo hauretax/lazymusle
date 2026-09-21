@@ -5,6 +5,12 @@
 // c'est tout l'enjeu de T7 : un jour sauté doit rester gris.
 //
 // Sans `onSelect`, la grille est un simple tableau de bord (écran Progression).
+//
+// `c.kg` : le poids du sac avec lequel le jour a été validé (T16), en bas à droite.
+function BagTag({ kg }) {
+  return kg ? <span className="cell__kg">{kg}</span> : null
+}
+
 export default function PlanGrid({ groups, selected, onSelect }) {
   return (
     <>
@@ -28,7 +34,7 @@ export default function PlanGrid({ groups, selected, onSelect }) {
               ].filter(Boolean).join(' ')
               const label = c.done ? '✓' : c.isTest ? '★' : c.label
               if (!onSelect) {
-                return <span key={c.key} className={cls}>{label}</span>
+                return <span key={c.key} className={cls}>{label}<BagTag kg={c.kg} /></span>
               }
               return (
                 <button
@@ -40,6 +46,7 @@ export default function PlanGrid({ groups, selected, onSelect }) {
                   onClick={() => onSelect(c.key)}
                 >
                   {label}
+                  <BagTag kg={c.kg} />
                 </button>
               )
             })}
@@ -50,7 +57,7 @@ export default function PlanGrid({ groups, selected, onSelect }) {
   )
 }
 
-export function PlanLegend({ tried, abandoned }) {
+export function PlanLegend({ tried, abandoned, bag }) {
   return (
     <ul className="legend">
       <li className="legend__item"><span className="cell cell--done">✓</span> validée</li>
@@ -58,6 +65,7 @@ export function PlanLegend({ tried, abandoned }) {
       <li className="legend__item"><span className="cell cell--cur">·</span> proposée</li>
       {tried && <li className="legend__item"><span className="cell cell--test cell--tried">★</span> test tenté</li>}
       {abandoned && <li className="legend__item"><span className="cell cell--abandon">·</span> abandonnée</li>}
+      {bag && <li className="legend__item"><span className="cell cell--done">✓<BagTag kg={5} /></span> kg dans le sac</li>}
     </ul>
   )
 }

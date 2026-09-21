@@ -13,7 +13,7 @@ import {
 } from '../src/data/pushupProgram.js'
 import { hydrate, freshState, STATE_VERSION, DEFAULT_SETTINGS } from '../src/lib/migrate.js'
 import {
-  pushupKey, pushupStatuses, countPushupDone, runDone, countRunDone,
+  pushupKey, pushupStatuses, countPushupDone, runDone, countRunDone, pushupBagKg, lastBagKg,
   sessionStatus, DONE, TRIED, ABANDONED,
 } from '../src/lib/progress.js'
 import { abandonMessage, shouldStretch, STRETCH_THRESHOLD } from '../src/lib/encouragement.js'
@@ -547,6 +547,33 @@ section('Les niveaux ne se mélangent pas')
     { levelIndex: 1, dayIndex: 2, isTest: false },
   ]
   eq('même jour, niveaux différents = deux séances', countPushupDone(deux), 2)
+}
+
+section('Sac lesté : la case garde le plus lourd des jours validés (T16)')
+{
+  const h = [
+    { levelIndex: 0, dayIndex: 3, isTest: false, bagKg: 5 },
+    { levelIndex: 0, dayIndex: 3, isTest: false, bagKg: 10 },
+    { levelIndex: 0, dayIndex: 3, isTest: false, bagKg: 2 },
+    { levelIndex: 0, dayIndex: 4, isTest: false },
+    { levelIndex: 0, dayIndex: 10, isTest: true, passed: false, bagKg: 8 },
+    { levelIndex: 0, dayIndex: 5, abandoned: true, bagKg: 6 },
+  ]
+  const kg = pushupBagKg(h)
+  eq('refait plus lourd puis plus léger : le plus lourd reste', kg.get(pushupKey(0, 3)), 10)
+  eq('sans sac : pas de poids', kg.has(pushupKey(0, 4)), false)
+  eq('test raté : pas validé, pas de poids', kg.has(pushupKey(0, 10)), false)
+  eq('abandonnée : pas de poids', kg.has(pushupKey(0, 5)), false)
+  eq('valeurs douteuses ignorées', pushupBagKg([
+    { levelIndex: 0, dayIndex: 0, bagKg: -3 },
+    { levelIndex: 0, dayIndex: 1, bagKg: 'lourd' },
+    { levelIndex: 0, dayIndex: 2, bagKg: 0 },
+  ]).size, 0)
+
+  eq('pré-rempli avec la dernière séance terminée', lastBagKg(h.slice(0, 3)), 2)
+  eq('l’abandon ne compte pas', lastBagKg([{ bagKg: 7 }, { abandoned: true }]), 7)
+  eq('dernière séance sans sac = 0', lastBagKg([{ bagKg: 7 }, {}]), 0)
+  eq('sans historique = 0', lastBagKg(undefined), 0)
 }
 
 section('Course : une séance terminée est une séance validée')

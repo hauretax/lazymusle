@@ -39,7 +39,23 @@ function FixedSet({ target, onDone }) {
   )
 }
 
-export default function Session({ session, onFinish, onQuit, onAbandon }) {
+// Le sac lesté (T16) : on dit avec quoi on a validé la journée. Pré-rempli avec
+// la dernière séance — le sac reste chargé d'une fois sur l'autre.
+function BagWeight({ kg, onChange }) {
+  return (
+    <div className="bag">
+      <p className="quit__label">🎒 Poids dans le sac</p>
+      <div className="stepper stepper--sm">
+        <button className="stepper__btn" onClick={() => onChange(Math.max(0, kg - 1))} aria-label="Un kilo de moins">−</button>
+        <div className="stepper__value">{kg}<span className="bag__unit">kg</span></div>
+        <button className="stepper__btn" onClick={() => onChange(kg + 1)} aria-label="Un kilo de plus">+</button>
+      </div>
+      <p className="bag__hint">{kg > 0 ? 'Il s’affichera sur la case du jour.' : 'Sans sac.'}</p>
+    </div>
+  )
+}
+
+export default function Session({ session, initialBagKg = 0, onFinish, onQuit, onAbandon }) {
   const { levelName, dayNumber, totalDays, values, isTest } = session
   const [idx, setIdx] = useState(0)
   const [phase, setPhase] = useState('active') // 'active' | 'rest' | 'quit' | 'abandoned' | 'done'
@@ -47,6 +63,7 @@ export default function Session({ session, onFinish, onQuit, onAbandon }) {
   const [partial, setPartial] = useState(0) // pompes faites dans la série lâchée en route
   const [results, setResults] = useState([])
   const [restSec, setRestSec] = useState(90)
+  const [bagKg, setBagKg] = useState(initialBagKg)
 
   useEffect(() => { primeAudio() }, [])
 
@@ -193,6 +210,7 @@ export default function Session({ session, onFinish, onQuit, onAbandon }) {
           <div className="summary__chips">
             {results.map((r, i) => <span key={i} className="chip chip--done">{r}</span>)}
           </div>
+          <BagWeight kg={bagKg} onChange={setBagKg} />
           <button
             className="btn btn--primary btn--big"
             onClick={() => onFinish({
@@ -203,6 +221,7 @@ export default function Session({ session, onFinish, onQuit, onAbandon }) {
               planned: values,
               results,
               total,
+              ...(bagKg > 0 && { bagKg }),
             })}
           >
             Terminer

@@ -1,5 +1,7 @@
 {
   "_source": "Routine post-pompes recoupée (O'Coach push-day cool-down, Peloton, Planet Fitness). Modifiable ici.",
+  "_prepSeconds": "Temps pour se mettre en place avant chaque étirement (et chaque changement de côté).",
+  "prepSeconds": 5,
   "stretches": [
     { "id": "wrists", "name": "Poignets", "target": "Avant-bras · poignets", "seconds": 15, "sides": 2, "sideLabels": ["Paumes au sol", "Dos des mains"],
       "howto": "À quatre pattes, mains au sol doigts vers les genoux, recule doucement le bassin. Puis retourne les mains (dos au sol)." },

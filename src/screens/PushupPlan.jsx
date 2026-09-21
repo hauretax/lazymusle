@@ -3,7 +3,7 @@ import { useApp, pushupsOf } from '../store'
 import {
   levels, daysInLevel, isTestDay, getDay, sessionMinTotal, computeRest, parseSet, TOTAL_DAYS,
 } from '../data/pushupProgram'
-import { pushupKey, pushupStatuses, countPushupDone, DONE, TRIED, ABANDONED } from '../lib/progress'
+import { pushupKey, pushupStatuses, countPushupDone, pushupBagKg, DONE, TRIED, ABANDONED } from '../lib/progress'
 import PlanGrid, { PlanLegend } from '../components/PlanGrid'
 
 // Les 54 séances du programme pompes, et le droit d'en choisir une : refaire un jour,
@@ -12,6 +12,7 @@ export default function PushupPlan({ onBack, onPick }) {
   const { state } = useApp()
   const p = pushupsOf(state)
   const status = pushupStatuses(p.sessions)
+  const bag = pushupBagKg(p.sessions)
   const [selected, setSelected] = useState(() => pushupKey(p.levelIndex ?? 0, p.dayIndex ?? 0))
 
   const groups = levels.map((lv, L) => ({
@@ -30,7 +31,8 @@ export default function PushupPlan({ onBack, onPick }) {
         tried: st === TRIED,
         abandoned: st === ABANDONED,
         current: !p.finished && p.levelIndex === L && p.dayIndex === D,
-        aria: `${lv.name}, ${test ? 'test' : `jour ${D + 1}`}${st === DONE ? ', validée' : ''}${st === ABANDONED ? ', abandonnée' : ''}`,
+        kg: bag.get(key),
+        aria: `${lv.name}, ${test ? 'test' : `jour ${D + 1}`}${st === DONE ? ', validée' : ''}${bag.has(key) ? ` avec ${bag.get(key)} kg` : ''}${st === ABANDONED ? ', abandonnée' : ''}`,
       }
     }),
   }))
@@ -54,7 +56,7 @@ export default function PushupPlan({ onBack, onPick }) {
       </p>
 
       <PlanGrid groups={groups} selected={selected} onSelect={setSelected} />
-      <PlanLegend tried abandoned={[...status.values()].includes(ABANDONED)} />
+      <PlanLegend tried abandoned={[...status.values()].includes(ABANDONED)} bag={bag.size > 0} />
 
       {day && (
         <div className="card card--next plan__pick">
@@ -80,7 +82,7 @@ export default function PushupPlan({ onBack, onPick }) {
 
           {st === DONE && (
             <p className="card__rest-note card__rest-note--soft">
-              Déjà validée. La refaire ne l’enlève pas de ton historique.
+              Déjà validée{bag.has(selected) && <> avec <b>{bag.get(selected)} kg</b> dans le sac</>}. La refaire ne l’enlève pas de ton historique.
             </p>
           )}
           {st === TRIED && (

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useApp, getAppStep, getPushupStep, getHandstandStep, getLsitStep, getRunStep, handstandOf, lsitOf } from './store'
+import { useApp, getAppStep, getPushupStep, getHandstandStep, getLsitStep, getRunStep, handstandOf, lsitOf, pushupsOf } from './store'
+import { lastBagKg } from './lib/progress'
 import { getDay } from './data/pushupProgram'
 import { getSession, AXES as HS_AXES } from './data/handstandProgram'
 import * as lsitProgram from './data/lsitProgram'
@@ -270,6 +271,7 @@ export default function App() {
     return (
       <Session
         session={day}
+        initialBagKg={lastBagKg(pushupsOf(state).sessions)}
         onQuit={() => setView('home')}
         onFinish={(result) => {
           completeSession(result)

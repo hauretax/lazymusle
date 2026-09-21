@@ -67,3 +67,37 @@ export function runDone(sessions = []) {
 export function countRunDone(sessions = []) {
   return runDone(sessions).size
 }
+
+// Le sac lesté (T16) : chaque séance validée peut porter `bagKg`, absent quand on
+// l'a faite sans sac — pas de `bagKg: 0` qui alourdirait l'historique pour rien.
+function bagKgOf(s) {
+  const kg = Number(s?.bagKg)
+  return Number.isFinite(kg) && kg > 0 ? kg : 0
+}
+
+// Map `levelIndex:dayIndex` -> kg. Seulement les jours VALIDÉS, et le plus lourd
+// gagne : refaire un jour avec plus de poids doit se voir sur la case, le refaire
+// plus léger ne doit pas effacer ce qu'on a déjà prouvé.
+export function pushupBagKg(sessions = []) {
+  const out = new Map()
+  for (const s of sessions) {
+    if (s?.levelIndex == null || s?.dayIndex == null) continue
+    if (sessionStatus(s) !== DONE) continue
+    const kg = bagKgOf(s)
+    if (!kg) continue
+    const key = pushupKey(s.levelIndex, s.dayIndex)
+    if (kg > (out.get(key) ?? 0)) out.set(key, kg)
+  }
+  return out
+}
+
+// Le poids de la dernière séance terminée, pour pré-remplir la suivante : le sac
+// reste chargé d'une fois sur l'autre. Une séance abandonnée ne demande pas le
+// poids, elle ne compte donc pas.
+export function lastBagKg(sessions = []) {
+  for (let i = sessions.length - 1; i >= 0; i--) {
+    const s = sessions[i]
+    if (s && !s.abandoned) return bagKgOf(s)
+  }
+  return 0
+}

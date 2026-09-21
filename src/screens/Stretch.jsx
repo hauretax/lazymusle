@@ -6,6 +6,10 @@ import { primeAudio, endOfRestSignal, tick } from '../lib/feedback'
 const R = 130
 const CIRC = 2 * Math.PI * R
 const DEFAULT_SIDES = ['Gauche', 'Droite']
+// Enchaîner deux étirements sans battement, c'est perdre les premières secondes
+// du suivant à se mettre en place. Chaque étape commence donc par une mise en
+// place, y compris la première et les changements de côté.
+const PREP_SECONDS = data.prepSeconds ?? 5
 
 function buildSteps() {
   const steps = []
@@ -22,7 +26,8 @@ function buildSteps() {
 export default function Stretch({ onDone }) {
   const steps = useMemo(buildSteps, [])
   const [idx, setIdx] = useState(0)
-  const [left, setLeft] = useState(steps[0].seconds)
+  const [phase, setPhase] = useState('prep') // 'prep' | 'hold'
+  const [left, setLeft] = useState(PREP_SECONDS)
   const [finished, setFinished] = useState(false)
   const doneRef = useRef(false)
   const lastTick = useRef(null)
@@ -32,17 +37,25 @@ export default function Stretch({ onDone }) {
   const step = steps[idx]
 
   const goNext = () => {
-    if (idx + 1 >= steps.length) setFinished(true)
-    else setIdx((i) => i + 1)
+    if (idx + 1 >= steps.length) {
+      setFinished(true)
+    } else {
+      setIdx((i) => i + 1)
+      setPhase('prep')
+    }
   }
+
+  // En mise en place, « Suivant » lance la tenue tout de suite : on est prêt avant les 5 s.
+  const skip = () => (phase === 'prep' ? setPhase('hold') : goNext())
+
+  const duration = phase === 'prep' ? PREP_SECONDS : step.seconds
 
   useEffect(() => {
     if (finished) return
     doneRef.current = false
     lastTick.current = null
-    setLeft(steps[idx].seconds)
-    const startedAt = Date.now()
-    const target = startedAt + steps[idx].seconds * 1000
+    setLeft(duration)
+    const target = Date.now() + duration * 1000
     const id = setInterval(() => {
       const remaining = Math.max(0, Math.round((target - Date.now()) / 1000))
       setLeft(remaining)
@@ -54,12 +67,13 @@ export default function Stretch({ onDone }) {
         doneRef.current = true
         clearInterval(id)
         endOfRestSignal()
-        goNext()
+        if (phase === 'prep') setPhase('hold')
+        else goNext()
       }
     }, 200)
     return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, finished])
+  }, [idx, phase, finished])
 
   if (finished) {
     return (
@@ -74,7 +88,8 @@ export default function Stretch({ onDone }) {
     )
   }
 
-  const pct = step.seconds > 0 ? left / step.seconds : 0
+  const pct = duration > 0 ? left / duration : 0
+  const prep = phase === 'prep'
 
   return (
     <div className="screen stretch">
@@ -107,7 +122,8 @@ export default function Stretch({ onDone }) {
       </div>
 
       <div className="stretch__timer">
-        <div className="ring ring--sm">
+        <p className="rest__label">{prep ? 'Mets-toi en place' : 'Tiens la position'}</p>
+        <div className={'ring ring--sm' + (prep ? ' ring--prep' : '')}>
           <svg viewBox="0 0 300 300" className="ring__svg">
             <circle cx="150" cy="150" r={R} className="ring__track" />
             <circle cx="150" cy="150" r={R} className="ring__progress"
@@ -115,12 +131,14 @@ export default function Stretch({ onDone }) {
           </svg>
           <div className="ring__center">
             <span className="ring__time">{left}</span>
-            <span className="ring__unit">sec</span>
+            <span className="ring__unit">{prep ? `puis ${step.seconds} s` : 'sec'}</span>
           </div>
         </div>
       </div>
 
-      <button className="btn btn--ghost btn--big" onClick={goNext}>Suivant →</button>
+      <button className="btn btn--ghost btn--big" onClick={skip}>
+        {prep ? 'Je suis prêt →' : 'Suivant →'}
+      </button>
     </div>
   )
 }

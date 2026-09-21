@@ -33,7 +33,7 @@ function pushupEntries(p = {}) {
     out.push(entry(
       PUSHUPS_GOAL, s?.date,
       s?.isTest ? `${nom} · Test` : `${nom} · Jour ${(s?.dayIndex ?? 0) + 1}`,
-      s?.total != null ? `${s.total} pompes` : null,
+      s?.total != null ? `${s.total} pompes${s.bagKg > 0 ? ` · 🎒 ${s.bagKg} kg` : ''}` : null,
       sessionStatus(s),
     ))
   }

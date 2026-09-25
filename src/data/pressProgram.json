@@ -1,0 +1,66 @@
+{
+  "_sources": {
+    "echellePress": "Overcoming Gravity 2e éd. (Steven Low), charte Handstand, colonne 8 « Straight Arm Press HS » : L5 Wall Str Press Ecc → L6 Ele Str Std Str Press → L7 Str/Pike Std Press → L8 L-sit/Str-L Str Press → L9 L-sit/Str-L Pike Press. https://www.calisthenics-101.co.uk/wp-content/uploads/2020/05/Overcoming-Gravity-2nd-Edition-Exercise-Charts.pdf",
+    "compression": "Steven Low : étirer les ischios 30 s, puis bras tendus mains aux genoux, tirer les genoux vers le visage, tenir 10 s, ×5 ; quand les genoux touchent sur la plupart des séries, rapprocher les mains des orteils. Levées de jambes en pike assis : Antranik, https://antranik.org/active-pike-compression/",
+    "dosage": "Steven Low, Prilepin pour excentriques : 2-3 séries × 2-3 reps de 3-5 s, 3 min de repos. Dynamique : 3-5 × 3-6 reps, passer au cran suivant au-delà de 5-6 reps propres. https://stevenlow.org/prilepin-tables-for-bodyweight-strength-isometric-and-eccentric-exercises/ · https://stevenlow.org/the-fundamentals-of-bodyweight-strength-training/",
+    "pourquoiLaCompression": "PLOS One 2021, 59 gymnastes : les meilleurs compressent activement les hanches pendant le press, les moins bons compensent avec les épaules. https://pmc.ncbi.nlm.nih.gov/articles/PMC8279359/",
+    "prerequis": "Désaccord : GMB juge qu'un handstand « bref » suffit (https://gmb.io/press-handstand/), le forum StrongFirst veut 30 s. Affichés comme repères, pas comme verrous.",
+    "_attention": "Comme le handstand et le L-sit : pas de calendrier sourcé, GMB refuse de numéroter. Le programme se dérive de la position sur les deux axes."
+  },
+
+  "restDays": 1,
+  "_restDaysSource": "CHOIX DE L'APP. Low donne 3×/sem pour un débutant en général, rien pour le press en particulier. On propose un jour de repos entre deux séances.",
+
+  "advanceAtReps": 6,
+  "_advanceSource": "Steven Low : au-delà de 5-6 reps propres, passer au cran suivant. L'app le propose dès qu'une série atteint 6.",
+
+  "axes": [
+    {
+      "id": "press",
+      "label": "Le press",
+      "emoji": "🤸",
+      "question": "Quel press tu travailles ?",
+      "hint": "Le plus dur que tu fasses proprement, pas ton meilleur jour. Épaules d'abord, hanches ensuite : elles restent au-dessus des mains tout du long.",
+      "steps": [
+        { "id": "wall-neg", "label": "Descente straddle, dos au mur", "kind": "eccentric", "how": "Monte en handstand dos au mur, écarte les jambes et descends-les le plus lentement possible jusqu'au sol, hanches au-dessus des mains. 3 à 5 s par descente." },
+        { "id": "elevated", "label": "Press straddle debout, mains surélevées", "kind": "reps", "how": "Mains sur des blocs ou une marche, pieds au sol. Penche les épaules en avant jusqu'à ce que les pieds décollent, et monte en straddle. La hauteur des mains raccourcit le trajet." },
+        { "id": "standing", "label": "Press straddle debout, mains au sol", "kind": "reps", "how": "Debout jambes écartées, mains au sol devant toi. Épaules en avant, hanches qui montent au-dessus des mains, puis les jambes suivent." },
+        { "id": "l-straddle", "label": "Press straddle depuis le L-sit", "kind": "reps", "how": "Depuis le L-sit, recule les hanches entre les bras, épaules en avant, et ouvre les jambes en straddle pour monter. C'est le L to handstand." },
+        { "id": "l-pike", "label": "Press pike depuis le L-sit", "kind": "reps", "how": "Pareil, jambes serrées et tendues tout du long. Demande une compression maximale : les cuisses restent collées au buste jusqu'en haut." }
+      ]
+    },
+    {
+      "id": "compression",
+      "label": "La compression",
+      "emoji": "🧘",
+      "question": "Où en est ta compression ?",
+      "hint": "Tirer les jambes vers le buste avec les abdos et les fléchisseurs de hanche. Plus tu compresses, moins tes épaules portent.",
+      "steps": [
+        { "id": "knees", "label": "Assis, mains aux genoux", "kind": "hold", "how": "Assis jambes tendues, bras tendus, mains posées sur les genoux. Tire les genoux vers le visage avec le ventre, sans t'aider des bras. Tiens 10 s." },
+        { "id": "shins", "label": "Mains à mi-tibias", "kind": "hold", "how": "Même geste, mains plus loin. Passe ici quand les genoux touchent le visage sur la plupart des séries." },
+        { "id": "toes", "label": "Mains aux orteils", "kind": "hold", "how": "Même geste, mains aux pointes. Le buste descend sur les jambes grâce aux abdos, pas au poids du corps." },
+        { "id": "pike-lifts", "label": "Levées de jambes en pike, assis", "kind": "reps", "how": "Assis jambes tendues, mains au sol à côté des hanches. Décolle les deux talons du sol, tiens 1 s, repose. Genoux verrouillés." },
+        { "id": "pike-lifts-fwd", "label": "Levées de jambes, mains aux genoux", "kind": "reps", "how": "Pareil, mains posées plus loin, au niveau des genoux. Moins de levier : il faut compresser plus fort." }
+      ]
+    }
+  ],
+
+  "dose": {
+    "eccentric": { "sets": 3, "reps": 3, "restSec": 180, "note": "Descente de 3 à 5 s. Arrête dès que tu ne contrôles plus." },
+    "reps": { "sets": 4, "reps": 5, "restSec": 180, "note": "Arrête la série dès que la forme casse. Une rep propre vaut mieux que trois tordues." },
+    "hold": { "sets": 5, "holdSec": 10, "restSec": 30, "note": "Tire fort, 10 s." },
+    "lifts": { "sets": 3, "reps": 8, "restSec": 90, "note": "Talons qui décollent, genoux verrouillés." },
+    "_source": "Press : Steven Low (excentriques 2-3 × 2-3, 3 min ; dynamique 3-5 × 3-6). Compression tenue : protocole Low, 10 s × 5. Pause de 30 s entre tenues et dosage des levées (3 × 8, 90 s) : CHOIX DE L'APP, aucune source ne les chiffre."
+  },
+
+  "prep": [
+    { "name": "Ischios", "sec": 30, "how": "Assis ou debout, jambes tendues, penche le buste vers les jambes. Low : toujours étirer avant de compresser." },
+    { "name": "Poignets", "sec": 30, "how": "Paumes au sol, balance le poids d'avant en arrière, doigts écartés. Les doigts légèrement vers l'extérieur ménagent les poignets." },
+    { "name": "Épaules en avant", "sec": 30, "how": "En appui facial, avance les épaules devant les mains, bras tendus. C'est le mouvement qui fait décoller les pieds." }
+  ],
+
+  "prerequisites": [
+    { "goalId": "handstand", "label": "Un handstand libre, même bref", "note": "GMB : bref suffit. Le forum StrongFirst parle de 30 s." },
+    { "goalId": "core", "label": "Un L-sit", "note": "Le press part de là. Le travailler à côté aide." }
+  ]
+}

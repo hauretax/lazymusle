@@ -8,7 +8,8 @@
     "triceps": "Triceps",
     "gainage": "Gainage",
     "dos": "Dos",
-    "jambes": "Jambes"
+    "jambes": "Jambes",
+    "mollets": "Mollets"
   },
   "goals": [
     {
@@ -20,7 +21,12 @@
       "status": "available",
       "training": {
         "block": "strength",
-        "muscles": ["deltoides-anterieurs", "pectoraux", "scapulaires", "triceps"],
+        "muscles": [
+          "deltoides-anterieurs",
+          "pectoraux",
+          "scapulaires",
+          "triceps"
+        ],
         "source": "Overcoming Gravity 2e éd., charte Pushing"
       }
     },
@@ -33,7 +39,12 @@
       "status": "available",
       "training": {
         "block": "skill",
-        "muscles": ["deltoides-anterieurs", "trapezes", "triceps", "gainage"],
+        "muscles": [
+          "deltoides-anterieurs",
+          "trapezes",
+          "triceps",
+          "gainage"
+        ],
         "source": "Overcoming Gravity 2e éd., charte Handstand"
       }
     },
@@ -46,8 +57,30 @@
       "status": "available",
       "training": {
         "block": "skill",
-        "muscles": ["gainage", "deltoides-posterieurs", "dos"],
+        "muscles": [
+          "gainage",
+          "deltoides-posterieurs",
+          "dos"
+        ],
         "source": "Overcoming Gravity 2e éd., charte Handstand (colonne L-sit)"
+      }
+    },
+    {
+      "id": "press",
+      "short": "Press",
+      "emoji": "🙃",
+      "label": "L-sit to handstand",
+      "tagline": "Le press, et la compression qui le porte.",
+      "status": "available",
+      "training": {
+        "block": "skill",
+        "muscles": [
+          "deltoides-anterieurs",
+          "trapezes",
+          "triceps",
+          "gainage"
+        ],
+        "source": "Overcoming Gravity 2e éd., charte Handstand (colonne 8, Straight Arm Press)"
       }
     },
     {
@@ -59,8 +92,26 @@
       "status": "available",
       "training": {
         "block": "endurance",
-        "muscles": ["jambes"],
+        "muscles": [
+          "jambes"
+        ],
         "source": "Couch-to-5K, Josh Clark"
+      }
+    },
+    {
+      "id": "jump",
+      "short": "Détente",
+      "emoji": "🏀",
+      "label": "Sauter plus haut",
+      "tagline": "Air Alert : 12 semaines, une séance à la fois.",
+      "status": "available",
+      "training": {
+        "block": "strength",
+        "muscles": [
+          "jambes",
+          "mollets"
+        ],
+        "source": "Air Alert II, TMT Sports"
       }
     }
   ],

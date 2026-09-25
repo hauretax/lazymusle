@@ -3,7 +3,7 @@ import { useApp } from '../store'
 import { recap, presetRange } from '../lib/recap'
 import { formatDuration, formatMeasure, ACTIVITY_EMOJI } from '../lib/activities'
 import { measures as MEASURES } from '../data/measures'
-import { getGoal, PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL } from '../data/goals'
+import { getGoal, PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, PRESS_GOAL, JUMP_GOAL } from '../data/goals'
 import { dayKey } from '../lib/dates'
 import { photosBetween } from '../lib/photos'
 import PhotoStrip from '../components/PhotoStrip'
@@ -48,6 +48,10 @@ function programDetail(p) {
       return p.seconds > 0 ? `${fmtSeconds(p.seconds)} tenus` : null
     case RUN_GOAL:
       return p.seconds > 0 ? `${fmtSeconds(p.seconds)} courues` : null
+    case PRESS_GOAL:
+      return p.reps > 0 ? plural(p.reps, 'rep de press', 'reps de press') : null
+    case JUMP_GOAL:
+      return p.reps > 0 ? plural(p.reps, 'rep', 'reps') : null
     default:
       return null
   }

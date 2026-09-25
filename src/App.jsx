@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { useApp, getAppStep, getPushupStep, getHandstandStep, getLsitStep, getRunStep, handstandOf, lsitOf, pushupsOf } from './store'
+import { useApp, getAppStep, getPushupStep, getHandstandStep, getLsitStep, getRunStep, getPressStep, getJumpStep, handstandOf, lsitOf, pushupsOf, pressOf, jumpOf } from './store'
 import { lastBagKg } from './lib/progress'
 import { getDay } from './data/pushupProgram'
 import { getSession, AXES as HS_AXES } from './data/handstandProgram'
 import * as lsitProgram from './data/lsitProgram'
 import { getWorkout } from './data/runProgram'
+import * as pressProgram from './data/pressProgram'
+import * as jumpProgram from './data/jumpProgram'
 import Home from './screens/Home'
 import Onboarding from './screens/Onboarding'
 import Test from './screens/Test'
@@ -24,6 +26,10 @@ import Settings from './screens/Settings'
 import PushupPlan from './screens/PushupPlan'
 import RunPlan from './screens/RunPlan'
 import Stretch from './screens/Stretch'
+import PressSession from './screens/PressSession'
+import JumpTest from './screens/JumpTest'
+import JumpSession from './screens/JumpSession'
+import JumpPlan from './screens/JumpPlan'
 
 export default function App() {
   const {
@@ -32,6 +38,8 @@ export default function App() {
     recordLsitAxes, completeLsitSession,
     completeRunSession, repeatRunWeek,
     goToPushupDay, goToRunWorkout,
+    recordPressAxes, completePressSession, advancePressAxis,
+    recordJumpTest, completeJumpSession, abandonJumpSession, lighterJumpWeek, setJumpReduced, goToJumpWorkout,
   } = useApp()
   const [view, setView] = useState('home')
   // Quelle activité on est en train de corriger (null = on en note une nouvelle).
@@ -41,6 +49,8 @@ export default function App() {
   const hsStep = getHandstandStep(state)
   const lsitStep = getLsitStep(state)
   const runStep = getRunStep(state)
+  const pressStep = getPressStep(state)
+  const jumpStep = getJumpStep(state)
 
   const start = () => {
     if (step.type === 'test-initial') setView('test')
@@ -240,6 +250,80 @@ export default function App() {
     )
   }
 
+  if (view === 'press-assess') {
+    return (
+      <Assess
+        title="Press"
+        intro="Deux choses qui avancent chacune à leur rythme : le press lui-même, et la compression qui le porte. Les meilleurs gymnastes compressent fort pour soulager leurs épaules."
+        axes={pressProgram.AXES}
+        initial={pressOf(state).axes}
+        onCancel={() => setView('home')}
+        onValidate={(axes) => {
+          recordPressAxes(axes)
+          setView('home')
+        }}
+      />
+    )
+  }
+
+  if (view === 'press-session' && pressStep.type === 'session') {
+    return (
+      <PressSession
+        session={pressProgram.getSession(pressStep.progress)}
+        onQuit={() => setView('home')}
+        onFinish={(result) => {
+          completePressSession(result)
+          setView('home')
+        }}
+      />
+    )
+  }
+
+  if (view === 'jump-test') {
+    const j = jumpOf(state)
+    return (
+      <JumpTest
+        first={!j.maxHistory.length}
+        weightKg={j.weightKg}
+        previous={jumpProgram.bestCm(j.maxHistory)}
+        onCancel={() => setView('home')}
+        onValidate={(test) => {
+          recordJumpTest(test)
+          setView('home')
+        }}
+      />
+    )
+  }
+
+  if (view === 'jump-plan') {
+    return (
+      <JumpPlan
+        onBack={() => setView('home')}
+        onPick={(index) => {
+          goToJumpWorkout(index)
+          setView('jump-session')
+        }}
+      />
+    )
+  }
+
+  if (view === 'jump-session' && jumpStep.type === 'session') {
+    return (
+      <JumpSession
+        workout={jumpProgram.getWorkout(jumpStep.index, { reduced: jumpOf(state).reduced })}
+        onQuit={() => setView('home')}
+        onFinish={(result) => {
+          completeJumpSession(result)
+          setView('home')
+        }}
+        onAbandon={(result) => {
+          abandonJumpSession(result)
+          setView('home')
+        }}
+      />
+    )
+  }
+
   if (view === 'hs-session' && hsStep.type === 'session') {
     return (
       <HandstandSession
@@ -308,6 +392,13 @@ export default function App() {
         setView('activity-form')
       }}
       onEditGoals={() => setView('goals')}
+      onStartPress={() => setView(pressStep.type === 'assess' ? 'press-assess' : 'press-session')}
+      onReassessPress={() => setView('press-assess')}
+      onAdvancePress={advancePressAxis}
+      onStartJump={() => setView(jumpStep.type === 'test' ? 'jump-test' : 'jump-session')}
+      onOpenJumpPlan={() => setView('jump-plan')}
+      onLighterJumpWeek={lighterJumpWeek}
+      onSetJumpReduced={setJumpReduced}
     />
   )
 }

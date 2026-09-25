@@ -15,7 +15,7 @@ import { dayKey, parseDayKey, daysBetween, isValidDayKey } from './dates.js'
 import { normalizeType, typeKey } from './activities.js'
 import { measures as MEASURES } from '../data/measures.js'
 import { sessionStatus, DONE, ABANDONED, TRIED } from './progress.js'
-import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL } from '../data/goals.js'
+import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, PRESS_GOAL, JUMP_GOAL } from '../data/goals.js'
 
 // Seules ces mesures s'additionnent. Un poids ne se cumule pas : 4 séances à
 // 20 kg ne font pas 80 kg, ça ne veut rien dire.
@@ -156,6 +156,16 @@ export function programTotals(state, from, to) {
   const running = countSessions(p.running?.sessions, r)
   if (running.total > 0) {
     out.push({ goalId: RUN_GOAL, ...running, seconds: sumSeconds(p.running.sessions, r, 'runSec') })
+  }
+
+  const pressed = countSessions(p.press?.sessions, r)
+  if (pressed.total > 0) {
+    out.push({ goalId: PRESS_GOAL, ...pressed, reps: sumSeconds(p.press.sessions, r, 'pressReps') })
+  }
+
+  const jumped = countSessions(p.jump?.sessions, r)
+  if (jumped.total > 0) {
+    out.push({ goalId: JUMP_GOAL, ...jumped, reps: sumSeconds(p.jump.sessions, r, 'reps') })
   }
 
   return out

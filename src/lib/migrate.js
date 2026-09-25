@@ -54,6 +54,27 @@ export function freshRun() {
   }
 }
 
+// Press (TICKETS.md T17) : comme le L-sit, une position sur deux axes. `ready`
+// garde les étapes dont le critère de passage a été atteint en séance.
+export function freshPress() {
+  return {
+    ...freshProgram(),
+    axes: null, // { press, compression }
+    ready: {}, // stepId -> true quand le critère de passage a été atteint
+  }
+}
+
+// Saut (TICKETS.md T18) : Air Alert II, séquentiel comme la course.
+export function freshJump() {
+  return {
+    ...freshProgram(),
+    index: 0, // séance courante dans les 36 du plan
+    weightKg: null, // renseigné au test ; au-delà de 100 kg, l'app propose un volume réduit
+    reduced: false,
+    // maxHistory : [{ date, cm, standReach, jumpReach, atIndex }] — les tests de détente
+  }
+}
+
 export function freshState() {
   return {
     version: STATE_VERSION,
@@ -72,6 +93,8 @@ export function freshState() {
       handstand: freshHandstand(),
       core: freshLsit(),
       running: freshRun(),
+      press: freshPress(),
+      jump: freshJump(),
     },
   }
 }
@@ -129,6 +152,9 @@ export function withDefaults(s) {
       handstand: { ...freshHandstand(), ...s.programs?.handstand },
       core: { ...freshLsit(), ...s.programs?.core },
       running: { ...freshRun(), ...s.programs?.running },
+      // Press et saut : additifs, un état d'avant n'en a simplement pas.
+      press: { ...freshPress(), ...s.programs?.press },
+      jump: { ...freshJump(), ...s.programs?.jump },
     },
   }
 }

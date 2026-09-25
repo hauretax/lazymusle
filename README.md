@@ -74,7 +74,7 @@ Installable comme app (PWA) : "Ajouter à l'écran d'accueil" sur mobile.
 ## Objectifs
 
 Au premier lancement, l'app demande **« Pourquoi es-tu là ? »** : tu choisis ce que tu veux travailler
-(pompes, handstand, abdos/L-sit, course). Ce choix pilote les modules affichés sur l'accueil et se
+(pompes, handstand, abdos/L-sit, press, course, détente). Ce choix pilote les modules affichés sur l'accueil et se
 modifie à tout moment. Les objectifs dont le module n'existe pas encore s'affichent en « bientôt ».
 Liste dans [`src/data/goals.json`](src/data/goals.json).
 
@@ -86,6 +86,8 @@ Liste dans [`src/data/goals.json`](src/data/goals.json).
 | **Handstand** | Overcoming Gravity (FIG), FEDEC, forum GymnasticBodies | Tenue max au mur, puis **2 axes** (monter / rattraper) |
 | **Abdos / L-sit** | Overcoming Gravity (FIG) | **2 axes** (se soulever / tendre les jambes) |
 | **Course** | Couch-to-5K, Josh Clark | Calendrier : 9 semaines × 3 séances |
+| **Press (L to handstand)** | Overcoming Gravity (colonne 8), Steven Low, GMB | **2 axes** (le press / la compression) |
+| **Détente** | Air Alert II, TMT Sports | Calendrier : 12 semaines × 3 séances, test de détente toutes les 4 semaines |
 
 Deux modèles, et le choix n'est pas arbitraire : **quand un calendrier jour-par-jour existe vraiment**
 (pompes, course), on le suit. **Quand il n'existe pas** — et pour le handstand comme le L-sit, aucune

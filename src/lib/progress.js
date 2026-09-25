@@ -101,3 +101,22 @@ export function lastBagKg(sessions = []) {
   }
   return 0
 }
+
+// Saut (T18) : comme la course, repéré par `index` — mais une séance peut être
+// abandonnée (elle se refait), donc on garde le meilleur statut par séance.
+export function indexStatuses(sessions = []) {
+  const out = new Map()
+  for (const s of sessions) {
+    if (!Number.isInteger(s?.index)) continue
+    const status = sessionStatus(s)
+    const seen = out.get(s.index)
+    if (!seen || RANK[status] > RANK[seen]) out.set(s.index, status)
+  }
+  return out
+}
+
+export function countIndexDone(sessions = []) {
+  let n = 0
+  for (const st of indexStatuses(sessions).values()) if (st === DONE) n++
+  return n
+}

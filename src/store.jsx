@@ -3,7 +3,9 @@ import { levels, pickLevelIndex, gapAfterSession } from './data/pushupProgram'
 import * as handstand from './data/handstandProgram'
 import * as lsit from './data/lsitProgram'
 import * as run from './data/runProgram'
-import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, hasProgram } from './data/goals'
+import * as press from './data/pressProgram'
+import * as jump from './data/jumpProgram'
+import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, PRESS_GOAL, JUMP_GOAL, hasProgram } from './data/goals'
 import { freshState, hydrate } from './lib/migrate'
 import * as activities from './lib/activities'
 import * as photos from './lib/photos'
@@ -73,6 +75,33 @@ export function getLsitStep(state) {
   if (l.finished) return { type: 'done' }
   if (!l.axes) return { type: 'assess' }
   return { type: 'session', progress: { axes: l.axes, bests: l.bests } }
+}
+
+export function pressOf(state) {
+  return state.programs.press
+}
+
+// Où en est le press. Comme le L-sit : deux axes, la séance en découle.
+export function getPressStep(state) {
+  if (!state.goals?.includes(PRESS_GOAL)) return { type: 'off' }
+  const p = pressOf(state)
+  if (p.finished) return { type: 'done' }
+  if (!p.axes) return { type: 'assess' }
+  return { type: 'session', progress: { axes: p.axes, ready: p.ready ?? {} } }
+}
+
+export function jumpOf(state) {
+  return state.programs.jump
+}
+
+// Où en est le saut. Séquentiel (Air Alert), avec un test de détente au départ,
+// toutes les 4 semaines et à la fin.
+export function getJumpStep(state) {
+  if (!state.goals?.includes(JUMP_GOAL)) return { type: 'off' }
+  const j = jumpOf(state)
+  if (jump.testDue(j)) return { type: 'test', atIndex: j.finished ? jump.TOTAL_WORKOUTS : j.index }
+  if (j.finished) return { type: 'done' }
+  return { type: 'session', index: j.index }
 }
 
 // Où en sont les POMPES, et rien d'autre — comme `getRunStep` et les deux
@@ -278,6 +307,109 @@ export function AppProvider({ children }) {
     })
   }, [updateProgram])
 
+  const recordPressAxes = useCallback((axes) => {
+    updateProgram(PRESS_GOAL, (p) => ({
+      ...p,
+      axes,
+      finished: press.isGoalReached(axes, p.ready),
+      axesHistory: [...(p.axesHistory ?? []), { date: new Date().toISOString(), ...axes }],
+    }))
+  }, [updateProgram])
+
+  // `result.ready` : les étapes dont le critère de passage a été atteint pendant
+  // la séance. On ne fait pas avancer l'axe tout seul : l'accueil le PROPOSE.
+  const completePressSession = useCallback((result) => {
+    updateProgram(PRESS_GOAL, (p) => {
+      const now = new Date().toISOString()
+      const ready = { ...p.ready }
+      for (const id of result.ready ?? []) ready[id] = true
+      return {
+        ...p,
+        ready,
+        finished: press.isGoalReached(p.axes, ready),
+        sessions: [...p.sessions, { ...result, axes: p.axes, date: now }],
+        lastSessionDate: now,
+        nextDate: addDays(now, press.REST_DAYS),
+      }
+    })
+  }, [updateProgram])
+
+  const advancePressAxis = useCallback((axisId) => {
+    updateProgram(PRESS_GOAL, (p) => {
+      const next = press.nextStep(axisId, p.axes?.[axisId])
+      if (!next) return p
+      const axes = { ...p.axes, [axisId]: next.id }
+      return {
+        ...p,
+        axes,
+        axesHistory: [...(p.axesHistory ?? []), { date: new Date().toISOString(), ...axes }],
+      }
+    })
+  }, [updateProgram])
+
+  const recordJumpTest = useCallback((test) => {
+    updateProgram(JUMP_GOAL, (j) => {
+      const atIndex = j.finished ? jump.TOTAL_WORKOUTS : j.index
+      const weightKg = test.weightKg > 0 ? test.weightKg : j.weightKg
+      return {
+        ...j,
+        weightKg,
+        // Au premier passage au-dessus de 100 kg, le volume réduit est proposé
+        // coché ; la personne peut le décocher à l'accueil.
+        reduced: j.weightKg == null && jump.isHeavy(weightKg) ? true : j.reduced,
+        maxHistory: [...j.maxHistory, {
+          date: new Date().toISOString(),
+          cm: test.cm, standReach: test.standReach, jumpReach: test.jumpReach, atIndex,
+        }],
+      }
+    })
+  }, [updateProgram])
+
+  const completeJumpSession = useCallback((result) => {
+    updateProgram(JUMP_GOAL, (j) => {
+      const now = new Date().toISOString()
+      const next = j.index + 1
+      return {
+        ...j,
+        sessions: [...j.sessions, { ...result, index: j.index, date: now }],
+        index: Math.min(next, jump.TOTAL_WORKOUTS - 1),
+        finished: next >= jump.TOTAL_WORKOUTS,
+        lastSessionDate: now,
+        nextDate: addDays(now, jump.gapAfterSession(j.index)),
+      }
+    })
+  }, [updateProgram])
+
+  // Séance pas finie : elle se refait. Le curseur ne bouge pas, et c'est demain.
+  const abandonJumpSession = useCallback((result) => {
+    updateProgram(JUMP_GOAL, (j) => {
+      const now = new Date().toISOString()
+      return {
+        ...j,
+        sessions: [...j.sessions, { ...result, index: j.index, abandoned: true, date: now }],
+        lastSessionDate: now,
+        nextDate: addDays(now, 1),
+      }
+    })
+  }, [updateProgram])
+
+  // Semaine allégée quand la détente stagne : on refait la semaine d'avant.
+  const lighterJumpWeek = useCallback(() => {
+    updateProgram(JUMP_GOAL, (j) => {
+      const at = jump.locate(j.index)
+      if (!at) return j
+      return { ...j, index: jump.firstIndexOfWeek(at.weekIndex - 1), finished: false }
+    })
+  }, [updateProgram])
+
+  const setJumpReduced = useCallback((reduced) => {
+    updateProgram(JUMP_GOAL, (j) => ({ ...j, reduced: !!reduced }))
+  }, [updateProgram])
+
+  const goToJumpWorkout = useCallback((index) => {
+    updateProgram(JUMP_GOAL, (j) => ({ ...j, index, finished: false }))
+  }, [updateProgram])
+
   const completeRunSession = useCallback((result) => {
     updateProgram(RUN_GOAL, (r) => {
       const now = new Date().toISOString()
@@ -415,6 +547,8 @@ export function AppProvider({ children }) {
       state, recordInitialTest, setGoals, completeSession, abandonSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
       recordLsitAxes, completeLsitSession,
+      recordPressAxes, completePressSession, advancePressAxis,
+      recordJumpTest, completeJumpSession, abandonJumpSession, lighterJumpWeek, setJumpReduced, goToJumpWorkout,
       completeRunSession, repeatRunWeek,
       goToPushupDay, goToRunWorkout, resetAll, replaceAll,
       addActivity, updateActivity, removeActivity,
@@ -423,6 +557,8 @@ export function AppProvider({ children }) {
     [state, recordInitialTest, setGoals, completeSession, abandonSession,
       recordHandstandTest, recordHandstandAxes, completeHandstandSession,
       recordLsitAxes, completeLsitSession,
+      recordPressAxes, completePressSession, advancePressAxis,
+      recordJumpTest, completeJumpSession, abandonJumpSession, lighterJumpWeek, setJumpReduced, goToJumpWorkout,
       completeRunSession, repeatRunWeek,
       goToPushupDay, goToRunWorkout, resetAll, replaceAll,
       addActivity, updateActivity, removeActivity,

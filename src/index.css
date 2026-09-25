@@ -813,3 +813,9 @@ body {
 .since__late { color: #ffb86b; }
 .since__never { color: var(--muted); font-weight: 500; }
 .since__edit { align-self: flex-start; padding: 0; }
+.cal__dot--press { color: #ff7ab6; }
+.cal__dot--jump { color: #ff9f43; }
+
+/* Saut (T18) : l'objectif de la série, en gros. */
+.jump__target { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.jump__unit { color: var(--muted); font-size: 14px; font-weight: 600; }

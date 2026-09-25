@@ -1,0 +1,45 @@
+{
+  "_sources": {
+    "programme": "Air Alert II, TMT Sports — tableau semaine par semaine transcrit depuis https://mdvfootball.weebly.com/uploads/4/1/7/0/417068/air_alert_2.doc. Séries × reps seulement : le texte et les images du produit ne sont pas repris, les consignes sont reformulées.",
+    "jours": "Air Alert II : semaines impaires lundi-mercredi-vendredi, semaines paires mardi-mercredi-jeudi.",
+    "repos": "Air Alert II ne donne pas de repos. Air Alert III : 2 min maximum entre les séries, rien entre les exercices — repris ici, marqué comme venant du III.",
+    "test": "Test de détente (marque au mur bras tendu, puis marque au sommet du saut) : CHOIX DE L'APP pour suivre la progression, Air Alert ne mesure rien. Toutes les 4 semaines : CHOIX DE L'APP.",
+    "poids": "NSCA (Essentials of S&C, chap. 18) : prudence avec la pliométrie intense au-delà d'environ 100 kg. La réduction de volume proposée (75 %) est un CHOIX DE L'APP.",
+    "attente": "Markovic 2007 (26 études) : ~2-6 cm de gain en 8-12 semaines de pliométrie. Seul essai contrôlé d'Air Alert (Frontiers 2025, 24 volleyeurs) : ~+10 %, contre ~+17 % en plyo classique."
+  },
+
+  "restSec": 120,
+  "heavyKg": 100,
+  "reducedFactor": 0.75,
+  "testEveryWeeks": 4,
+
+  "exercises": [
+    { "id": "leap", "name": "Leap-ups", "perLeg": false, "how": "Pieds écartés largeur d'épaules, saute le plus haut possible. À la réception, redescends d'un quart de squat et repars aussitôt. Chaque saut compte." },
+    { "id": "calf", "name": "Montées sur pointes", "perLeg": true, "how": "Sur une marche, talon dans le vide, sur une jambe. Monte le plus haut possible sur la pointe, redescends lentement. Les reps sont par jambe." },
+    { "id": "step", "name": "Step-ups", "perLeg": true, "how": "Un pied sur une chaise solide ou un banc. Pousse avec cette jambe pour monter le plus haut possible, change de jambe en l'air, et enchaîne. Les reps sont par jambe." },
+    { "id": "thrust", "name": "Thrust-ups", "perLeg": false, "how": "Pieds écartés, genoux verrouillés. Petits sauts rapides avec les mollets seulement, sans plier les genoux." },
+    { "id": "burnout", "name": "Burnouts", "perLeg": false, "how": "Sur une marche, talons dans le vide, sur les deux pieds. Monte et descends sur les pointes le plus vite possible, sur 2-3 cm seulement. Ça brûle : c'est le but." }
+  ],
+
+  "weeks": [
+    { "leap": [2, 25],  "calf": [2, 10], "step": [2, 10], "thrust": [2, 15],  "burnout": [1, 100] },
+    { "leap": [1, 50],  "calf": [2, 20], "step": [2, 15], "thrust": [2, 20],  "burnout": [1, 200] },
+    { "leap": [1, 75],  "calf": [2, 25], "step": [2, 15], "thrust": [2, 25],  "burnout": [1, 300] },
+    { "leap": [1, 75],  "calf": [2, 30], "step": [2, 20], "thrust": [2, 30],  "burnout": [1, 400] },
+    { "leap": [2, 50],  "calf": [2, 35], "step": [2, 20], "thrust": [2, 35],  "burnout": [1, 500] },
+    { "leap": [1, 100], "calf": [2, 40], "step": [2, 25], "thrust": [2, 40],  "burnout": [1, 600] },
+    { "leap": [1, 125], "calf": [2, 45], "step": [2, 25], "thrust": [2, 50],  "burnout": [1, 700] },
+    { "leap": [2, 75],  "calf": [2, 50], "step": [2, 30], "thrust": [2, 60],  "burnout": [1, 800] },
+    { "leap": [2, 100], "calf": [2, 55], "step": [2, 30], "thrust": [2, 70],  "burnout": [1, 900] },
+    { "leap": [2, 125], "calf": [2, 60], "step": [2, 35], "thrust": [2, 80],  "burnout": [1, 1000] },
+    { "leap": [2, 150], "calf": [2, 65], "step": [2, 35], "thrust": [2, 90],  "burnout": [1, 1100] },
+    { "leap": [2, 200], "calf": [2, 70], "step": [2, 40], "thrust": [2, 100], "burnout": [1, 1200] }
+  ],
+
+  "sessionsPerWeek": 3,
+  "dayPattern": {
+    "odd": [0, 2, 4],
+    "even": [1, 2, 3],
+    "_note": "Jours de la semaine, 0 = lundi. Semaines impaires lun-mer-ven, paires mar-mer-jeu (Air Alert II)."
+  }
+}

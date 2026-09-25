@@ -20,6 +20,9 @@ import { abandonMessage, shouldStretch, STRETCH_THRESHOLD } from '../src/lib/enc
 import { dayKey, journalByDay, monthGrid, shiftMonth, monthSummary } from '../src/lib/journal.js'
 import { parseDayKey, daysBetween } from '../src/lib/dates.js'
 import { lastDays, daysSince, sinceSummary, formatSince } from '../src/lib/since.js'
+import * as press from '../src/data/pressProgram.js'
+import * as jump from '../src/data/jumpProgram.js'
+import { indexStatuses, countIndexDone } from '../src/lib/progress.js'
 import {
   normalizeType, typeKey, cleanMeasures, dayToISO, isFutureDay, activityError,
   addActivity, updateActivity, removeActivity, knownTypes, suggestTypes, measuresForType,
@@ -715,6 +718,89 @@ section('Depuis quand : jours depuis la dernière séance')
   eq('état absent', sinceSummary(undefined, auj).all.days, null)
 
   eq('libellés', [null, 0, 1, 5].map(formatSince), ['jamais', 'aujourd’hui', 'hier', '5 jours'])
+}
+
+section('Press (T17) : axes, dosage, critère de passage')
+{
+  eq('deux axes', press.AXES.map((a) => a.id), ['press', 'compression'])
+  eq('échelle OG colonne 8, dans l’ordre', press.AXES[0].steps.map((s) => s.id),
+    ['wall-neg', 'elevated', 'standing', 'l-straddle', 'l-pike'])
+  const s = press.getSession({ axes: { press: 'wall-neg', compression: 'knees' } })
+  eq('press d’abord, compression ensuite', s.drills.map((d) => d.axisId), ['press', 'compression'])
+  eq('descente : dosage excentrique de Low', [s.drills[0].sets, s.drills[0].reps, s.drills[0].restSec], [3, 3, 180])
+  eq('compression : 5 × 10 s', [s.drills[1].sets, s.drills[1].holdSec], [5, 10])
+  const r = press.getSession({ axes: { press: 'l-straddle', compression: 'pike-lifts' } })
+  eq('press dynamique : 4 × 5', [r.drills[0].sets, r.drills[0].reps], [4, 5])
+  eq('levées : dosage à part', r.drills[1].reps, 8)
+  eq('axes inconnus : pas de séance', press.getSession({ axes: { press: 'oups', compression: 'knees' } }), null)
+  eq('reps : 6 sur une série suffit', press.meetsCriterion(r.drills[0], { sets: [5, 6, 4] }), true)
+  eq('reps : 5 ne suffit pas', press.meetsCriterion(r.drills[0], { sets: [5, 5, 5, 5] }), false)
+  eq('tenue : c’est la réponse qui compte', press.meetsCriterion(s.drills[1], { sets: [10, 10], confirmed: true }), true)
+  eq('étape suivante', press.nextStep('press', 'standing')?.id, 'l-straddle')
+  eq('au bout : pas de suivante', press.nextStep('press', 'l-pike'), null)
+  eq('but : se situer dessus ne suffit pas', press.isGoalReached({ press: 'l-pike' }, {}), false)
+  eq('but : le faire, oui', press.isGoalReached({ press: 'l-pike' }, { 'l-pike': true }), true)
+}
+
+section('Saut (T18) : Air Alert II transcrit')
+{
+  eq('12 semaines × 3', jump.TOTAL_WORKOUTS, 36)
+  const w1 = jump.getWorkout(0)
+  eq('semaine 1, dans l’ordre du programme', w1.exercises.map((e) => `${e.id} ${e.sets}×${e.reps}`),
+    ['leap 2×25', 'calf 2×10', 'step 2×10', 'thrust 2×15', 'burnout 1×100'])
+  eq('semaine 12', jump.getWorkout(35).exercises.map((e) => `${e.sets}×${e.reps}`),
+    ['2×200', '2×70', '2×40', '2×100', '1×1200'])
+  eq('total : les reps par jambe comptent double', w1.totalReps, 50 + 40 + 40 + 30 + 100)
+  let monte = true
+  for (let i = 3; i < 36; i += 3) {
+    if (jump.getWorkout(i).totalReps < jump.getWorkout(i - 3).totalReps) monte = false
+  }
+  eq('le volume ne recule jamais d’une semaine à l’autre', monte, true)
+  eq('volume réduit : 75 %, arrondi', jump.getWorkout(0, { reduced: true }).exercises[0].reps, 19)
+  eq('hors plan', jump.getWorkout(36), null)
+  eq('semaine impaire : lun → mer → ven → mar', [0, 1, 2].map(jump.gapAfterSession), [2, 2, 4])
+  eq('semaine paire : mar → mer → jeu → lun', [3, 4, 5].map(jump.gapAfterSession), [1, 1, 4])
+  eq('détente = saut − bras tendu', jump.verticalCm(225, 275), 50)
+  eq('saut plus bas que bras tendu : refusé', jump.verticalCm(225, 200), null)
+  eq('hauteur vide : refusé', jump.verticalCm('', 275), null)
+  eq('test dû au départ', jump.testDue({ index: 0, maxHistory: [] }), true)
+  eq('pas deux fois au même palier', jump.testDue({ index: 0, maxHistory: [{ cm: 40, atIndex: 0 }] }), false)
+  eq('pas au milieu', jump.testDue({ index: 5, maxHistory: [{ cm: 40, atIndex: 0 }] }), false)
+  eq('toutes les 4 semaines', jump.testDue({ index: 12, maxHistory: [{ cm: 40, atIndex: 0 }] }), true)
+  eq('et à la fin', jump.testDue({ index: 35, finished: true, maxHistory: [{ atIndex: 0 }, { atIndex: 12 }, { atIndex: 24 }] }), true)
+  eq('stagnation : deux tests sans mieux', jump.isStalling([{ cm: 40 }, { cm: 44 }, { cm: 43 }, { cm: 44 }]), true)
+  eq('un seul test sans mieux : pas encore', jump.isStalling([{ cm: 40 }, { cm: 44 }, { cm: 43 }]), false)
+  eq('progrès : pas de stagnation', jump.isStalling([{ cm: 40 }, { cm: 44 }, { cm: 43 }, { cm: 46 }]), false)
+  eq('lourd au-delà de 100 kg', [jump.isHeavy(100), jump.isHeavy(101), jump.isHeavy(null)], [false, true, false])
+  const st = indexStatuses([{ index: 0 }, { index: 1, abandoned: true }, { index: 1 }, { index: 2, abandoned: true }])
+  eq('abandon puis refaite = validée', st.get(1), DONE)
+  eq('abandon seul = abandon', st.get(2), ABANDONED)
+  eq('compteur : séances distinctes validées', countIndexDone([{ index: 0 }, { index: 0 }, { index: 2, abandoned: true }]), 1)
+}
+
+section('Press et saut au journal et dans « depuis quand »')
+{
+  const auj = new Date(2026, 6, 30, 15)
+  const etat = hydrate({
+    version: 7,
+    goals: ['press', 'jump'],
+    programs: {
+      press: { axes: { press: 'standing', compression: 'knees' }, sessions: [{ axes: { press: 'standing' }, pressReps: 14, date: local(2026, 7, 28, 10) }] },
+      jump: {
+        index: 1,
+        sessions: [{ index: 0, reps: 260, date: local(2026, 7, 27, 10) }, { index: 1, reps: 40, abandoned: true, date: local(2026, 7, 29, 10) }],
+        maxHistory: [{ cm: 48, atIndex: 0, date: local(2026, 7, 26, 10) }],
+      },
+    },
+  })
+  const j = journalByDay(etat)
+  eq('press : nommé par son étape', j.get('2026-07-28')[0].title, 'Press · Press straddle debout, mains au sol')
+  eq('saut : semaine et séance', j.get('2026-07-27')[0].detail, '260 reps')
+  eq('saut abandonné : statut gardé', j.get('2026-07-29')[0].status, ABANDONED)
+  eq('test de détente au journal', j.get('2026-07-26')[0].detail, '48 cm')
+  eq('depuis quand : les deux modules', sinceSummary(etat, auj).modules.map((m) => [m.goalId, m.days]),
+    [['press', 2], ['jump', 1]])
+  eq('état d’avant : press et saut arrivent vides', hydrate({ version: 7 }).programs.jump.index, 0)
 }
 
 section('Journal : chaque jour dit ce qui a été fait')

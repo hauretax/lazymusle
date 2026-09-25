@@ -639,28 +639,35 @@ Demandé le 25/09/2026 : un onglet abdos/compression « dans le but de faire un 
 des outils pour **sauter plus haut** en suivant le PDF de basketteur (Air Alert). Recherche web du
 même jour, sources ci-dessous.
 
-### T17 — Press : du L-sit au handstand · à faire
+### T17 — Press : du L-sit au handstand · fait (reste le passage à l'œil)
 
 Même modèle que le L-sit (T4) : **deux axes, pas de calendrier**. Aucune source sérieuse n'en donne,
 et GMB refuse explicitement : « pas de nombre magique ».
 
-- [ ] Nouvel objectif dans `goals.json` (bloc `skill`), données dans `pressProgram.json`
-- [ ] Axe **Press** — charte OG2, colonne 8 « Straight Arm Press HS » (niveaux FIG) :
+- [x] Nouvel objectif dans `goals.json` (bloc `skill`), données dans `pressProgram.json`
+- [x] Axe **Press** — charte OG2, colonne 8 « Straight Arm Press HS » (niveaux FIG) :
       négative straddle au mur (L5) → press straddle debout mains surélevées (L6) → press straddle /
       pike debout (L7) → **press straddle depuis L-sit (L8)** → **press pike depuis L-sit (L9)**
-- [ ] Axe **Compression** — protocole Steven Low (ischios 30 s, puis bras tendus mains aux genoux,
+- [x] Axe **Compression** — protocole Steven Low (ischios 30 s, puis bras tendus mains aux genoux,
       tirer les genoux vers le visage, 10 s × 5 ; mains vers les orteils quand les genoux touchent
       sur la plupart des séries) puis levées de jambes en pike assis (Antranik)
-- [ ] Dosage : négatives = Prilepin excentrique (2-3 × 2-3 reps de 3-5 s, 3 min de repos, puis
+- [x] Dosage : négatives = Prilepin excentrique (2-3 × 2-3 reps de 3-5 s, 3 min de repos, puis
       7-10 s) ; dynamique = 3-5 × 3-6, on monte d'un cran **au-delà de 5-6 reps propres** (Low)
-- [ ] Prérequis **affichés comme repères, pas verrous** : handstand libre (OG : Free HS niveau 4-5)
+- [x] Prérequis **affichés comme repères, pas verrous** : handstand libre (OG : Free HS niveau 4-5)
       et L-sit. Désaccord à assumer : GMB dit qu'un HS « bref » suffit, le forum StrongFirst veut 30 s
-- [ ] Moteur de planning : skill, avant la force ; muscles partagés avec handstand et L-sit
-- [ ] Délai affiché honnêtement : des mois à des années, aucune source primaire ne chiffre
+- [x] Moteur de planning : skill, avant la force ; muscles partagés avec handstand et L-sit
+- [x] Délai affiché honnêtement : des mois à des années, aucune source primaire ne chiffre
 
 **Insight à garder** (PLOS One 2021, 59 gymnastes) : les meilleurs **compressent activement** les
 hanches pendant le press, les moins bons compensent avec les épaules. La compression n'est pas un
 à-côté, c'est la moitié du geste.
+
+**Comment c'est fait** : `pressProgram.json`/`.js`, écran `PressSession` (prep → press → compression,
+chaque série notée au steppeur ou au chrono). Le critère de passage est **proposé** à l'accueil
+(« ✅ Critère atteint — passer à … »), jamais appliqué tout seul. Pour les descentes et les tenues,
+le chiffre ne dit rien : l'app **pose la question** en fin de séance (descentes de 7-10 s
+contrôlées ? genoux au visage sur la plupart des tenues ? — les deux critères de Low). Le but
+n'est atteint que quand le press pike depuis le L-sit est **fait**, pas quand on s'y situe.
 
 **Choix de l'app à marquer dans le JSON** : fréquence (Low donne 3×/sem en général, rien pour le
 press), seuil de reps pour passer d'un drill à l'autre, dosage des levées de jambes compression.
@@ -677,24 +684,24 @@ les relie au press.
 [Marmerstein, ordre des opérations](https://www.yuri-mar.com/blog/2014/2/16/order-of-operations-in-press-handstand) ·
 [PLOS One 2021](https://pmc.ncbi.nlm.nih.gov/articles/PMC8279359/)
 
-### T18 — Sauter plus haut : Air Alert II · à faire
+### T18 — Sauter plus haut : Air Alert II · fait (reste le passage à l'œil)
 
 Le « PDF de basketteur », c'est **Air Alert** (TMT Sports). Contrairement au press, un calendrier
 **existe vraiment** → modèle des pompes : séances séquentielles, une à la fois.
 
-- [ ] **Air Alert II transcrit à la lettre** : 12 semaines × 3 séances (semaines impaires lun-mer-ven,
+- [x] **Air Alert II transcrit à la lettre** : 12 semaines × 3 séances (semaines impaires lun-mer-ven,
       paires mar-mer-jeu). Ordre : leap-ups → calf raises → step-ups → thrust-ups → burnouts.
       Séries × reps seulement — **pas le texte ni les images** (produit commercial)
-- [ ] Transcription verrouillée par assertions (le volume ne recule jamais d'une semaine à l'autre)
-- [ ] **Test de détente** : marque au mur bras tendu, puis marque en sautant → écart en cm.
+- [x] Transcription verrouillée par assertions (le volume ne recule jamais d'une semaine à l'autre)
+- [x] **Test de détente** : marque au mur bras tendu, puis marque en sautant → écart en cm.
       Au départ, puis toutes les 4 semaines
-- [ ] Séance pas finie ou abandonnée → **se refait** (comme T8)
-- [ ] Détente qui stagne ou baisse **deux tests de suite** → proposer une semaine allégée
+- [x] Séance pas finie ou abandonnée → **se refait** (comme T8)
+- [x] Détente qui stagne ou baisse **deux tests de suite** → proposer une semaine allégée
       (CHOIX DE L'APP : Air Alert ne prévoit rien)
-- [ ] **Poids** renseigné une fois : > 100 kg → mise en garde NSCA + volume réduit proposé
+- [x] **Poids** renseigné une fois : > 100 kg → mise en garde NSCA + volume réduit proposé
       (CHOIX DE L'APP pour le volume ; seule la prudence au-delà de ~100 kg est sourcée NSCA)
-- [ ] Moteur de planning : pas de saut les jours de course (NSCA : 48-72 h entre séances plyo)
-- [ ] Avertissement unique à l'entrée du module : volume élevé, genoux/chevilles
+- [ ] ~~Moteur de planning : pas de saut les jours de course~~ — **non fait** : le moteur ordonne (technique avant force) mais ne déplace aucune séance ; Air Alert a ses propres jours
+- [x] Avertissement unique à l'entrée du module : volume élevé, genoux/chevilles
 
 | Sem. | Leap-ups | Calf raises | Step-ups | Thrust-ups | Burnouts |
 |------|----------|-------------|----------|------------|----------|
@@ -714,6 +721,16 @@ Le « PDF de basketteur », c'est **Air Alert** (TMT Sports). Contrairement au p
 Source du tableau : [Air Alert II (.doc)](https://mdvfootball.weebly.com/uploads/4/1/7/0/417068/air_alert_2.doc).
 Aucune règle de repos entre séries dans le II ; le III dit « 2 min max entre séries, rien entre
 exercices » → à reprendre, marqué comme venant du III.
+
+**Comment c'est fait** : `jumpProgram.json`/`.js`, écrans `JumpTest`, `JumpSession`, `JumpPlan`
+(grille des 36 séances, comme les pompes et la course). Séance = les 5 exercices série par série,
+« Série faite ✓ », 2 min de repos entre séries d'un même exercice, rien entre exercices. Les jours
+suivent le motif du programme (2-2-4 puis 1-1-4 jours). Le volume réduit se coche d'office au
+premier test au-dessus de 100 kg, et se décoche sur la carte.
+
+**Vérifié** : 45 assertions de plus (press et saut) (transcription des 12 semaines, volume qui ne recule jamais,
+jours, détente, paliers de test, stagnation, abandon puis refaite, journal, « depuis quand »,
+migration) ; rendu SSR de l'accueil vierge et en cours, des séances, du test et de la grille.
 
 **À savoir, sans en faire un frein** : le seul essai contrôlé trouvé
 ([Frontiers 2025](https://www.frontiersin.org/journals/sports-and-active-living/articles/10.3389/fspor.2025.1735291/xml),

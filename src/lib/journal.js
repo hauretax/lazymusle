@@ -9,7 +9,9 @@
 import { levels as pushupLevels } from '../data/pushupProgram.js'
 import * as hs from '../data/handstandProgram.js'
 import * as run from '../data/runProgram.js'
-import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL } from '../data/goals.js'
+import * as press from '../data/pressProgram.js'
+import * as jump from '../data/jumpProgram.js'
+import { PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, PRESS_GOAL, JUMP_GOAL } from '../data/goals.js'
 import { sessionStatus, DONE } from './progress.js'
 import { activitySummary, ACTIVITY_ID, ACTIVITY_EMOJI } from './activities.js'
 import { formatWeather } from './weather.js'
@@ -80,6 +82,34 @@ function runEntries(r = {}) {
   }).filter(Boolean)
 }
 
+function pressEntries(p = {}) {
+  return (p.sessions ?? []).map((s) => {
+    const step = press.getStep('press', s?.axes?.press)
+    return entry(
+      PRESS_GOAL, s?.date,
+      step ? `Press · ${step.label}` : 'Press',
+      s?.pressReps > 0 ? `${s.pressReps} reps de press` : null,
+    )
+  }).filter(Boolean)
+}
+
+function jumpEntries(j = {}) {
+  const out = []
+  for (const s of j.sessions ?? []) {
+    const w = jump.locate(s?.index)
+    out.push(entry(
+      JUMP_GOAL, s?.date,
+      w ? `Semaine ${w.weekIndex + 1} · Séance ${w.pos + 1}` : 'Détente',
+      s?.reps > 0 ? `${s.reps} reps` : null,
+      sessionStatus(s),
+    ))
+  }
+  for (const t of j.maxHistory ?? []) {
+    out.push(entry(JUMP_GOAL, t?.date, 'Test de détente', t?.cm != null ? `${t.cm} cm` : null))
+  }
+  return out.filter(Boolean)
+}
+
 // Les activités notées à la main (TICKETS.md T10). Elles ne sortent d'aucun
 // programme : elles portent leur propre identité dans le calendrier, d'où
 // l'emoji sur l'entrée — `getGoal('activity')` ne renverrait rien.
@@ -106,6 +136,8 @@ export function journalEntries(state) {
     ...handstandEntries(p.handstand),
     ...lsitEntries(p.core),
     ...runEntries(p.running),
+    ...pressEntries(p.press),
+    ...jumpEntries(p.jump),
     ...activityEntries(state?.activities),
   ]
 }

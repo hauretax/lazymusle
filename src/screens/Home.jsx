@@ -1,10 +1,12 @@
 import { Fragment, useEffect, useState } from 'react'
-import { useApp, getAppStep, getPushupStep, getHandstandStep, getLsitStep, getRunStep, pushupsOf, handstandOf, lsitOf, runOf } from '../store'
+import { useApp, getAppStep, getPushupStep, getHandstandStep, getLsitStep, getRunStep, getPressStep, getJumpStep, pushupsOf, handstandOf, lsitOf, runOf, pressOf, jumpOf } from '../store'
 import { GOAL, TOTAL_DAYS, getDay, sessionMinTotal, computeRest, parseSet } from '../data/pushupProgram'
 import * as hs from '../data/handstandProgram'
 import * as lsit from '../data/lsitProgram'
 import * as run from '../data/runProgram'
-import { goals as ALL_GOALS, PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, getGoal, hasProgram } from '../data/goals'
+import * as press from '../data/pressProgram'
+import * as jump from '../data/jumpProgram'
+import { goals as ALL_GOALS, PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, PRESS_GOAL, JUMP_GOAL, getGoal, hasProgram } from '../data/goals'
 import { orderForDay, dayWarnings } from '../lib/schedule'
 import { countPushupDone } from '../lib/progress'
 import { sinceSummary, formatSince } from '../lib/since'
@@ -46,6 +48,8 @@ export default function Home({
   onStartLsit, onReassessLsit, onStartRun, onRepeatRunWeek,
   onOpenPushupPlan, onOpenRunPlan, onOpenProgress, onOpenJournal, onEditGoals,
   onOpenActivities, onAddActivity, onOpenRecap, onOpenBackup, onOpenSettings,
+  onStartPress, onReassessPress, onAdvancePress,
+  onStartJump, onOpenJumpPlan, onLighterJumpWeek, onSetJumpReduced,
 }) {
   const { state } = useApp()
   const appStep = getAppStep(state)
@@ -57,6 +61,12 @@ export default function Home({
   const handstand = handstandOf(state)
   const lsitProg = lsitOf(state)
   const runProg = runOf(state)
+  const pressStep = getPressStep(state)
+  const jumpStep = getJumpStep(state)
+  const pressProg = pressOf(state)
+  const jumpProg = jumpOf(state)
+  const onPress = state.goals.includes(PRESS_GOAL)
+  const onJump = state.goals.includes(JUMP_GOAL)
   const bestMax = pushups.maxHistory.reduce((m, x) => Math.max(m, x.reps), 0)
   const nActivities = (state.activities ?? []).length
   const onPushups = state.goals.includes(PUSHUPS_GOAL)
@@ -319,6 +329,179 @@ export default function Home({
     </>
   )
 
+  const pressBlocks = onPress && (
+    <>
+      {pressStep.type === 'assess' && (
+        <div className="card card--intro">
+          <div className="intro__emoji">🙃</div>
+          <h2>L-sit to handstand</h2>
+          <p>
+            Pas de calendrier ici non plus : <b>aucune source sérieuse n’en donne</b>. On regarde où tu en
+            es sur <b>le press</b> et sur <b>la compression</b> qui le porte, et la séance en découle.
+          </p>
+          <ul className="drills">
+            {press.PREREQUISITES.map((p) => (
+              <li key={p.goalId} className="drills__row">
+                <span className="drills__emoji">{getGoal(p.goalId)?.emoji}</span>
+                <span className="drills__text">
+                  <span className="drills__axis">Repère, pas un verrou</span>
+                  <b>{p.label}</b>
+                  <span>{p.note}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="card__rest-note card__rest-note--soft">
+            Compte des mois, souvent des années. Aucune source sérieuse ne chiffre mieux.
+          </p>
+          <button className="btn btn--primary btn--big" onClick={onStartPress}>Situer où j’en suis</button>
+        </div>
+      )}
+
+      {pressStep.type === 'done' && (
+        <div className="card card--intro">
+          <div className="intro__emoji">🏆</div>
+          <h2>Press pike depuis le L-sit !</h2>
+          <p>Tu passes du L au handstand jambes serrées. Ça, c’est de la gym. 🔥</p>
+        </div>
+      )}
+
+      {pressStep.type === 'session' && (() => {
+        const s = press.getSession(pressStep.progress)
+        if (!s) return null
+        const ready = daysUntil(pressProg.nextDate) <= 0
+        return (
+          <div className="card card--next">
+            <span className="badge badge--skill">Technique</span>
+            <h2>Press</h2>
+            <ul className="drills">
+              {s.drills.map((d) => {
+                const next = press.nextStep(d.axisId, d.step.id)
+                const passed = pressStep.progress.ready[d.step.id]
+                return (
+                  <li key={d.axisId} className="drills__row">
+                    <span className="drills__emoji">{d.emoji}</span>
+                    <span className="drills__text">
+                      <span className="drills__axis">{d.axisLabel}</span>
+                      <b>{d.step.label}</b>
+                      <span>{d.sets} × {d.kind === 'hold' ? `${d.holdSec} s` : `${d.reps} reps`}</span>
+                      {passed && next && (
+                        <button className="link since__edit" onClick={() => onAdvancePress(d.axisId)}>
+                          ✅ Critère atteint — passer à « {next.label} »
+                        </button>
+                      )}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+            {pressProg.nextDate && !ready && (
+              <p className="card__sub">Fait récemment — un jour de repos, puis on remet ça.</p>
+            )}
+            <button className="btn btn--primary btn--big" onClick={onStartPress}>
+              {ready ? 'Commencer' : 'Commencer quand même'}
+            </button>
+            <button className="link" onClick={onReassessPress}>🙃 J’ai progressé, resituer</button>
+          </div>
+        )
+      })()}
+    </>
+  )
+
+  const jumpBlocks = onJump && (
+    <>
+      {jumpStep.type === 'test' && (() => {
+        const first = !jumpProg.maxHistory.length
+        return (
+          <div className="card card--intro">
+            <div className="intro__emoji">🏀</div>
+            <h2>{first ? 'Sauter plus haut' : 'Test de détente'}</h2>
+            <p>
+              {first ? (
+                <><b>Air Alert</b> : 12 semaines, 3 séances par semaine, une à la fois. D’abord on mesure
+                ta détente — deux marques au mur. On la remesure toutes les 4 semaines.</>
+              ) : jumpProg.finished ? (
+                <>Les 12 semaines sont bouclées. Dernière mesure : on regarde ce que ça a donné.</>
+              ) : (
+                <>4 semaines de plus. On remesure avant de continuer.</>
+              )}
+            </p>
+            {first && (
+              <p className="card__rest-note card__rest-note--soft">
+                Le volume monte fort (jusqu’à {jump.getWorkout(jump.TOTAL_WORKOUTS - 1).totalReps} reps par séance) : écoute tes genoux et tes chevilles.
+                En pliométrie, les études donnent en moyenne 2 à 6 cm de gain en 8 à 12 semaines.
+              </p>
+            )}
+            <button className="btn btn--primary btn--big" onClick={onStartJump}>Mesurer ma détente</button>
+          </div>
+        )
+      })()}
+
+      {jumpStep.type === 'done' && (() => {
+        const first = jumpProg.maxHistory[0]?.cm
+        const best = jump.bestCm(jumpProg.maxHistory)
+        return (
+          <div className="card card--intro">
+            <div className="intro__emoji">🏆</div>
+            <h2>Air Alert bouclé !</h2>
+            <p>
+              Détente : <b>{first} cm</b> au départ, <b>{best} cm</b> au mieux.
+              {' '}Air Alert conseille d’attendre au moins un mois avant de relancer.
+            </p>
+            <button className="link" onClick={onOpenJumpPlan}>📅 Refaire une séance</button>
+          </div>
+        )
+      })()}
+
+      {jumpStep.type === 'session' && (() => {
+        const w = jump.getWorkout(jumpStep.index, { reduced: jumpProg.reduced })
+        if (!w) return null
+        const du = daysUntil(jumpProg.nextDate)
+        const ready = du <= 0
+        const best = jump.bestCm(jumpProg.maxHistory)
+        return (
+          <div className="card card--next">
+            <span className="badge">Détente</span>
+            <h2>Semaine {w.weekNumber} · Séance {w.sessionNumber}</h2>
+            <p className="card__sub">Air Alert II{best != null && <> · détente {best} cm</>}</p>
+            <div className="card__chips">
+              {w.exercises.map((e) => <span key={e.id} className="chip">{e.name} {e.sets}×{e.reps}</span>)}
+            </div>
+            <div className="card__meta">
+              <span>{w.totalReps} reps en tout</span>
+              <span>2 min entre séries</span>
+            </div>
+            {jump.isStalling(jumpProg.maxHistory) && (
+              <p className="card__rest-note">
+                Ta détente n’a pas progressé sur les deux derniers tests. Souvent, c’est la fatigue qui
+                s’accumule : refaire la semaine d’avant, plus légère, peut aider.
+                {' '}<button className="link since__edit" onClick={onLighterJumpWeek}>↺ Refaire la semaine d’avant</button>
+              </p>
+            )}
+            {jump.isHeavy(jumpProg.weightKg) && (
+              <label className="card__rest-note card__rest-note--soft">
+                <input
+                  type="checkbox"
+                  checked={!!jumpProg.reduced}
+                  onChange={(e) => onSetJumpReduced(e.target.checked)}
+                />{' '}Volume réduit (75 %) — au-delà de {jump.HEAVY_KG} kg, ménage genoux et chevilles.
+              </label>
+            )}
+            {jumpProg.nextDate && !ready && (
+              <p className="card__rest-note">
+                Repos conseillé. Prochaine séance {du === 1 ? 'demain' : `dans ${du} jours`} ({fmtDay(jumpProg.nextDate)}). Tu peux quand même y aller 👊
+              </p>
+            )}
+            <button className="btn btn--primary btn--big" onClick={onStartJump}>
+              {ready ? 'Commencer la séance' : 'Commencer quand même'}
+            </button>
+            <button className="link" onClick={onOpenJumpPlan}>📅 Choisir ma séance</button>
+          </div>
+        )
+      })()}
+    </>
+  )
+
   const pushupBlocks = onPushups && (
     <>
       {firstRun && (
@@ -423,6 +606,8 @@ export default function Home({
     [LSIT_GOAL]: lsitBlocks,
     [PUSHUPS_GOAL]: pushupBlocks,
     [RUN_GOAL]: runBlocks,
+    [PRESS_GOAL]: pressBlocks,
+    [JUMP_GOAL]: jumpBlocks,
   }
 
   return (

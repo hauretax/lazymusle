@@ -630,3 +630,114 @@ carte le dit ; étirements : 5 s de mise en place puis 15 s de tenue, idem au ch
 
 **Non fait, volontairement** : pas de poids sur une séance abandonnée (l'écran d'abandon ne le
 demande pas) ni sur les autres modules.
+
+---
+
+## Phase 4 — le press et la détente
+
+Demandé le 25/09/2026 : un onglet abdos/compression « dans le but de faire un L to handstand », et
+des outils pour **sauter plus haut** en suivant le PDF de basketteur (Air Alert). Recherche web du
+même jour, sources ci-dessous.
+
+### T17 — Press : du L-sit au handstand · à faire
+
+Même modèle que le L-sit (T4) : **deux axes, pas de calendrier**. Aucune source sérieuse n'en donne,
+et GMB refuse explicitement : « pas de nombre magique ».
+
+- [ ] Nouvel objectif dans `goals.json` (bloc `skill`), données dans `pressProgram.json`
+- [ ] Axe **Press** — charte OG2, colonne 8 « Straight Arm Press HS » (niveaux FIG) :
+      négative straddle au mur (L5) → press straddle debout mains surélevées (L6) → press straddle /
+      pike debout (L7) → **press straddle depuis L-sit (L8)** → **press pike depuis L-sit (L9)**
+- [ ] Axe **Compression** — protocole Steven Low (ischios 30 s, puis bras tendus mains aux genoux,
+      tirer les genoux vers le visage, 10 s × 5 ; mains vers les orteils quand les genoux touchent
+      sur la plupart des séries) puis levées de jambes en pike assis (Antranik)
+- [ ] Dosage : négatives = Prilepin excentrique (2-3 × 2-3 reps de 3-5 s, 3 min de repos, puis
+      7-10 s) ; dynamique = 3-5 × 3-6, on monte d'un cran **au-delà de 5-6 reps propres** (Low)
+- [ ] Prérequis **affichés comme repères, pas verrous** : handstand libre (OG : Free HS niveau 4-5)
+      et L-sit. Désaccord à assumer : GMB dit qu'un HS « bref » suffit, le forum StrongFirst veut 30 s
+- [ ] Moteur de planning : skill, avant la force ; muscles partagés avec handstand et L-sit
+- [ ] Délai affiché honnêtement : des mois à des années, aucune source primaire ne chiffre
+
+**Insight à garder** (PLOS One 2021, 59 gymnastes) : les meilleurs **compressent activement** les
+hanches pendant le press, les moins bons compensent avec les épaules. La compression n'est pas un
+à-côté, c'est la moitié du geste.
+
+**Choix de l'app à marquer dans le JSON** : fréquence (Low donne 3×/sem en général, rien pour le
+press), seuil de reps pour passer d'un drill à l'autre, dosage des levées de jambes compression.
+**Pas dedans, volontairement** : hanging leg raises, V-ups, dragon flag — aucune source sérieuse ne
+les relie au press.
+
+**Sources** :
+[charte OG2](https://www.calisthenics-101.co.uk/wp-content/uploads/2020/05/Overcoming-Gravity-2nd-Edition-Exercise-Charts.pdf) ·
+[Prilepin iso/excentrique](https://stevenlow.org/prilepin-tables-for-bodyweight-strength-isometric-and-eccentric-exercises/) ·
+[fondamentaux Low](https://stevenlow.org/the-fundamentals-of-bodyweight-strength-training/) ·
+[GMB press](https://gmb.io/press-handstand/) ·
+[FEDEC ch.6](https://www.fedec.eu/en/file/file/96/inline/EN%20FEDEC_manual-EPE_chap6.pdf) ·
+[Antranik compression](https://antranik.org/active-pike-compression/) ·
+[Marmerstein, ordre des opérations](https://www.yuri-mar.com/blog/2014/2/16/order-of-operations-in-press-handstand) ·
+[PLOS One 2021](https://pmc.ncbi.nlm.nih.gov/articles/PMC8279359/)
+
+### T18 — Sauter plus haut : Air Alert II · à faire
+
+Le « PDF de basketteur », c'est **Air Alert** (TMT Sports). Contrairement au press, un calendrier
+**existe vraiment** → modèle des pompes : séances séquentielles, une à la fois.
+
+- [ ] **Air Alert II transcrit à la lettre** : 12 semaines × 3 séances (semaines impaires lun-mer-ven,
+      paires mar-mer-jeu). Ordre : leap-ups → calf raises → step-ups → thrust-ups → burnouts.
+      Séries × reps seulement — **pas le texte ni les images** (produit commercial)
+- [ ] Transcription verrouillée par assertions (le volume ne recule jamais d'une semaine à l'autre)
+- [ ] **Test de détente** : marque au mur bras tendu, puis marque en sautant → écart en cm.
+      Au départ, puis toutes les 4 semaines
+- [ ] Séance pas finie ou abandonnée → **se refait** (comme T8)
+- [ ] Détente qui stagne ou baisse **deux tests de suite** → proposer une semaine allégée
+      (CHOIX DE L'APP : Air Alert ne prévoit rien)
+- [ ] **Poids** renseigné une fois : > 100 kg → mise en garde NSCA + volume réduit proposé
+      (CHOIX DE L'APP pour le volume ; seule la prudence au-delà de ~100 kg est sourcée NSCA)
+- [ ] Moteur de planning : pas de saut les jours de course (NSCA : 48-72 h entre séances plyo)
+- [ ] Avertissement unique à l'entrée du module : volume élevé, genoux/chevilles
+
+| Sem. | Leap-ups | Calf raises | Step-ups | Thrust-ups | Burnouts |
+|------|----------|-------------|----------|------------|----------|
+| 1  | 2×25  | 2×10 | 2×10 | 2×15  | 1×100  |
+| 2  | 1×50  | 2×20 | 2×15 | 2×20  | 1×200  |
+| 3  | 1×75  | 2×25 | 2×15 | 2×25  | 1×300  |
+| 4  | 1×75  | 2×30 | 2×20 | 2×30  | 1×400  |
+| 5  | 2×50  | 2×35 | 2×20 | 2×35  | 1×500  |
+| 6  | 1×100 | 2×40 | 2×25 | 2×40  | 1×600  |
+| 7  | 1×125 | 2×45 | 2×25 | 2×50  | 1×700  |
+| 8  | 2×75  | 2×50 | 2×30 | 2×60  | 1×800  |
+| 9  | 2×100 | 2×55 | 2×30 | 2×70  | 1×900  |
+| 10 | 2×125 | 2×60 | 2×35 | 2×80  | 1×1000 |
+| 11 | 2×150 | 2×65 | 2×35 | 2×90  | 1×1100 |
+| 12 | 2×200 | 2×70 | 2×40 | 2×100 | 1×1200 |
+
+Source du tableau : [Air Alert II (.doc)](https://mdvfootball.weebly.com/uploads/4/1/7/0/417068/air_alert_2.doc).
+Aucune règle de repos entre séries dans le II ; le III dit « 2 min max entre séries, rien entre
+exercices » → à reprendre, marqué comme venant du III.
+
+**À savoir, sans en faire un frein** : le seul essai contrôlé trouvé
+([Frontiers 2025](https://www.frontiersin.org/journals/sports-and-active-living/articles/10.3389/fspor.2025.1735291/xml),
+24 volleyeurs, 8 sem.) donne ~+10 % avec Air Alert contre ~+17 % en plyo classique. Attente réaliste
+en plyo : **2-6 cm** sur 8-12 semaines ([Markovic 2007](https://bpb-eu-w2.wpmucdn.com/sites.marjon.ac.uk/dist/1/212/files/2016/03/Markovic_BJSM-review-2007-23ak6uf.pdf)).
+Si la détente plafonne après les 12 semaines, piste suivante : plyo NSCA/Chu (pogos → squat jumps →
+box → depth jumps, 80-100 contacts/séance, 2×/sem).
+
+⚠️ Air Alert® est une marque de TMT Sports : l'app attribue le plan dans les données, elle ne
+s'approprie pas le nom (même règle que C25K en T5).
+
+### T19 — Depuis quand · fait (reste le passage à l'œil)
+
+Demandé le 25/09/2026 : « afficher un compteur du nombre de jours depuis la dernière séance de sport
+et depuis la dernière séance de chaque partie », et pouvoir choisir les modules qu'on suit.
+
+- [x] Carte en haut de l'accueil : le **gros chiffre** = jours depuis la dernière séance, **tous exos
+      confondus, activités libres comprises** ; puis une ligne par module suivi (« 3 jours », « hier »,
+      « aujourd'hui », « jamais »), en orange à partir de 7 jours
+- [x] Une séance abandonnée ou un test raté **comptent** : ce jour-là, on a fait du sport
+- [x] Jours de **calendrier**, pas tranches de 24 h : hier 23 h vu ce matin = « hier »
+- [x] Pure lecture des historiques (`lib/since.js`, sur `journalEntries`) : rétroactif, rien à migrer
+- [x] « ✏️ Choisir mes modules » dans la carte → l'écran des objectifs (qui existait déjà en bas de
+      l'accueil, trop loin pour qu'on le trouve)
+- [x] 19 assertions dans `npm run check`, rendu SSR de l'accueil vérifié
+
+**Pas encore fait** : le passage à l'œil dans le navigateur (Chrome occupé par une autre session).

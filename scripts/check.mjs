@@ -19,6 +19,7 @@ import {
 import { abandonMessage, shouldStretch, STRETCH_THRESHOLD } from '../src/lib/encouragement.js'
 import { dayKey, journalByDay, monthGrid, shiftMonth, monthSummary } from '../src/lib/journal.js'
 import { parseDayKey, daysBetween } from '../src/lib/dates.js'
+import { lastDays, daysSince, sinceSummary, formatSince } from '../src/lib/since.js'
 import {
   normalizeType, typeKey, cleanMeasures, dayToISO, isFutureDay, activityError,
   addActivity, updateActivity, removeActivity, knownTypes, suggestTypes, measuresForType,
@@ -678,6 +679,42 @@ const JOURNAL_STATE = {
     core: { sessions: [{ mode: 'hold', volume: 40, best: 12, date: local(2026, 7, 20, 19) }] },
     running: { sessions: [{ index: 3, weekNumber: 2, runSec: 540, date: local(2026, 6, 30, 7) }] },
   },
+}
+
+section('Depuis quand : jours depuis la dernière séance')
+{
+  const auj = new Date(2026, 6, 30, 15) // 30 juillet, 15 h
+  const l = lastDays(JOURNAL_STATE)
+  eq('pompes : le test raté du 24 compte', l.get('pushups'), '2026-07-24')
+  eq('handstand : la séance du 20 gagne sur le test du 2', l.get('handstand'), '2026-07-20')
+  eq('course : 30 juin', l.get('running'), '2026-06-30')
+  eq('aujourd’hui = 0', daysSince('2026-07-30', auj), 0)
+  eq('hier soir 23 h vu ce matin = hier', daysSince(dayKey(local(2026, 7, 29, 23)), new Date(2026, 6, 30, 7)), 1)
+  eq('passage de mois', daysSince('2026-06-30', auj), 30)
+  eq('jour illisible', daysSince('oups', auj), null)
+  eq('futur : jamais négatif', daysSince('2026-08-02', auj), 0)
+
+  const s = sinceSummary(JOURNAL_STATE, auj)
+  eq('global = le plus récent, tous modules', s.all, { day: '2026-07-24', days: 6 })
+  eq('une ligne par module suivi, dans l’ordre des objectifs',
+    s.modules.map((m) => [m.goalId, m.days]),
+    [['pushups', 6], ['handstand', 10], ['core', 10], ['running', 30]])
+
+  const peu = sinceSummary({ ...JOURNAL_STATE, goals: ['running'] }, auj)
+  eq('module pas suivi : pas de ligne', peu.modules.map((m) => m.goalId), ['running'])
+  eq('mais le global compte tout ce qui a été fait', peu.all.days, 6)
+
+  const act = sinceSummary({ ...JOURNAL_STATE, activities: [{ id: 'a', type: 'Vélo', date: local(2026, 7, 29, 10) }] }, auj)
+  eq('une activité libre fait bouger le global', act.all.days, 1)
+  eq('et a sa ligne', act.modules.at(-1), { goalId: 'activity', day: '2026-07-29', days: 1 })
+
+  const vide = sinceSummary({ goals: ['pushups'] }, auj)
+  eq('jamais rien fait', vide.all, { day: null, days: null })
+  eq('module suivi jamais pratiqué', vide.modules, [{ goalId: 'pushups', day: null, days: null }])
+  eq('objectif « bientôt » : pas de ligne', sinceSummary({ goals: ['nope'] }, auj).modules, [])
+  eq('état absent', sinceSummary(undefined, auj).all.days, null)
+
+  eq('libellés', [null, 0, 1, 5].map(formatSince), ['jamais', 'aujourd’hui', 'hier', '5 jours'])
 }
 
 section('Journal : chaque jour dit ce qui a été fait')

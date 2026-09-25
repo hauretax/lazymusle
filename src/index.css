@@ -801,3 +801,15 @@ body {
 }
 .toggle--on { background: var(--accent-soft); border-color: var(--accent); }
 .toggle--on i { transform: translateX(20px); background: var(--accent); }
+
+/* Depuis quand : jours depuis la dernière séance, global puis par module. */
+.since { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.since__main { display: flex; align-items: baseline; gap: 10px; }
+.since__num { font-size: 40px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.since__label { color: var(--muted); font-size: 14px; }
+.since__list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.since__row { display: flex; justify-content: space-between; align-items: center; font-size: 14.5px; }
+.since__row b { font-variant-numeric: tabular-nums; }
+.since__late { color: #ffb86b; }
+.since__never { color: var(--muted); font-weight: 500; }
+.since__edit { align-self: flex-start; padding: 0; }

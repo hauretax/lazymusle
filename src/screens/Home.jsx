@@ -7,6 +7,8 @@ import * as run from '../data/runProgram'
 import { goals as ALL_GOALS, PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, getGoal, hasProgram } from '../data/goals'
 import { orderForDay, dayWarnings } from '../lib/schedule'
 import { countPushupDone } from '../lib/progress'
+import { sinceSummary, formatSince } from '../lib/since'
+import { ACTIVITY_EMOJI } from '../lib/activities'
 import { canNotify, requestNotif, notify, exportSchedule } from '../lib/reminders'
 import InstallButton from '../components/InstallButton'
 
@@ -74,6 +76,8 @@ export default function Home({
   // Plusieurs exos actifs : c'est le moteur qui décide de l'ordre (le skill se
   // travaille frais, avant la force) et signale les muscles qu'ils partagent.
   const activeToday = orderForDay(state.goals.filter(hasProgram))
+  // Jours depuis la dernière séance : tous exos confondus, puis par module suivi.
+  const since = sinceSummary(state)
   const ordre = activeToday.map((id) => getGoal(id)?.short).filter(Boolean)
   const chevauchements = dayWarnings(activeToday).filter((w) => w.type === 'muscles')
 
@@ -430,6 +434,40 @@ export default function Home({
         </div>
         {onPushups && !firstRun && <ProgressRing done={doneCount} total={TOTAL_DAYS} />}
       </header>
+
+      {/* Depuis quand : une lecture des historiques, comme le calendrier. Le bouton
+          mène au même écran que « 🎯 Mes objectifs » : c'est là qu'on choisit
+          les modules qu'on suit. */}
+      {(since.modules.length > 0 || since.all.day) && (
+        <div className="since">
+          <div className="since__main">
+            <span className="since__num">{since.all.days ?? '—'}</span>
+            <span className="since__label">
+              {since.all.days == null
+                ? 'Pas encore de séance'
+                : since.all.days === 0
+                  ? 'Séance faite aujourd’hui 💪'
+                  : <>jour{since.all.days > 1 ? 's' : ''} depuis ta dernière séance</>}
+            </span>
+          </div>
+          {since.modules.length > 0 && (
+            <ul className="since__list">
+              {since.modules.map((m) => {
+                const g = getGoal(m.goalId)
+                return (
+                  <li key={m.goalId} className="since__row">
+                    <span>{g ? `${g.emoji} ${g.short}` : `${ACTIVITY_EMOJI} Activités`}</span>
+                    <b className={m.days == null ? 'since__never' : m.days >= 7 ? 'since__late' : ''}>
+                      {formatSince(m.days)}
+                    </b>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          <button className="link since__edit" onClick={onEditGoals}>✏️ Choisir mes modules</button>
+        </div>
+      )}
 
       {/* Seulement quand AUCUN objectif choisi n'a de module. Avant, cette carte
           sortait dès que les pompes n'étaient pas cochées — donc au-dessus d'une

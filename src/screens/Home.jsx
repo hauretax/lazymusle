@@ -9,7 +9,7 @@ import * as jump from '../data/jumpProgram'
 import { goals as ALL_GOALS, PUSHUPS_GOAL, HANDSTAND_GOAL, LSIT_GOAL, RUN_GOAL, PRESS_GOAL, JUMP_GOAL, getGoal, hasProgram } from '../data/goals'
 import { orderForDay, dayWarnings } from '../lib/schedule'
 import { countPushupDone } from '../lib/progress'
-import { sinceSummary, formatSince } from '../lib/since'
+import { sinceSummary, formatSince, sameDayLegs } from '../lib/since'
 import { ACTIVITY_EMOJI } from '../lib/activities'
 import { canNotify, requestNotif, notify, exportSchedule } from '../lib/reminders'
 import InstallButton from '../components/InstallButton'
@@ -88,6 +88,9 @@ export default function Home({
   const activeToday = orderForDay(state.goals.filter(hasProgram))
   // Jours depuis la dernière séance : tous exos confondus, puis par module suivi.
   const since = sinceSummary(state)
+  // Saut et course tapent tous les deux sur les jambes : l'un fait aujourd'hui,
+  // l'autre le signale (TICKETS.md T18).
+  const legs = sameDayLegs(state)
   const ordre = activeToday.map((id) => getGoal(id)?.short).filter(Boolean)
   const chevauchements = dayWarnings(activeToday).filter((w) => w.type === 'muscles')
 
@@ -309,6 +312,9 @@ export default function Home({
               <span>échauffement compris</span>
             </div>
             {w.note && <p className="card__rest-note card__rest-note--soft">{w.note}</p>}
+            {legs.run && (
+              <p className="card__rest-note">🏀 Tu as déjà fait ta séance de saut aujourd’hui : la course peut attendre demain.</p>
+            )}
             {runProg.nextDate && !ready && (
               <p className="card__rest-note">
                 Repos conseillé. Prochaine séance {du === 1 ? 'demain' : `dans ${du} jours`} ({fmtDay(runProg.nextDate)}). Tu peux quand même y aller 👊
@@ -486,6 +492,9 @@ export default function Home({
                   onChange={(e) => onSetJumpReduced(e.target.checked)}
                 />{' '}Volume réduit (75 %) — au-delà de {jump.HEAVY_KG} kg, ménage genoux et chevilles.
               </label>
+            )}
+            {legs.jump && (
+              <p className="card__rest-note">🏃 Tu as déjà couru aujourd’hui : tes jambes ont donné. Mieux vaut sauter un autre jour.</p>
             )}
             {jumpProg.nextDate && !ready && (
               <p className="card__rest-note">

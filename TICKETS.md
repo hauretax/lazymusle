@@ -188,12 +188,27 @@ s'approprie pas le nom. À garder en tête si le projet sort du cadre perso.
 **Non fait** : les étirements post-séance sont ceux des pompes (pecs, triceps, épaules, poignets) —
 ils ne conviennent pas à la course. Un jeu d'étirements jambes reste à ajouter.
 
-### T6 — GPS / Capacitor · option, à faire
+### T6 — GPS pour la course · fait (sans Capacitor)
 
-GPS pour la course. Wrapper Capacitor si on a besoin de natif : Health Connect, GPS en arrière-plan,
-notifications locales fiables app fermée.
+GPS pour la course. Fait **dans la PWA**, sans wrapper natif :
 
-### T7 — Choisir sa séance · en cours (reste le passage à l'œil)
+- [x] « 📍 Mesurer la distance (GPS) » dans la séance de course, à la demande : rien n'est suivi
+      sans qu'on le demande
+- [x] Distance calculée sur le téléphone (`lib/gps.js`), **aucune position ne sort** ni n'est
+      gardée : seule la distance finale va sur la séance (`distanceKm`, absent sans GPS)
+- [x] Filtres (CHOIX DE L'APP) : point à plus de 30 m de précision = bruit ; plus de 25 km/h à
+      pied = saut du GPS, pas un sprint
+- [x] L'écran reste allumé pendant le suivi (Wake Lock) ; la distance arrive au journal
+      (« 8 min courues · 2,35 km »)
+- [x] Vérifié : assertions (distance, filtres, journal) + parcours headless avec position simulée
+
+**Limite assumée** : une PWA ne reçoit **aucune position écran verrouillé ou app en
+arrière-plan**. Si le téléphone se verrouille, la distance s'arrête. Pour ça, et pour Health
+Connect ou des notifications fiables app fermée, il faudrait le wrapper **Capacitor** — non fait :
+il demande Xcode/Android Studio, un build natif et une publication sur les stores, pour une app
+à un seul utilisateur.
+
+### T7 — Choisir sa séance · fait
 
 Les modules à calendrier (pompes, course) ne servent que **la séance suivante**, et rien d'autre.
 Impossible de refaire un jour, d'en sauter quand c'est trop simple, ou de dire « en vrai, j'en suis
@@ -639,7 +654,7 @@ Demandé le 25/09/2026 : un onglet abdos/compression « dans le but de faire un 
 des outils pour **sauter plus haut** en suivant le PDF de basketteur (Air Alert). Recherche web du
 même jour, sources ci-dessous.
 
-### T17 — Press : du L-sit au handstand · fait (reste le passage à l'œil)
+### T17 — Press : du L-sit au handstand · fait
 
 Même modèle que le L-sit (T4) : **deux axes, pas de calendrier**. Aucune source sérieuse n'en donne,
 et GMB refuse explicitement : « pas de nombre magique ».
@@ -684,7 +699,7 @@ les relie au press.
 [Marmerstein, ordre des opérations](https://www.yuri-mar.com/blog/2014/2/16/order-of-operations-in-press-handstand) ·
 [PLOS One 2021](https://pmc.ncbi.nlm.nih.gov/articles/PMC8279359/)
 
-### T18 — Sauter plus haut : Air Alert II · fait (reste le passage à l'œil)
+### T18 — Sauter plus haut : Air Alert II · fait
 
 Le « PDF de basketteur », c'est **Air Alert** (TMT Sports). Contrairement au press, un calendrier
 **existe vraiment** → modèle des pompes : séances séquentielles, une à la fois.
@@ -700,7 +715,9 @@ Le « PDF de basketteur », c'est **Air Alert** (TMT Sports). Contrairement au p
       (CHOIX DE L'APP : Air Alert ne prévoit rien)
 - [x] **Poids** renseigné une fois : > 100 kg → mise en garde NSCA + volume réduit proposé
       (CHOIX DE L'APP pour le volume ; seule la prudence au-delà de ~100 kg est sourcée NSCA)
-- [ ] ~~Moteur de planning : pas de saut les jours de course~~ — **non fait** : le moteur ordonne (technique avant force) mais ne déplace aucune séance ; Air Alert a ses propres jours
+- [x] Saut et course le même jour : la carte de l'un signale que l'autre a été fait aujourd'hui
+      (`sameDayLegs`). Rien n'est bloqué ni déplacé — Air Alert a ses propres jours. CHOIX DE L'APP :
+      le NSCA chiffre l'écart entre deux séances de pliométrie, pas entre pliométrie et course
 - [x] Avertissement unique à l'entrée du module : volume élevé, genoux/chevilles
 
 | Sem. | Leap-ups | Calf raises | Step-ups | Thrust-ups | Burnouts |
@@ -742,7 +759,7 @@ box → depth jumps, 80-100 contacts/séance, 2×/sem).
 ⚠️ Air Alert® est une marque de TMT Sports : l'app attribue le plan dans les données, elle ne
 s'approprie pas le nom (même règle que C25K en T5).
 
-### T19 — Depuis quand · fait (reste le passage à l'œil)
+### T19 — Depuis quand · fait
 
 Demandé le 25/09/2026 : « afficher un compteur du nombre de jours depuis la dernière séance de sport
 et depuis la dernière séance de chaque partie », et pouvoir choisir les modules qu'on suit.
@@ -758,3 +775,16 @@ et depuis la dernière séance de chaque partie », et pouvoir choisir les modul
 - [x] 19 assertions dans `npm run check`, rendu SSR de l'accueil vérifié
 
 **Pas encore fait** : le passage à l'œil dans le navigateur (Chrome occupé par une autre session).
+
+---
+
+### Passage à l'œil de T17 · T18 · T19 — 25/09/2026
+
+Chrome DevTools occupé par une autre session : parcours rejoués en **Chrome headless**
+(puppeteer-core sur le Chrome installé), 390 px, zéro erreur console :
+onboarding press + détente → situer le press → séance complète (prep, 4 séries au steppeur,
+5 tenues, question de fin) → « Critère atteint » proposé sur les deux axes → test de détente
+(47 cm, 104 kg → volume réduit coché) → séance Air Alert à 75 % → ✕ en route → « 38 reps
+comptent » → grille des 36 séances. Course : GPS simulé, avertissement saut/course le même jour.
+**Le passage final se fait sur la version en ligne** (Hugo, seul utilisateur de l'app).
+

@@ -58,3 +58,18 @@ export function formatSince(days) {
   if (days === 1) return 'hier'
   return `${days} jours`
 }
+
+// Saut et course le même jour : les deux tapent sur les jambes. On signale sur
+// la carte de l'un que l'autre a déjà été fait aujourd'hui. CHOIX DE L'APP :
+// le NSCA demande 48-72 h entre deux séances de pliométrie, rien de chiffré
+// entre pliométrie et course.
+export function sameDayLegs(state, today = new Date()) {
+  const last = lastDays(state)
+  const t = dayKey(today)
+  const goals = Array.isArray(state?.goals) ? state.goals : []
+  const both = goals.includes('jump') && goals.includes('running')
+  return {
+    jump: both && last.get('running') === t, // à afficher sur la carte saut
+    run: both && last.get('jump') === t, // à afficher sur la carte course
+  }
+}

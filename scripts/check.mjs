@@ -19,7 +19,8 @@ import {
 import { abandonMessage, shouldStretch, STRETCH_THRESHOLD } from '../src/lib/encouragement.js'
 import { dayKey, journalByDay, monthGrid, shiftMonth, monthSummary } from '../src/lib/journal.js'
 import { parseDayKey, daysBetween } from '../src/lib/dates.js'
-import { lastDays, daysSince, sinceSummary, formatSince } from '../src/lib/since.js'
+import { lastDays, daysSince, sinceSummary, formatSince, sameDayLegs } from '../src/lib/since.js'
+import { haversine, addPosition, formatKm } from '../src/lib/gps.js'
 import * as press from '../src/data/pressProgram.js'
 import * as jump from '../src/data/jumpProgram.js'
 import { indexStatuses, countIndexDone } from '../src/lib/progress.js'
@@ -801,6 +802,35 @@ section('Press et saut au journal et dans « depuis quand »')
   eq('depuis quand : les deux modules', sinceSummary(etat, auj).modules.map((m) => [m.goalId, m.days]),
     [['press', 2], ['jump', 1]])
   eq('état d’avant : press et saut arrivent vides', hydrate({ version: 7 }).programs.jump.index, 0)
+}
+
+section('GPS de la course (T6) : distance à partir des positions')
+{
+  const p = (lat, lon, t, accuracy = 5) => ({ lat, lon, t, accuracy })
+  const m = haversine({ lat: 48.8566, lon: 2.3522 }, { lat: 48.8666, lon: 2.3522 })
+  eq('0,01° de latitude ≈ 1,11 km', Math.round(m), 1112)
+  let t = addPosition(null, p(48.85, 2.35, 0))
+  eq('premier point : rien parcouru', t.meters, 0)
+  t = addPosition(t, p(48.851, 2.35, 60000)) // ~111 m en 1 min
+  eq('un point de plus : la distance monte', Math.round(t.meters), 111)
+  eq('point imprécis : ignoré', addPosition(t, p(48.86, 2.35, 120000, 80)).meters, t.meters)
+  eq('saut du GPS (1 km en 10 s) : ignoré', addPosition(t, p(48.86, 2.35, 70000)).meters, t.meters)
+  eq('temps qui recule : ignoré', addPosition(t, p(48.852, 2.35, 30000)).meters, t.meters)
+  eq('point illisible : ignoré', addPosition(t, { lat: NaN }).meters, t.meters)
+  eq('format', [formatKm(0), formatKm(2345)], ['0,00 km', '2,35 km'])
+  const e = journalByDay({ programs: { running: { sessions: [{ index: 0, runSec: 480, distanceKm: 2.35, date: local(2026, 7, 20, 7) }] } } })
+  eq('la distance arrive au journal', e.get('2026-07-20')[0].detail, '8 min courues · 2,35 km')
+}
+
+section('Saut et course le même jour')
+{
+  const auj = new Date(2026, 6, 30, 15)
+  const base = { goals: ['jump', 'running'], programs: { running: { sessions: [{ index: 0, runSec: 60, date: local(2026, 7, 30, 8) }] } } }
+  eq('couru ce matin : la carte saut le dit', sameDayLegs(base, auj), { jump: true, run: false })
+  eq('couru hier : rien', sameDayLegs(base, new Date(2026, 6, 31, 9)), { jump: false, run: false })
+  eq('saut pas suivi : rien', sameDayLegs({ ...base, goals: ['running'] }, auj), { jump: false, run: false })
+  const saute = { goals: ['jump', 'running'], programs: { jump: { sessions: [{ index: 0, reps: 200, date: local(2026, 7, 30, 9) }] } } }
+  eq('sauté ce matin : la carte course le dit', sameDayLegs(saute, auj), { jump: false, run: true })
 }
 
 section('Journal : chaque jour dit ce qui a été fait')

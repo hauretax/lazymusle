@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { primeAudio, tick, endOfRestSignal, vibrate } from '../lib/feedback'
+import { addPosition, formatKm } from '../lib/gps'
 
 const R = 130
 const CIRC = 2 * Math.PI * R
@@ -32,6 +33,44 @@ export default function RunSession({ workout, onFinish, onQuit }) {
   const endRef = useRef(Date.now() + steps[0].sec * 1000)
 
   useEffect(() => { primeAudio() }, [])
+
+  // GPS, à la demande (TICKETS.md T6). Une PWA ne suit la position que tant que
+  // l'app est ouverte et l'écran allumé : on garde donc l'écran allumé pendant
+  // le suivi. Écran verrouillé ou app en arrière-plan = pas de points.
+  const [gps, setGps] = useState('off') // 'off' | 'on' | 'denied' | 'unsupported'
+  const [track, setTrack] = useState({ last: null, meters: 0 })
+  const watchRef = useRef(null)
+  const wakeRef = useRef(null)
+
+  const stopGps = () => {
+    if (watchRef.current != null) navigator.geolocation.clearWatch(watchRef.current)
+    watchRef.current = null
+    wakeRef.current?.release?.().catch(() => {})
+    wakeRef.current = null
+  }
+  useEffect(() => stopGps, [])
+
+  const startGps = async () => {
+    if (!('geolocation' in navigator)) return setGps('unsupported')
+    try {
+      wakeRef.current = await navigator.wakeLock?.request('screen')
+    } catch {
+      /* pas de wake lock : le suivi marche tant que l'écran reste allumé */
+    }
+    watchRef.current = navigator.geolocation.watchPosition(
+      (pos) => setTrack((t) => addPosition(t, {
+        lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy, t: pos.timestamp,
+      })),
+      (err) => {
+        if (err.code === 1) {
+          setGps('denied')
+          stopGps()
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 },
+    )
+    setGps('on')
+  }
 
   useEffect(() => {
     if (!running) return
@@ -94,18 +133,24 @@ export default function RunSession({ workout, onFinish, onQuit }) {
           </h2>
           {workout.note && <p className="summary__testline">{workout.note}</p>}
           <div className="summary__stats">
+            {gps === 'on' && <div className="stat"><span className="stat__num">{formatKm(track.meters).replace(' km', '')}</span><span className="stat__lbl">km (GPS)</span></div>}
             <div className="stat"><span className="stat__num">{Math.round(workout.runSec / 60)}</span><span className="stat__lbl">min courues</span></div>
             <div className="stat"><span className="stat__num">{Math.round(workout.totalSec / 60)}</span><span className="stat__lbl">min au total</span></div>
             <div className="stat"><span className="stat__num">S{workout.weekNumber}</span><span className="stat__lbl">semaine</span></div>
           </div>
           <button
             className="btn btn--primary btn--big"
-            onClick={() => onFinish({
-              index: workout.index,
-              weekNumber: workout.weekNumber,
-              runSec: workout.runSec,
-              totalSec: workout.totalSec,
-            })}
+            onClick={() => {
+              stopGps()
+              onFinish({
+                index: workout.index,
+                weekNumber: workout.weekNumber,
+                runSec: workout.runSec,
+                totalSec: workout.totalSec,
+                // Absent sans GPS (même choix qu'en T14 : pas de clé vide).
+                ...(gps === 'on' && track.meters > 0 ? { distanceKm: Math.round(track.meters / 10) / 100 } : {}),
+              })
+            }}
           >
             Terminer
           </button>
@@ -121,7 +166,7 @@ export default function RunSession({ workout, onFinish, onQuit }) {
   return (
     <div className={'screen session run run--' + cur.t}>
       <header className="session__head">
-        <button className="iconbtn" onClick={onQuit} aria-label="Quitter">✕</button>
+        <button className="iconbtn" onClick={() => { stopGps(); onQuit() }} aria-label="Quitter">✕</button>
         <div className="session__title">
           <strong>Semaine {workout.weekNumber} · Séance {workout.workoutNumber}</strong>
           <span>{cur.warmup ? 'Échauffement' : `${idx}/${steps.length - 1}`}</span>
@@ -151,6 +196,12 @@ export default function RunSession({ workout, onFinish, onQuit }) {
           <p className="rest__hint">
             {next ? <>Ensuite : {EMOJI[next.t]} {LABEL[next.t]} {mmss(next.sec)}</> : 'Dernier effort 🔥'}
           </p>
+          {gps === 'off' && (
+            <button className="link" onClick={startGps}>📍 Mesurer la distance (GPS)</button>
+          )}
+          {gps === 'on' && <p className="rest__hint">📍 {formatKm(track.meters)} · garde l’écran allumé</p>}
+          {gps === 'denied' && <p className="rest__hint">📍 Position refusée — la séance continue sans distance.</p>}
+          {gps === 'unsupported' && <p className="rest__hint">📍 Pas de GPS sur ce navigateur.</p>}
           <div className="rest__actions">
             <button className="btn btn--ghost" onClick={pause}>{running ? '⏸ Pause' : '▶︎ Reprendre'}</button>
             <button className="btn btn--ghost" onClick={skip}>Passer</button>

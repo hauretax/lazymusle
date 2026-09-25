@@ -77,7 +77,9 @@ function runEntries(r = {}) {
     return entry(
       RUN_GOAL, s?.date,
       semaine ? `Semaine ${semaine} · Séance ${w ? w.workoutNumber : ''}`.trim() : 'Course',
-      s?.runSec ? `${Math.round(s.runSec / 60)} min courues` : null,
+      s?.runSec
+        ? `${Math.round(s.runSec / 60)} min courues${s.distanceKm > 0 ? ` · ${String(s.distanceKm).replace('.', ',')} km` : ''}`
+        : null,
     )
   }).filter(Boolean)
 }

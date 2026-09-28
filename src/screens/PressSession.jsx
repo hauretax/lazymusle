@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import RestTimer from '../components/RestTimer'
 import HoldTimer from '../components/HoldTimer'
+import PressFigure from '../components/PressFigure'
 import { PREP, meetsCriterion, CRITERION_QUESTION } from '../data/pressProgram'
 import { primeAudio, vibrate } from '../lib/feedback'
 
@@ -178,18 +179,22 @@ export default function PressSession({ session, onFinish, onQuit }) {
         {phase === 'rest' ? (
           <RestTimer key={`r${d}-${set}`} seconds={restSec} onDone={afterRest} />
         ) : drill.kind === 'hold' ? (
-          <HoldTimer
-            key={`h${d}-${set}`}
-            seconds={drill.holdSec}
-            label="Compresse"
-            hint={drill.step.how}
-            onDone={record}
-          />
+          <>
+            <PressFigure id={drill.step.id} />
+            <HoldTimer
+              key={`h${d}-${set}`}
+              seconds={drill.holdSec}
+              label="Compresse"
+              hint={drill.step.how}
+              onDone={record}
+            />
+          </>
         ) : (
           <div className="rest">
             <p className="rest__label">
               {drill.kind === 'eccentric' ? 'Descentes lentes' : 'Reps propres'} · objectif {drill.reps}
             </p>
+            <PressFigure id={drill.step.id} />
             <p className="rest__hint">{drill.step.how}</p>
             <div className="stepper">
               <button className="stepper__btn" onClick={() => setReps((r) => Math.max(0, r - 1))}>−</button>

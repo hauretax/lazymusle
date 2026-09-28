@@ -819,3 +819,15 @@ body {
 /* Saut (T18) : l'objectif de la série, en gros. */
 .jump__target { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .jump__unit { color: var(--muted); font-size: 14px; font-weight: 600; }
+
+/* Bonshommes de la détente : départ et arrivée alternent. */
+.jfig { max-height: 170px; width: auto; margin: 0 auto; }
+.jfig__a { animation: jfig-a 1.6s steps(1, end) infinite; }
+.jfig__b { animation: jfig-b 1.6s steps(1, end) infinite; }
+.jfig--fast .jfig__a, .jfig--fast .jfig__b { animation-duration: 0.5s; }
+@keyframes jfig-a { 0% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes jfig-b { 0% { opacity: 0; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .jfig__a, .jfig__b { animation: none; }
+  .jfig__a { opacity: 0.3; }
+}

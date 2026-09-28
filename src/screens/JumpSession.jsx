@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import RestTimer from '../components/RestTimer'
+import JumpFigure from '../components/JumpFigure'
 import { REST_SEC } from '../data/jumpProgram'
 import { primeAudio, vibrate } from '../lib/feedback'
 
@@ -97,6 +98,7 @@ export default function JumpSession({ workout, onFinish, onAbandon, onQuit }) {
         ) : (
           <div className="rest">
             <p className="rest__label">{step.ex.name} · série {step.set + 1}/{step.ex.sets}</p>
+            <JumpFigure id={step.ex.id} />
             <div className="jump__target">
               <span className="stepper__value">{step.ex.reps}</span>
               <span className="jump__unit">{step.ex.perLeg ? 'reps par jambe' : 'reps'}</span>
